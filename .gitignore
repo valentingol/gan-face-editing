@@ -1,0 +1,8 @@
+# Specific Folders
+data
+
+# General (Python)
+*egg-info
+*.pyc
+.env
+.vscode
