@@ -12,7 +12,7 @@ Make many but small commits!
 | Emoji                                                     | Description                                      |
 | --------------------------------------------------------- | ------------------------------------------------ |
 | :tada: `:tada:`                                           | Initial Commit                                   |
-| :sparkle: `:sparkles:`                                    | Add features                                     |
+| :sparkles: `:sparkles:`                                   | Add features                                     |
 | :fire: `:fire:`                                           | Remove code or feature                           |
 | :heavy_plus_sign: `:heavy_plus_sign:`                     | Add file (without adding features)               |
 | :heavy_minus_sign: `:heavy_minus_sign:`                   | Remove file (without removing features)          |
