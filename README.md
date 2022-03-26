@@ -2,6 +2,16 @@
 
 Repository of Inter-Centrales 2022 AI competition.
 
+## To-Do list
+
+- [ ] Project images in latent space
+- [ ] Modify bounds of the direction
+- [ ] Find translations in latent space
+- [ ] Saving pipeline image + direction
+- [ ] Solve bald issue
+- [ ] Solve specific issue
+- [ ] Improve resolution (super resolution ?)
+
 ## Commit message
 
 Commit messages start with a Capital letter and are written in present tense (e.g. `:art: Refactor training loop` instead of `:tada: Refactored training loop`).
