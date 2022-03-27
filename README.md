@@ -4,12 +4,13 @@ Repository of Inter-Centrales 2022 AI competition.
 
 ## To-Do list
 
-- [ ] Project images in latent space
-- [ ] Modify bounds of the direction
+- [x] <span style="color:green"> Project images in latent space <span>
+- [x] <span style="color:green"> Modify bounds of the direction <span style="color:green">
 - [ ] Find translations in latent space
 - [ ] Saving pipeline image + direction
-- [ ] Solve bald issue
-- [ ] Solve specific issue
+- [x] <span style="color:green"> Solve bald issue <span style="color:green">
+- [ ] Solve specific issues
+- [ ] Fix artifacts (using original images)
 - [ ] Improve resolution (super resolution ?)
 
 ## Commit message
