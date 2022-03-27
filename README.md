@@ -1,6 +1,9 @@
 # InterCentrales Competition 2022
 
 Repository of Inter-Centrales 2022 AI competition: Ceteris Paribus Face Challenge: [site of the competition](https://transfer-learning.org/competition.html).
+
+![alt text](assets/figures/compet_img.png)
+
 ## To-Do list
 
 - [x] <span style="color:green"> Project images in latent space <span>
