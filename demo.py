@@ -11,11 +11,12 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
-# settings
-# for attributes to use, modify the load_assets() function
-config = 'anycost-ffhq-config-f-flexible'
-assets_dir = 'assets/demo'
-n_style_to_change = 12
+
+# NOTE: configs 'anycost-ffhq-config-f' or 'anycost-ffhq-config-f-flexible'
+config = 'anycost-ffhq-config-f'
+
+assets_dir = 'data/'
+n_style_to_change = 20
 device = 'cpu'
 
 
@@ -43,15 +44,16 @@ class Worker(QRunnable):
 
 
 class FaceEditor(QMainWindow):
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
+        self.config = config
         # load assets
         self.load_assets()
         # title
         self.setWindowTitle('Face Editing with Anycost GAN')
         # window size
         # self.setGeometry(50, 50, 1000, 800)  # x, y, w, h
-        self.setFixedSize(1200, 1200)
+        self.setFixedSize(1800, 1200)
         # background color
         # p = self.palette()
         # p.setColor(self.backgroundRole(), Qt.white)
@@ -91,23 +93,42 @@ class FaceEditor(QMainWindow):
         # build editing sliders
         self.attr_sliders = dict()
         for i_slider, key in enumerate(self.direction_dict.keys()):
-            tick_label = QLabel(self)
-            tick_label.setText('|')
-            self.set_text_format(tick_label, 'center', 10)
-            tick_label.setGeometry(700 + 175, 470 + i_slider * 30 + 9, 50, 20)
+            if i_slider < 18:
+                tick_label = QLabel(self)
+                tick_label.setText('|')
+                self.set_text_format(tick_label, 'center', 10)
+                tick_label.setGeometry(700 + 175, 470 + i_slider * 30 + 9, 50, 20)
 
-            this_slider = QSlider(Qt.Horizontal, self)
-            this_slider.setGeometry(700, 470 + i_slider * 30, 400, 30)
-            this_slider.sliderReleased.connect(self.slider_update)
-            this_slider.setMinimum(-100)
-            this_slider.setMaximum(100)
-            this_slider.setValue(0)
-            self.attr_sliders[key] = this_slider
+                this_slider = QSlider(Qt.Horizontal, self)
+                this_slider.setGeometry(700, 470 + i_slider * 30, 400, 30)
+                this_slider.sliderReleased.connect(self.slider_update)
+                this_slider.setMinimum(-100)
+                this_slider.setMaximum(100)
+                this_slider.setValue(0)
+                self.attr_sliders[key] = this_slider
 
-            attr_label = QLabel(self)
-            attr_label.setText(key)
-            self.set_text_format(attr_label, 'right', 13)
-            attr_label.move(700 - 110, 470 + i_slider * 30 + 2)
+                attr_label = QLabel(self)
+                attr_label.setText(key)
+                self.set_text_format(attr_label, 'right', 13)
+                attr_label.move(700 - 110, 470 + i_slider * 30 + 2)
+            else:
+                tick_label = QLabel(self)
+                tick_label.setText('|')
+                self.set_text_format(tick_label, 'center', 10)
+                tick_label.setGeometry(1300 + 175, 470 + (i_slider - 18) * 30 + 9, 50, 20)
+
+                this_slider = QSlider(Qt.Horizontal, self)
+                this_slider.setGeometry(1300, 470 + (i_slider - 18) * 30, 400, 30)
+                this_slider.sliderReleased.connect(self.slider_update)
+                this_slider.setMinimum(-100)
+                this_slider.setMaximum(100)
+                this_slider.setValue(0)
+                self.attr_sliders[key] = this_slider
+
+                attr_label = QLabel(self)
+                attr_label.setText(key)
+                self.set_text_format(attr_label, 'right', 13)
+                attr_label.move(1300 - 110, 470 + (i_slider - 18) * 30 + 2)
 
         # build models sliders
         base_h = 560
@@ -221,9 +242,37 @@ class FaceEditor(QMainWindow):
             'narrow eyes': '23_Narrow_Eyes',
             'pointy nose': '27_Pointy_Nose',
             'lips size': '06_Big_Lips',
-            'nose_size': '27_Pointy_Nose',
+            'nose_size': '07_Big_Nose',
             'chubby': '13_Chubby',
+            'attractive': '02_Attractive',
+            'blurry': '10_Blurry',
+            'eyebrows': '12_Bushy_Eyebrows',
+            'eyeglasses': '15_Eyeglasses',
+            'goatee': '16_Goatee',
+            'makup': '18_Heavy_Makeup',
+            'mouth open': '21_Mouth_Slightly_Open',
+            'mustache': '22_Mustache',
+            'no beard': '24_No_Beard',
+            'oval face': '25_Oval_Face',
+            'hairline': '28_Receding_Hairline',
+            'sideburns': '30_Sideburns',
+            'smile': '31_Smiling',
+            'lipstick': '36_Wearing_Lipstick',
         }
+        # Default max values 0.6
+        max_values = {k: 0.6 for k in direction_map.keys()}
+        # Overwrite some max values
+        max_values = max_values | {
+            'skin': 1,
+            'sexe': 1,
+            'bangs': 1,
+            'black hair': 1,
+            'brown hair': 1,
+            'bald': 1.4,
+            'lips size': 0.6,
+        }
+
+        self.max_values = max_values
 
         boundaries = models.get_pretrained('boundary', config)
         self.direction_dict = dict()
@@ -238,8 +287,12 @@ class FaceEditor(QMainWindow):
 
         for fname in self.file_names:
             org_image = np.asarray(Image.open(os.path.join(assets_dir, 'input_images', fname)).convert('RGB'))
+            if 'flexible' in self.config:
+                latent_dir = 'anycost-flex'
+            else:
+                latent_dir = 'anycost'
             latent_code = torch.from_numpy(
-                np.load(os.path.join(assets_dir, 'projected_latents',
+                np.load(os.path.join(assets_dir, latent_dir, 'projected_latents',
                                      fname.replace('.jpg', '.npy').replace('.png', '.npy'))))
             self.org_image_list.append(org_image)
             self.latent_code_list.append(latent_code.view(1, -1, 512))
@@ -312,17 +365,18 @@ class FaceEditor(QMainWindow):
         for slider in self.attr_sliders.values():
             slider.setEnabled(active)
 
-    def slider_update(self, force_full_g=False):
+    def slider_update(self, force_full_g=True):  # NOTE change force_full_g to True??
         self.set_sliders_status(False)
         self.statusBar().showMessage('Running...')
         self.time_label.setText('')
         self.loading_label.setVisible(True)
-        max_value = 0.6
         edited_code = self.org_latent_code.clone()
         for direction_name in self.attr_sliders.keys():
             edited_code[:, :n_style_to_change] = \
                 edited_code[:, :n_style_to_change] \
-                + self.attr_sliders[direction_name].value() * self.direction_dict[direction_name] / 100 * max_value
+                + self.attr_sliders[direction_name].value() \
+                * self.direction_dict[direction_name] / 100 \
+                * self.max_values[direction_name]
         self.input_kwargs['styles'] = edited_code
         if not force_full_g:
             set_uniform_channel_ratio(self.generator, self.anycost_channel)
@@ -354,5 +408,5 @@ class FaceEditor(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = FaceEditor()
+    ex = FaceEditor(config)
     sys.exit(app.exec_())
