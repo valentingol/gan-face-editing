@@ -1,7 +1,6 @@
 # InterCentrales Competition 2022
 
-Repository of Inter-Centrales 2022 AI competition.
-
+Repository of Inter-Centrales 2022 AI competition: Ceteris Paribus Face Challenge: [site of the competition](https://transfer-learning.org/competition.html).
 ## To-Do list
 
 - [x] <span style="color:green"> Project images in latent space <span>
@@ -13,9 +12,35 @@ Repository of Inter-Centrales 2022 AI competition.
 - [ ] Fix artifacts (using original images)
 - [ ] Improve resolution (super resolution ?)
 
+## To start
+
+First create a new virtual environment and install all the required packages:
+
+```bash
+pip install -r requirements.txt
+```
+
+Then download the dataset of the competition available here: [drive dataset](https://drive.google.com/drive/folders/1-R1863MV8CuCjmycsLy05Uc6bdkWfuOP?usp=sharing)
+
+And unzip the content in the `data/input_images` folder.
+
+Then you can run the script `demo.py` to start the image editing API. Don't forget to change the config at the beginning of the script if you want to use the flexible config.
+
+```bash
+python demo.py
+```
+
+Or if you are using a Nvidia GPU:
+
+```bash
+FORCE_NATIVE=1 python demo.py
+```
+
+The tutorial of AnyCostGAN is in the file `AnycostGAN tuto.md` and the tutorial notebooks are in the `notebooks` folder. The original repository is here: [AnyCosGAN](https://github.com/mit-han-lab/anycost-gan).
+
 ## Commit message
 
-Commit messages start with a Capital letter and are written in present tense (e.g. `:art: Refactor training loop` instead of `:tada: Refactored training loop`).
+Commit messages are written in present tense (e.g. `:art: refactor training loop` instead of `:art: refactored training loop`).
 They also start with one or two applicable emoji. This does not only look great but also makes you rethink what to add to a commit (one kind of action per commit!).
 
 Make many but small commits!
