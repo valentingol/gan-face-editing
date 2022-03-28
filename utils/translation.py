@@ -24,5 +24,19 @@ def get_translations(carac_list, flexible_config):
 
 
 def default_translations(flexible_config):
+    """ Get default translations.
+
+    Parameters
+    ----------
+    flexible_config : bool
+        If True, configuration considered is AnyCost-flexible
+        else it is vanilla AnyCost.
+
+    Returns
+    -------
+    translations : dict[str, torch.Tensor (device cpu)]
+        Default translations for all the changes. (key: 'identifier',
+        value: translation).
+    """
     # TODO
     return
