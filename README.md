@@ -9,7 +9,7 @@ Repository of Inter-Centrales 2022 AI competition: Ceteris Paribus Face Challeng
 - [x] <span style="color:green"> Project images in latent space <span>
 - [x] <span style="color:green"> Modify bounds of the direction <span style="color:green">
 - [ ] Find translations in latent space
-- [ ] Saving pipeline image + direction
+- [x] <span style="color:green"> Saving pipeline image + direction <span style="color:green">
 - [x] <span style="color:green"> Solve bald issue <span style="color:green">
 - [ ] Solve specific issues
 - [ ] Fix artifacts (using original images)
@@ -39,6 +39,8 @@ Or if you are using a Nvidia GPU:
 FORCE_NATIVE=1 python demo.py
 ```
 
+To save the latent direction you want in the `data/` folder, you can click on the 'Save' button. It can be used to automatically generate edited images using this translation via the scripts `tools/translate.py` and `utils/translation.py` (work in progress :construction:).
+
 The tutorial of AnyCostGAN is in the file `AnycostGAN tuto.md` and the tutorial notebooks are in the `notebooks` folder. The original repository is here: [AnyCosGAN](https://github.com/mit-han-lab/anycost-gan).
 
 ## Commit message
@@ -63,7 +65,8 @@ Make many but small commits!
 | :white_check_mark: `:white_check_mark:`                   | Add, update or pass tests                        |
 | :arrow_up: `:arrow_up:`                                   | Update dependency or requirements                |
 | :wrench: `:wrench:`                                       | Add/update configuration or configuration files  |
-| :construction: `:construction:`                           | Deplace or rename files or folders               |
+| :truck: `:truck:`                                         | Deplace or rename files or folders               |
+| :construction: `:construction:`                           | Work in progress                                 |
 | :twisted_rightwards_arrows: `:twisted_rightwards_arrows:` | Branch Merging                                   |
 | :rewind: `:rewind:`                                       | Revert commit or changes                         |
 | :speech_balloon: `:speech_balloon:`                       | Unknown category                                 |
