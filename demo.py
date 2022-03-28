@@ -11,12 +11,11 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
+flexible_config = False
 
-# NOTE: configs 'anycost-ffhq-config-f' or 'anycost-ffhq-config-f-flexible'
-config = 'anycost-ffhq-config-f'
-
+config = 'anycost-ffhq-config-f-flexible' if flexible_config else 'anycost-ffhq-config-f'
 assets_dir = 'data/'
-n_style_to_change = 20
+n_style_to_change = 12
 device = 'cpu'
 
 
@@ -172,10 +171,10 @@ class FaceEditor(QMainWindow):
         self.reset_button.clicked.connect(self.reset_clicked)
 
         # build button slider
-        self.finalize_button = QPushButton('Finalize', self)
-        self.finalize_button.move(280, 700)
+        self.save_button = QPushButton('Save', self)
+        self.save_button.move(280, 700)
         from functools import partial
-        self.finalize_button.clicked.connect(partial(self.slider_update, force_full_g=True))
+        self.save_button.clicked.connect(partial(self.slider_update, force_full_g=True, save=True))
 
         # add loading gif
         # create label
@@ -365,7 +364,7 @@ class FaceEditor(QMainWindow):
         for slider in self.attr_sliders.values():
             slider.setEnabled(active)
 
-    def slider_update(self, force_full_g=True):  # NOTE change force_full_g to True??
+    def slider_update(self, force_full_g=True, save=False):
         self.set_sliders_status(False)
         self.statusBar().showMessage('Running...')
         self.time_label.setText('')
@@ -378,6 +377,13 @@ class FaceEditor(QMainWindow):
                 * self.direction_dict[direction_name] / 100 \
                 * self.max_values[direction_name]
         self.input_kwargs['styles'] = edited_code
+        if save:
+            translation = edited_code - self.org_latent_code
+            text, _ = QInputDialog.getText(self, "Name of direction","Name:", QLineEdit.Normal, "")
+            latent_dir = 'anycost-flex' if 'flexible' in self.config else 'anycost'
+            path = f'data/{latent_dir}/translations/' + text + '.npy'
+            np.save(path, translation.cpu().numpy())
+            print(f'Direction "{text}" saved at {path}')
         if not force_full_g:
             set_uniform_channel_ratio(self.generator, self.anycost_channel)
             self.generator.target_res = self.anycost_resolution
@@ -385,6 +391,7 @@ class FaceEditor(QMainWindow):
         worker = Worker(self.generate_image)
         worker.signals.result.connect(self.after_slider_update)
         self.thread_pool.start(worker)
+
 
     def after_slider_update(self, ret):
         edited, used_time = ret
