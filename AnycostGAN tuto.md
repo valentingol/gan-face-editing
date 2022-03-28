@@ -1,6 +1,6 @@
 # Anycost GAN
 
-### [video](https://youtu.be/_yEziPl9AkM) | [paper](https://arxiv.org/abs/2103.03243) | [website](https://hanlab.mit.edu/projects/anycost-gan/) [![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mit-han-lab/anycost-gan/blob/master/notebooks/intro_colab.ipynb)
+## [video](https://youtu.be/_yEziPl9AkM) | [paper](https://arxiv.org/abs/2103.03243) | [website](https://hanlab.mit.edu/projects/anycost-gan/) [![alt_text](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mit-han-lab/anycost-gan/blob/master/notebooks/intro_colab.ipynb)
 
 [Anycost GANs for Interactive Image Synthesis and Editing](https://arxiv.org/abs/2103.03243)
 
@@ -61,9 +61,7 @@ We recommend setting up the environment using Anaconda: `conda env create -f env
 
 We provide a jupyter notebook example to show how to use the anycost generator for image synthesis at diverse costs: `notebooks/intro.ipynb`.
 
-We also provide a colab version of the notebook: [![](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mit-han-lab/anycost-gan/blob/master/notebooks/intro_colab.ipynb). Be sure to select the GPU as the accelerator in runtime options.
-
-
+We also provide a colab version of the notebook: [![alt_text](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mit-han-lab/anycost-gan/blob/master/notebooks/intro_colab.ipynb). Be sure to select the GPU as the accelerator in runtime options.
 
 ### Interactive Demo
 
@@ -74,13 +72,12 @@ python demo.py
 ```
 
 If your computer contains a CUDA GPU, try running with:
+
 ```bash
 FORCE_NATIVE=1 python demo.py
 ```
 
 You can find a video recording of the demo [here](https://youtu.be/_yEziPl9AkM?t=90).
-
-
 
 ### Using Pre-trained Models
 
@@ -102,8 +99,6 @@ models.get_pretrained('attribute-predictor')
 
 The attribute classifier takes in the face images in FFHQ format.
 
-
-
 After loading the Anycost generator, we can run it at a wide range of computational costs. For example:
 
 ```python
@@ -117,8 +112,6 @@ reset_generator(g)  # restore the generator
 ```
 
 For detailed usage and *flexible-channel* anycost generator, please refer to `notebooks/intro.ipynb`.
-
-
 
 ### Model Zoo
 
@@ -135,13 +128,11 @@ For Anycost generators, by default, we refer to the uniform setting.
 
 `stylegan2-ffhq-config-f` refers to the official StyleGAN2 generator converted from the [repo](https://github.com/NVlabs/stylegan2).
 
-
-
 ### Datasets
 
 We prepare the [FFHQ](https://github.com/NVlabs/ffhq-dataset), [CelebA-HQ](https://github.com/switchablenorms/CelebAMask-HQ), and [LSUN Car](https://github.com/fyu/lsun) datasets into a directory of images, so that it can be easily used with `ImageFolder` from `torchvision`. The dataset layout looks like:
 
-```
+```bash
 ├── PATH_TO_DATASET
 │   ├── images
 │   │   ├── 00000.png
@@ -150,8 +141,6 @@ We prepare the [FFHQ](https://github.com/NVlabs/ffhq-dataset), [CelebA-HQ](https
 ```
 
 Due to the copyright issue, you need to download the dataset from official site and process them accordingly.
-
-
 
 ### Evaluation
 
@@ -212,15 +201,13 @@ python metrics/eval_encoder.py \
     --data_path PATH_TO_CELEBA_HQ
 ```
 
-
-
 ### Training
 
 We provide the scripts to train Anycost GAN on FFHQ dataset.
 
 - Training the original StyleGAN2 on FFHQ
 
-```
+```bash
 horovodrun -np 8 bash scripts/train_stylegan2_ffhq.sh
 ```
 
@@ -228,7 +215,7 @@ The training of original StyleGAN2 is time-consuming. We recommend downloading t
 
 - Training Anycost GAN: mult-resolution
 
-```
+```bash
 horovodrun -np 8 bash scripts/train_stylegan2_multires_ffhq.sh
 ```
 
@@ -236,23 +223,19 @@ Note that after each epoch, we evaluate the FIDs of two resolutions (1024&512) t
 
 - Training Anycost GAN: adaptive-channel
 
-```
+```bash
 horovodrun -np 8 bash scripts/train_stylegan2_multires_adach_ffhq.sh
 ```
 
 Here we set a longer training epoch for a more stable reproduction, which might not be necessary (depending on the randomness).
 
-
-
 **Note**: We trained our models on Titan RTX GPUs with 24GB memory. For GPUs with smaller memory, you may need to reduce the resolution/model size/batch size/etc. and adjust other hyper-parameters accordingly.
-
-
 
 ## Citation
 
 If you use this code for your research, please cite our paper.
 
-```
+```bash
 @inproceedings{lin2021anycost,
   author    = {Lin, Ji and Zhang, Richard and Ganz, Frieder and Han, Song and Zhu, Jun-Yan},
   title     = {Anycost GANs for Interactive Image Synthesis and Editing},
@@ -261,13 +244,9 @@ If you use this code for your research, please cite our paper.
 }
 ```
 
-
-
 ## Related Projects
 
 **[GAN Compression](https://github.com/mit-han-lab/gan-compression) | [Once for All](https://github.com/mit-han-lab/once-for-all) | [iGAN](https://github.com/junyanz/iGAN) | [StyleGAN2](https://github.com/NVlabs/stylegan2)**
-
-
 
 ## Acknowledgement
 
