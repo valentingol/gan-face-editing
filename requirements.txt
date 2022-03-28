@@ -2,10 +2,12 @@ dlib==19.23.1
 horovod==0.24.2
 lpips==0.1.4
 numpy==1.22.3
+opencv_python==4.5.5.64
 Pillow==9.0.1
 PyQt5==5.15.6
 scikit_learn==1.0.2
 scipy==1.8.0
+setuptools==60.9.3
 torch==1.11.0
 torchprofile==0.0.4
 torchvision==0.12.0
