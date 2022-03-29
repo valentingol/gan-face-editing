@@ -29,16 +29,16 @@ Then download the dataset of the competition available here: [drive dataset](htt
 
 And unzip the content in the `data/input_images` folder.
 
-Then you can run the script `demo.py` to start the image editing API. Don't forget to change the config at the beginning of the script if you want to use the flexible config.
+Then you can run the script `editor_API.py` to start the image editing API. Don't forget to change the config at the beginning of the script if you want to use the flexible config.
 
 ```bash
-python demo.py
+python editor_API.py
 ```
 
 Or if you are using a Nvidia GPU:
 
 ```bash
-FORCE_NATIVE=1 python demo.py
+FORCE_NATIVE=1 python editor_API.py
 ```
 
 To save the latent direction you want in the `data/` folder, you can click on the 'Save' button. **The name of the translation should follow the name convention:**
@@ -73,7 +73,7 @@ python tools/check_submission.py
 
 ## AnyCost GAN tutorial
 
-The tutorial of AnyCostGAN is in the file `AnycostGAN tuto.md` and the tutorial notebooks are in the `notebooks` folder. The original repository is here: [AnyCosGAN](https://github.com/mit-han-lab/anycost-gan).
+The tutorial of AnyCostGAN is in the file `AnycostGAN tuto.md` and the tutorial notebooks are in the `notebooks` folder. The original repository is here: [AnyCosGAN](https://github.com/mit-han-lab/anycost-gan). Note that the script `demo.py` was renamed to `editor_API.py` in this repository.
 
 ## Commit message
 
