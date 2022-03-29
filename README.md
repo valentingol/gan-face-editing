@@ -6,16 +6,18 @@ Repository of Inter-Centrales 2022 AI competition: Ceteris Paribus Face Challeng
 
 ## To-Do list
 
-- [x] <span style="color:green"> Project images in latent space <span>
-- [x] <span style="color:green"> Modify bounds of the direction <span style="color:green">
-- [ ] Find translations in latent space
-- [x] <span style="color:green"> Saving pipeline image + direction <span style="color:green">
-- [x] <span style="color:green"> Solve bald issue <span style="color:green">
-- [ ] Solve specific issues
+- [x] Project images in latent space
+- [x] Modify bounds of the direction
+- [x] Find translations in latent space
+- [x] Saving pipeline for direction
+- [x] Solve bald issue
+- [ ] Detect and improve bad translations
+- [ ] Saving pipeline for edited images
+- [ ] Solve specific issues (manually or with other methods)
 - [ ] Fix artifacts (using original images)
 - [ ] Improve resolution (super resolution ?)
 
-## To start
+## Quick Start
 
 First create a new virtual environment and install all the required packages:
 
@@ -39,7 +41,37 @@ Or if you are using a Nvidia GPU:
 FORCE_NATIVE=1 python demo.py
 ```
 
-To save the latent direction you want in the `data/` folder, you can click on the 'Save' button. It can be used to automatically generate edited images using this translation via the scripts `tools/translate.py` and `utils/translation.py` (work in progress :construction:).
+To save the latent direction you want in the `data/` folder, you can click on the 'Save' button. **The name of the translation should follow the name convention:**
+
+- for 'cursor' transformation (min - max): `{carac}_{'min' or 'max'}`. Example `Be_min` means cursor transformation to minimal bags under the eyes (Be_min).
+
+- for default transformation (transformation that doesn't depend on the current value of the caracteristic): `{carac}_{new_value}`. Example: `Hc_0` means default transformation to black hair color (Hc_0)
+
+- for specific transformation (transformation that depends on the current value of the caracteristic) that will overwrite default transformation: `{carac}_{new_value}_fr_{old_value}`. Example `A_0_fr_1` means specific transformation from intermediate age (A_1) to young age (A_0), 'fr' means 'from'.
+
+**All required transformations must be treated for all input caracterisics to make a valid submission.**
+
+Now, given an input image, the transformations to create caracterisitcs that are not in the initial image can automatically be got with the script `utils/translation.py`. Finally you can run the script `tools/translate.py` to generate the new images in a folder respecting the naming convention of the competition (the images are generated in `data/{latent_dir}/edited_images/`)
+
+```bash
+python tools/translate.py
+```
+
+Or if you are using a Nvidia GPU:
+
+```bash
+FORCE_NATIVE=1 tools/translate.py
+```
+
+**Of course, you can generate only a subset of images or caracteristics by removing some latent vectors or by removing keys of the dictionary containing the translations.**
+
+If all the 72 images with all caracteristics are generated (1731 images in total), you can zip the folder containing the images and run the following script to check the submission (if all the required images are inside, with the good name, type, size...):
+
+```bash
+python tools/check_submission.py
+```
+
+## AnyCost GAN tutorial
 
 The tutorial of AnyCostGAN is in the file `AnycostGAN tuto.md` and the tutorial notebooks are in the `notebooks` folder. The original repository is here: [AnyCosGAN](https://github.com/mit-han-lab/anycost-gan).
 
