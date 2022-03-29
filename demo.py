@@ -257,18 +257,21 @@ class FaceEditor(QMainWindow):
             'sideburns': '30_Sideburns',
             'smile': '31_Smiling',
             'lipstick': '36_Wearing_Lipstick',
+            'rosy cheeks': '29_Rosy_Cheeks',
         }
         # Default max values 0.6
         max_values = {k: 0.6 for k in direction_map.keys()}
         # Overwrite some max values
         max_values = max_values | {
-            'skin': 1,
+            'skin': 1.2,
+            'age': 0.6,
             'sexe': 1,
             'bangs': 1,
             'black hair': 1,
             'brown hair': 1,
             'bald': 1.4,
             'lips size': 0.6,
+            'air line': 1.5,
         }
 
         self.max_values = max_values
