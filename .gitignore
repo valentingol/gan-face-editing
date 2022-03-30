@@ -8,3 +8,6 @@ test_proj
 *.pyc
 .env
 .vscode
+
+# Submission
+**.zip
