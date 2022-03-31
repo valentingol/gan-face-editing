@@ -22,9 +22,10 @@ Repository of Inter-Centrales 2022 AI competition: Ceteris Paribus Face Challeng
 
 ### Installation
 
-First create a new virtual environment and install all the required packages:
+First, create a new virtual environment and install all the required packages:
 
 ```bash
+pip install -e .
 pip install -r requirements.txt
 ```
 
