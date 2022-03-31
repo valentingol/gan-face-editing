@@ -11,7 +11,7 @@ def alpha_from_dist(dist, margin=42):
 if __name__ == '__main__':
     input_images_path = './data/input_images'
     edited_images_path = './data/anycost/edited_images'
-    new_edited_images_path = './preprocess/edited_images_postmixup'
+    new_edited_images_path = './preprocess/mixup/edited_images_postmixup'
     # distances to domains (computed with `compute_dist.py`)
     domains_dist_path = './preprocess/mixup/domains/distances'
 
