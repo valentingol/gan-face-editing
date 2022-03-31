@@ -12,16 +12,20 @@ Repository of Inter-Centrales 2022 AI competition: Ceteris Paribus Face Challeng
 - [x] Saving pipeline for direction
 - [x] Solve bald issue
 - [ ] Detect and improve bad translations
+- [ ] Look for other repo to solve skin and age :construction:
 - [ ] Saving pipeline for edited images
 - [ ] Solve specific issues (manually or with other methods)
-- [ ] Fix artifacts (using original images)
-- [ ] Improve resolution (super resolution ?)
+- [ ] Focused change by semantic segmentation :construction:
+- [ ] Improve resolution (super resolution ?) :construction:
 
 ## Quick Start
 
-First create a new virtual environment and install all the required packages:
+### Installation
+
+First, create a new virtual environment and install all the required packages:
 
 ```bash
+pip install -e .
 pip install -r requirements.txt
 ```
 
@@ -40,6 +44,8 @@ Or if you are using a Nvidia GPU:
 ```bash
 FORCE_NATIVE=1 python editor_API.py
 ```
+
+### Translations in latent space
 
 To save the latent direction you want in the `data/` folder, you can click on the 'Save' button. **The name of the translation should follow the name convention:**
 
@@ -67,8 +73,30 @@ FORCE_NATIVE=1 tools/translate.py
 
 If all the 72 images with all caracteristics are generated (1731 images in total), you can zip the folder containing the images and run the following script to check the submission (if all the required images are inside, with the good name, type, size...):
 
+### Domain Mixup
+
+To keep only the modification near the area where we expect them (called 'domain') for a specific change, a mixup is applied. The idea is to draw an area in a 512x512 white image that correspond to the area we expect add the changes, for each caracterisitc. The images are saved in `preprocess/mixup/domains/images/` (black and white images and black pixels correspond to the domain).
+
+Then you need to compute the distance to the domain pixel per pixel. Don't forget to process only the domains you want by editing the script. It can take a while for each domain so copying the domains and the distances for similar caracteristics is highly recommended.
+
 ```bash
-python tools/check_submission.py
+python tools/preprocess/mixup_compute_dist.py
+```
+
+Finally you can process the domain mixup. You can edit the paths in the script:
+
+```bash
+python tools/preprocess/mixup.py
+```
+
+By default, the resulting images are in `preprocess/mixup/edited_images_postmixum/`
+
+### Check the submission
+
+Checking the submission (number of files, names and format) can be easily checked with the following script:
+
+```bash
+python tools/check_submission.py <path_to_submission>
 ```
 
 ## AnyCost GAN tutorial
@@ -92,7 +120,7 @@ Make many but small commits!
 | :beetle: `:beetle:`                                       | Fix bug                                          |
 | :art: `:art:`                                             | Improve structure/format of code (including PEP) |
 | :memo: `:memo:`                                           | Add/update docstring, comment or readme          |
-| :zap: `:zap:`                                             | Improve performance                              |
+| :rocket: `:rocket:`                                       | Improve performance                              |
 | :pencil2: `:pencil2:`                                     | Fix typo                                         |
 | :white_check_mark: `:white_check_mark:`                   | Add, update or pass tests                        |
 | :arrow_up: `:arrow_up:`                                   | Update dependency or requirements                |

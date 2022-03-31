@@ -64,10 +64,14 @@ def get_translations(carac_list, flexible_config):
 
     # Check if there is enough translations
     if hc != 4:  # not bald
-        assert (len(translations) == 24, 'The number of translations is '
-                f'{len(translations)} while it should be 24.')
+        assert len(translations) == 24, (
+            f'The number of translations is {len(translations)} while it '
+            'should be 24.'
+            )
     else:  # bald
-        assert (len(translations) == 25, 'The number of translations is '
-                f'{len(translations)} while it should be 25 (for bald people).')
+        assert len(translations) == 25, (
+            f'The number of translations is {len(translations)} while it '
+            'should be 25 (for bald people).'
+            )
 
     return translations
