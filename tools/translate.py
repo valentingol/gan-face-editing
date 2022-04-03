@@ -23,7 +23,7 @@ def generate_image(generator, **input_kwargs):
 
 
 if __name__ == '__main__':
-
+    print('Translate latent spaces')
     flexible_config = False
 
     latent_dir = 'anycost-flex' if flexible_config else 'anycost'
@@ -57,4 +57,4 @@ if __name__ == '__main__':
             path = f'data/{latent_dir}/edited_images/{basename}/{ident}.png'
             cv2.imwrite(path, image)
         print(f'image {i + 1}/{n_images} done', end='\r')
-        print()
+    print()
