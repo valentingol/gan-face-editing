@@ -9,6 +9,7 @@ def alpha_from_dist(dist, margin=42):
 
 
 if __name__ == '__main__':
+    print('Mixup processing')
     input_images_path = './data/input_images'
     edited_images_path = './data/anycost/edited_images'
     new_edited_images_path = './preprocess/mixup/edited_images_postmixup'
@@ -19,15 +20,16 @@ if __name__ == '__main__':
     for domain_name in os.listdir(domains_dist_path):
         if domain_name.endswith('.npy'):
             dist = np.load(os.path.join(domains_dist_path, domain_name))
-            carac_name = domain_name.split('_')[0]
+            carac_name = domain_name.split('.')[0]
+            carac_name = carac_name.split('_')[0]
             dists[carac_name] = dist
     n_images = len(os.listdir(edited_images_path))
     for idx, img_name in enumerate(os.listdir(edited_images_path)):
         original_image = cv2.imread(os.path.join(input_images_path,
                                                  img_name + '.png'))
         for edited_name in os.listdir(os.path.join(edited_images_path, img_name)):
-            # NOTE: bald is not treated here
-            carac_name = edited_name.split('_')[0]
+            carac_name = edited_name.split('.')[0]
+            carac_name = carac_name.split('_')[0]
             edited_img = cv2.imread(os.path.join(edited_images_path, img_name,
                                                     edited_name))
             if carac_name in dists:
@@ -49,5 +51,5 @@ if __name__ == '__main__':
             else: # no modification
                 cv2.imwrite(os.path.join(outdir, edited_name), edited_img)
 
-        print(f'{idx + 1}/{n_images} done', end='\r')
+        print(f'image {idx + 1}/{n_images} done', end='\r')
     print()
