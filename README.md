@@ -92,7 +92,13 @@ By default, the resulting images are in `preprocess/mixup/edited_images_postmixu
 
 ### Segmentation
 
-To go further in the last idea, we apply a semantic segmentation on the original image and the edited images in order to find for each image and for each transformation the area where we expect to find the change. You can run the following script to generate new images with the segmentation:
+To go further in the last idea, we apply a semantic segmentation on the original image and the edited images in order to find for each image and for each transformation the area where we expect to find the change. First you need to get the segmentaion model by Git LFS (see [Git LFS](https://git-lfs.github.com/) for details):
+
+```bash
+git lfs pull
+```
+
+Then you can run the following script to merge the previously edited images with the original ones by semantic segmentation:
 
 ```bash
 python tools/preprocess/segment.py
