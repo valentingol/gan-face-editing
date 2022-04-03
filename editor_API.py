@@ -264,14 +264,17 @@ class FaceEditor(QMainWindow):
         # Overwrite some max values
         max_values = max_values | {
             'skin': 1.2,
-            'age': 0.6,
+            'age': 2,
             'sexe': 1,
-            'bangs': 1,
-            'black hair': 1,
+            'bangs': 1.6,
+            'black hair': 1.3,
             'brown hair': 1,
-            'bald': 1.4,
+            'gray hair': 2,
+            'bald': 1.6,
             'lips size': 0.6,
             'air line': 1.5,
+            'blurry': 1.2,
+            'eyes bags': 1,
         }
 
         self.max_values = max_values
