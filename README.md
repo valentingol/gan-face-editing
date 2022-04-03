@@ -11,11 +11,10 @@ Repository of Inter-Centrales 2022 AI competition: Ceteris Paribus Face Challeng
 - [x] Find translations in latent space
 - [x] Saving pipeline for direction
 - [x] Solve bald issue
-- [ ] Detect and improve bad translations
+- [x] Detect and improve bad translations
 - [ ] Look for other repo to solve skin and age :construction:
-- [ ] Saving pipeline for edited images
 - [ ] Solve specific issues (manually or with other methods)
-- [ ] Focused change by semantic segmentation :construction:
+- [x] Focused change by semantic segmentation
 - [ ] Improve resolution (super resolution ?) :construction:
 
 ## Quick Start
@@ -90,6 +89,14 @@ python tools/preprocess/mixup.py
 ```
 
 By default, the resulting images are in `preprocess/mixup/edited_images_postmixum/`
+
+### Segmentation
+
+To go further in the last idea, we apply a semantic segmentation on the original image and the edited images in order to find for each image and for each transformation the area where we expect to find the change. You can run the following script to generate new images with the segmentation:
+
+```bash
+python tools/preprocess/segment.py
+```
 
 ### Check the submission
 
