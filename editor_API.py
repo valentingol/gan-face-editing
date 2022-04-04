@@ -1,3 +1,5 @@
+from functools import partial
+
 import torch
 import numpy as np
 import os
@@ -5,6 +7,7 @@ from PIL import Image
 from models.dynamic_channel import set_uniform_channel_ratio, reset_generator
 import models
 import time
+# import cv2
 
 import sys
 from PyQt5.QtWidgets import *
@@ -173,8 +176,15 @@ class FaceEditor(QMainWindow):
         # build button slider
         self.save_button = QPushButton('Save', self)
         self.save_button.move(280, 700)
-        from functools import partial
-        self.save_button.clicked.connect(partial(self.slider_update, force_full_g=True, save=True))
+        self.save_button.clicked.connect(partial(self.slider_update, force_full_g=True,
+                                                 save=True, save_img=False))
+
+        # button for saving image
+        self.save_img_button = QPushButton('Save img', self)
+        self.save_img_button.move(280, 760)
+        self.save_img_button.clicked.connect(partial(self.slider_update, force_full_g=True,
+                                                     save=False, save_img=True))
+
 
         # add loading gif
         # create label
@@ -352,7 +362,7 @@ class FaceEditor(QMainWindow):
         self.statusBar().showMessage('Ready.')
         self.time_label.setText('')
 
-    def generate_image(self):
+    def generate_image(self, pixmap=True):
         def image_to_np(x):
             assert x.shape[0] == 1
             x = x.squeeze(0).permute(1, 2, 0)
@@ -364,13 +374,16 @@ class FaceEditor(QMainWindow):
             out = self.generator(**self.input_kwargs)[0].clamp(-1, 1)
             out = image_to_np(out)
             out = np.ascontiguousarray(out)
-            return self.np2pixmap(out)
+            if pixmap:
+                return self.np2pixmap(out)
+            else:
+                return out
 
     def set_sliders_status(self, active):
         for slider in self.attr_sliders.values():
             slider.setEnabled(active)
 
-    def slider_update(self, force_full_g=True, save=False):
+    def slider_update(self, force_full_g=True, save=False, save_img=False):
         self.set_sliders_status(False)
         self.statusBar().showMessage('Running...')
         self.time_label.setText('')
@@ -390,11 +403,26 @@ class FaceEditor(QMainWindow):
             path = f'data/{latent_dir}/translations/' + text + '.npy'
             np.save(path, translation.cpu().numpy())
             print(f'Direction "{text}" saved at {path}')
+        if save_img:
+            image = self.generate_image(pixmap=False)
+            image = Image.fromarray(image)
+            image = image.resize((512, 512), Image.ANTIALIAS)
+            text, _ = QInputDialog.getText(self, "Name of direction","Name:", QLineEdit.Normal, "")
+            latent_dir = 'anycost-flex' if 'flexible' in self.config else 'anycost'
+            base_name = self.file_names[self.sample_idx].split('.')[0]
+            dir_path = f'data/{latent_dir}/edited_images_2/{base_name}'
+            path = os.path.join(dir_path, text + '.png')
+            if not os.path.exists(dir_path):
+                os.makedirs(dir_path)
+            image.save(path)
+            print('Image saved at', path)
+
         if not force_full_g:
             set_uniform_channel_ratio(self.generator, self.anycost_channel)
             self.generator.target_res = self.anycost_resolution
+
         # generate the images in a separate thread
-        worker = Worker(self.generate_image)
+        worker = Worker(partial(self.generate_image, pixmap=True))
         worker.signals.result.connect(self.after_slider_update)
         self.thread_pool.start(worker)
 
