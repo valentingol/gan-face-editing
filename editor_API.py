@@ -272,7 +272,7 @@ class FaceEditor(QMainWindow):
         # Default max values 0.6
         max_values = {k: 0.6 for k in direction_map.keys()}
         # Overwrite some max values
-        max_values = {**max_values, **{
+        max_values = {**max_values , **{
             'skin': 1.2,
             'age': 2,
             'sexe': 1,
