@@ -15,7 +15,7 @@ Repository of Inter-Centrales 2022 AI competition: Ceteris Paribus Face Challeng
 - [ ] Look for other repo to solve skin and age :construction:
 - [ ] Solve specific issues (manually or with other methods)
 - [x] Focused change by semantic segmentation
-- [x] Resolve remaining artefacts ans background problems with monocular depth estimation
+- [x] Resolve some artefacts and background problems with depth estimation
 - [ ] Improve resolution (super resolution ?) :construction:
 
 ## Quick Start
@@ -103,6 +103,17 @@ Then you can run the following script to merge the previously edited images with
 
 ```bash
 python tools/preprocess/segment.py
+```
+
+### Depth estimation
+
+To go further in this idea, we apply a depth estimation to correct artefacts of the backgrounds for the images coming from the segmentation. First, you need to [download](https://drive.google.com/file/d/1vnuhoMc6caF-buQQ4hK0CeiMk9SjwB-G/view) the depth estimation model and put it on *preprocess/depth_estimation/cp*.
+The idea is to make a depth estimation with a transformer model (see [DPT](https://github.com/isl-org/DPT)). Then we build the foreground mask with a K-means algorithm. This allows to extract a relevant foreground from the segmented image and to paste it on the background of the original image. 
+
+Then you can run the following script to merge the previously edited images with the original ones by depth estimation:
+
+```bash
+python tools/preprocess/estimate_depth.py
 ```
 
 ### Check the submission
