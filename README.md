@@ -15,6 +15,7 @@ Repository of Inter-Centrales 2022 AI competition: Ceteris Paribus Face Challeng
 - [ ] Look for other repo to solve skin and age :construction:
 - [ ] Solve specific issues (manually or with other methods)
 - [x] Focused change by semantic segmentation
+- [x] Resolve remaining artefacts ans background problems with monocular depth estimation
 - [ ] Improve resolution (super resolution ?) :construction:
 
 ## Quick Start
