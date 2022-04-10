@@ -104,10 +104,11 @@ Then you can run the following script to merge the previously edited images with
 ```bash
 python tools/preprocess/segment.py
 ```
+By default, the resulting images are in `preprocess/segmentation/edited_images_postsegmentation/`
 
 ### Depth estimation
 
-To go further in this idea, we apply a depth estimation to correct artefacts of the backgrounds for the images coming from the segmentation. First, you need to [download](https://drive.google.com/file/d/1vnuhoMc6caF-buQQ4hK0CeiMk9SjwB-G/view) the depth estimation model and put it on *preprocess/depth_estimation/cp*.
+To go further in this idea, we perform depth estimation to correct artefacts of the backgrounds for the images coming from the segmentation. First, you need to [download](https://drive.google.com/file/d/1vnuhoMc6caF-buQQ4hK0CeiMk9SjwB-G/view) the depth estimation model and put it on `preprocess/depth_estimation/cp`.
 The idea is to make a depth estimation with a transformer model (see [DPT](https://github.com/isl-org/DPT)). Then we build the foreground mask with a K-means algorithm. This allows to extract a relevant foreground from the segmented image and to paste it on the background of the original image. 
 
 Then you can run the following script to merge the previously edited images with the original ones by depth estimation:
@@ -115,6 +116,7 @@ Then you can run the following script to merge the previously edited images with
 ```bash
 python tools/preprocess/estimate_depth.py
 ```
+By default, the resulting images are in `preprocess/depth_estimation/edited_images_postdepth/`
 
 ### Check the submission
 
