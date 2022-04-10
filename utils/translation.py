@@ -56,7 +56,7 @@ def get_translations(carac_list, flexible_config):
                 raise NotImplementedError('Specific translation of cursor '
                                           'attribute is not supported yet.')
     # Overwrite default translations with translations from specific caracteristics
-    translations = translations_default | translations
+    translations = {**translations_default, **translations}
     # Replace 'Hc_4' by 'bald':
     if hc != 4:
         translation_bald = translations.pop('Hc_4')
