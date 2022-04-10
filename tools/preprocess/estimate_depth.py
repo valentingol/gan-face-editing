@@ -150,9 +150,9 @@ if __name__ == "__main__":
     # Path to the original images
     original_path ='data/input_images'
     # Path to the edited images
-    edited_path = 'preprocess/mixup/edited_images_postmixup'
+    edited_path = 'preprocess/segmentation/edited_images_postsegmentation'
     # Path to the segmented edited images
-    output_path = 'preprocess/segmentation/edited_images_postsegmentation'
+    output_path = 'preprocess/depth_estimation/edited_images_postdepth'
     # Path to the model
     model_path = "preprocess/depth_estimation/cp/dpt_large-midas-2f21e586.pt"
 
