@@ -1,5 +1,4 @@
-#!/usr/bin/python
-# -*- encoding: utf-8 -*-
+# Code from https://github.com/zllrunning/face-parsing.PyTorch
 
 import torch
 import torch.nn as nn

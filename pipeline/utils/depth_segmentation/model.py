@@ -2,14 +2,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .base_model import BaseModel
+from pipeline.utils.depth_segmentation.base_model import BaseModel
 from .blocks import (
-    FeatureFusionBlock,
     FeatureFusionBlock_custom,
     Interpolate,
     _make_encoder,
     forward_vit,
-)
+    )
 
 
 def _make_fusion_block(features, use_bn):
@@ -20,7 +19,7 @@ def _make_fusion_block(features, use_bn):
         bn=use_bn,
         expand=False,
         align_corners=True,
-    )
+        )
 
 
 class DPT(BaseModel):
@@ -33,7 +32,7 @@ class DPT(BaseModel):
         channels_last=False,
         use_bn=False,
         enable_attention_hooks=False,
-    ):
+        ):
 
         super(DPT, self).__init__()
 
@@ -49,7 +48,7 @@ class DPT(BaseModel):
         self.pretrained, self.scratch = _make_encoder(
             backbone,
             features,
-            False,  # Set to true of you want to train from scratch, uses ImageNet weights
+            False,  # True: from scratch, False: from pretrained on ImageNet
             groups=1,
             expand=False,
             exportable=False,
@@ -88,8 +87,9 @@ class DPT(BaseModel):
 
 class DPTDepthModel(DPT):
     def __init__(
-        self, path=None, non_negative=True, scale=1.0, shift=0.0, invert=False, **kwargs
-    ):
+        self, path=None, non_negative=True, scale=1.0, shift=0.0, invert=False,
+        **kwargs
+        ):
         features = kwargs["features"] if "features" in kwargs else 256
 
         self.scale = scale
@@ -97,14 +97,15 @@ class DPTDepthModel(DPT):
         self.invert = invert
 
         head = nn.Sequential(
-            nn.Conv2d(features, features // 2, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(features, features // 2, kernel_size=3, stride=1,
+                      padding=1),
             Interpolate(scale_factor=2, mode="bilinear", align_corners=True),
             nn.Conv2d(features // 2, 32, kernel_size=3, stride=1, padding=1),
             nn.ReLU(True),
             nn.Conv2d(32, 1, kernel_size=1, stride=1, padding=0),
             nn.ReLU(True) if non_negative else nn.Identity(),
             nn.Identity(),
-        )
+            )
 
         super().__init__(head, **kwargs)
 

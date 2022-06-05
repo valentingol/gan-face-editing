@@ -1,13 +1,15 @@
+# Code from https://github.com/zllrunning/face-parsing.PyTorch
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision
 
-from preprocess.segmentation.utils.resnet import Resnet18
+from pipeline.utils.segmentation.resnet import Resnet18
 
 
 class ConvBNReLU(nn.Module):
-    def __init__(self, in_chan, out_chan, ks=3, stride=1, padding=1, *args, **kwargs):
+    def __init__(self, in_chan, out_chan, ks=3, stride=1, padding=1,
+                 *args, **kwargs):
         super(ConvBNReLU, self).__init__()
         self.conv = nn.Conv2d(in_chan,
                 out_chan,
@@ -33,7 +35,8 @@ class BiSeNetOutput(nn.Module):
     def __init__(self, in_chan, mid_chan, n_classes, *args, **kwargs):
         super(BiSeNetOutput, self).__init__()
         self.conv = ConvBNReLU(in_chan, mid_chan, ks=3, stride=1, padding=1)
-        self.conv_out = nn.Conv2d(mid_chan, n_classes, kernel_size=1, bias=False)
+        self.conv_out = nn.Conv2d(mid_chan, n_classes, kernel_size=1,
+                                  bias=False)
         self.init_weight()
 
     def forward(self, x):
@@ -63,7 +66,8 @@ class AttentionRefinementModule(nn.Module):
     def __init__(self, in_chan, out_chan, *args, **kwargs):
         super(AttentionRefinementModule, self).__init__()
         self.conv = ConvBNReLU(in_chan, out_chan, ks=3, stride=1, padding=1)
-        self.conv_atten = nn.Conv2d(out_chan, out_chan, kernel_size= 1, bias=False)
+        self.conv_atten = nn.Conv2d(out_chan, out_chan, kernel_size= 1,
+                                    bias=False)
         self.bn_atten = nn.BatchNorm2d(out_chan)
         self.sigmoid_atten = nn.Sigmoid()
         self.init_weight()
@@ -137,7 +141,8 @@ class ContextPath(nn.Module):
         return wd_params, nowd_params
 
 
-### This is not used, since I replace this with the resnet feature with the same size
+### This is not used, since I replace this with the resnet feature with
+# the same size
 class SpatialPath(nn.Module):
     def __init__(self, *args, **kwargs):
         super(SpatialPath, self).__init__()
@@ -235,17 +240,22 @@ class BiSeNet(nn.Module):
 
     def forward(self, x):
         H, W = x.size()[2:]
-        feat_res8, feat_cp8, feat_cp16 = self.cp(x)  # here return res3b1 feature
-        feat_sp = feat_res8  # use res3b1 feature to replace spatial path feature
+        # Here return res3b1 feature
+        feat_res8, feat_cp8, feat_cp16 = self.cp(x)
+        # Use res3b1 feature to replace spatial path feature
+        feat_sp = feat_res8
         feat_fuse = self.ffm(feat_sp, feat_cp8)
 
         feat_out = self.conv_out(feat_fuse)
         feat_out16 = self.conv_out16(feat_cp8)
         feat_out32 = self.conv_out32(feat_cp16)
 
-        feat_out = F.interpolate(feat_out, (H, W), mode='bilinear', align_corners=True)
-        feat_out16 = F.interpolate(feat_out16, (H, W), mode='bilinear', align_corners=True)
-        feat_out32 = F.interpolate(feat_out32, (H, W), mode='bilinear', align_corners=True)
+        feat_out = F.interpolate(feat_out, (H, W), mode='bilinear',
+                                 align_corners=True)
+        feat_out16 = F.interpolate(feat_out16, (H, W), mode='bilinear',
+                                   align_corners=True)
+        feat_out32 = F.interpolate(feat_out32, (H, W), mode='bilinear',
+                                   align_corners=True)
         return feat_out, feat_out16, feat_out32
 
     def init_weight(self):
@@ -255,10 +265,12 @@ class BiSeNet(nn.Module):
                 if not ly.bias is None: nn.init.constant_(ly.bias, 0)
 
     def get_params(self):
-        wd_params, nowd_params, lr_mul_wd_params, lr_mul_nowd_params = [], [], [], []
-        for name, child in self.named_children():
+        wd_params, nowd_params = [], []
+        lr_mul_wd_params, lr_mul_nowd_params = [], []
+        for _, child in self.named_children():
             child_wd_params, child_nowd_params = child.get_params()
-            if isinstance(child, FeatureFusionModule) or isinstance(child, BiSeNetOutput):
+            if (isinstance(child, FeatureFusionModule)
+                or isinstance(child, BiSeNetOutput)):
                 lr_mul_wd_params += child_wd_params
                 lr_mul_nowd_params += child_nowd_params
             else:

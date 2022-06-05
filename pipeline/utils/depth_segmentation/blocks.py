@@ -1,12 +1,11 @@
 import torch
 import torch.nn as nn
 
-from .vit import (
+from pipeline.utils.depth_segmentation.vit import (
     _make_pretrained_vitb_rn50_384,
     _make_pretrained_vitl16_384,
     _make_pretrained_vitb16_384,
-    forward_vit,
-)
+    )
 
 
 def _make_encoder(
@@ -20,7 +19,7 @@ def _make_encoder(
     use_vit_only=False,
     use_readout="ignore",
     enable_attention_hooks=False,
-):
+    ):
     if backbone == "vitl16_384":
         pretrained = _make_pretrained_vitl16_384(
             use_pretrained,
@@ -185,12 +184,10 @@ class ResidualConvUnit(nn.Module):
 
         self.conv1 = nn.Conv2d(
             features, features, kernel_size=3, stride=1, padding=1, bias=True
-        )
-
+            )
         self.conv2 = nn.Conv2d(
             features, features, kernel_size=3, stride=1, padding=1, bias=True
-        )
-
+            )
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
@@ -236,11 +233,9 @@ class FeatureFusionBlock(nn.Module):
             output += self.resConfUnit1(xs[1])
 
         output = self.resConfUnit2(output)
-
         output = nn.functional.interpolate(
             output, scale_factor=2, mode="bilinear", align_corners=True
-        )
-
+            )
         return output
 
 
@@ -267,7 +262,7 @@ class ResidualConvUnit_custom(nn.Module):
             padding=1,
             bias=not self.bn,
             groups=self.groups,
-        )
+            )
 
         self.conv2 = nn.Conv2d(
             features,
@@ -277,14 +272,13 @@ class ResidualConvUnit_custom(nn.Module):
             padding=1,
             bias=not self.bn,
             groups=self.groups,
-        )
+            )
 
         if self.bn == True:
             self.bn1 = nn.BatchNorm2d(features)
             self.bn2 = nn.BatchNorm2d(features)
 
         self.activation = activation
-
         self.skip_add = nn.quantized.FloatFunctional()
 
     def forward(self, x):
@@ -312,8 +306,6 @@ class ResidualConvUnit_custom(nn.Module):
 
         return self.skip_add.add(out, x)
 
-        # return out + x
-
 
 class FeatureFusionBlock_custom(nn.Module):
     """Feature fusion block."""
@@ -326,7 +318,7 @@ class FeatureFusionBlock_custom(nn.Module):
         bn=False,
         expand=False,
         align_corners=True,
-    ):
+        ):
         """Init.
 
         Args:
@@ -336,14 +328,11 @@ class FeatureFusionBlock_custom(nn.Module):
 
         self.deconv = deconv
         self.align_corners = align_corners
-
         self.groups = 1
-
         self.expand = expand
         out_features = features
         if self.expand == True:
             out_features = features // 2
-
         self.out_conv = nn.Conv2d(
             features,
             out_features,
@@ -352,11 +341,9 @@ class FeatureFusionBlock_custom(nn.Module):
             padding=0,
             bias=True,
             groups=1,
-        )
-
+            )
         self.resConfUnit1 = ResidualConvUnit_custom(features, activation, bn)
         self.resConfUnit2 = ResidualConvUnit_custom(features, activation, bn)
-
         self.skip_add = nn.quantized.FloatFunctional()
 
     def forward(self, *xs):
@@ -373,11 +360,10 @@ class FeatureFusionBlock_custom(nn.Module):
             # output += res
 
         output = self.resConfUnit2(output)
-
         output = nn.functional.interpolate(
-            output, scale_factor=2, mode="bilinear", align_corners=self.align_corners
-        )
-
+            output, scale_factor=2, mode="bilinear",
+            align_corners=self.align_corners
+            )
         output = self.out_conv(output)
 
         return output
