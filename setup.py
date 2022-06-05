@@ -1,9 +1,8 @@
-import os
 from setuptools import setup, find_packages
 
 # Installation
 config = {
-    'name': 'InterCentrales',
+    'name': 'gan-face-editing',
     'version': '1.0',
     'description': 'Inter Centrales Ceteris Paribus face challenge.',
     'author': 'Valentin Goldite',
