@@ -411,7 +411,7 @@ class FaceEditor(QMainWindow):
         self.input_kwargs['styles'] = edited_code
         if save:
             translation = edited_code - self.org_latent_code
-            text, _ = QInputDialog.getText(self, "Name of direction","Name:",
+            text, _ = QInputDialog.getText(self, "Name of translation","Name:",
                                            QLineEdit.Normal, "")
             path = os.path.join(data_dir, 'translations_vect', text + '.npy')
             np.save(path, translation.cpu().numpy())
@@ -420,7 +420,7 @@ class FaceEditor(QMainWindow):
             image = self.generate_image(pixmap=False)
             image = Image.fromarray(image)
             image = image.resize((512, 512), Image.ANTIALIAS)
-            text, _ = QInputDialog.getText(self, "Name of direction","Name:",
+            text, _ = QInputDialog.getText(self, "Name of image","Name:",
                                            QLineEdit.Normal, "")
             base_name = self.file_names[self.sample_idx].split('.')[0]
             dir_path = os.path.join(res_dir, 'images_manual_edited', base_name)
