@@ -2,16 +2,14 @@
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from pipeline.utils.depth_segmentation.base_model import BaseModel
-from .blocks import (
+from pipeline.utils.depth_segmentation.blocks import (
     FeatureFusionBlock_custom,
     Interpolate,
     _make_encoder,
-    forward_vit,
     )
-
+from pipeline.utils.depth_segmentation.vit import forward_vit
 
 def _make_fusion_block(features, use_bn):
     return FeatureFusionBlock_custom(
