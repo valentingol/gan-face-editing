@@ -18,7 +18,7 @@ def alpha_from_dist(dist, margin=21):
         return np.where(dist < margin, dist / margin, 1.0)
 
 
-def segmentation_mix(input_path, original_path, output_path, model_path):
+def segmentation_mix(data_dir, input_path, output_path, model_path):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -38,17 +38,18 @@ def segmentation_mix(input_path, original_path, output_path, model_path):
     with torch.no_grad():
         # Original images
         seg_original, original_imgs = {}, {}
-        for image_name in os.listdir(original_path):
+        for image_name in os.listdir(data_dir):
             base_image_name = image_name.split('.')[0]
             if not osp.exists(osp.join(output_path, base_image_name)):
                 os.makedirs(osp.join(output_path, base_image_name))
-            image = Image.open(osp.join(original_path, image_name))
+            image = Image.open(osp.join(data_dir, image_name))
             image = image.resize((512, 512), Image.BILINEAR)
             original_imgs[base_image_name] = image
             image_tsr = to_tensor(image)
             seg = segmentation(image_tsr, net, device)
             seg_original[base_image_name] = seg
         print('Original images segmentation done')
+
         n_images = len(os.listdir(input_path))
         for i, image_dir in enumerate(os.listdir(input_path)):
             seg_org = seg_original[image_dir]
@@ -235,15 +236,15 @@ def segmentation(images, net, device):
 
 
 if __name__ == "__main__":
-    print('Segmentation processing')
+    print('Applying segmentation mixup...')
     # Path to the original images
-    original_path ='data/input_images'
+    data_dir ='data/face_challenge'
     # Path to the edited images
-    input_path = 'res/images_post_domain_mixup'
+    input_path = 'res/run1/images_post_domain_mixup'
     # Path to the segmented edited images
-    output_path = 'res/images_post_segmentation'
+    output_path = 'res/run1/images_post_segmentation'
     # Path to the model
     model_path = 'postprocess/segmentation/model/79999_iter.pth'
 
-    segmentation_mix(input_path=input_path, original_path=original_path,
+    segmentation_mix(data_dir=data_dir, input_path=input_path,
                      output_path=output_path, model_path=model_path)
