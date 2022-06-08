@@ -5,11 +5,12 @@ import numpy as np
 
 from pipeline.utils.domain_mixup.dist import compute_dist
 
+
 def alpha_from_dist(dist, margin=42):
     return np.where(dist < margin, dist / margin, 1.0)
 
 
-def apply_domain_mixup(original_path, input_path, output_path,
+def domain_mix(data_dir, input_path, output_path,
                        domains_dist_path, domains_img_path):
 
     if len(os.listdir(domains_dist_path)) == 0:
@@ -25,7 +26,7 @@ def apply_domain_mixup(original_path, input_path, output_path,
             dists[carac_name] = dist
     n_images = len(os.listdir(input_path))
     for idx, img_name in enumerate(os.listdir(input_path)):
-        original_image = cv2.imread(os.path.join(original_path,
+        original_image = cv2.imread(os.path.join(data_dir,
                                                  img_name + '.png'))
         for edited_name in os.listdir(os.path.join(input_path,
                                                    img_name)):
@@ -39,7 +40,6 @@ def apply_domain_mixup(original_path, input_path, output_path,
 
                 # Mixup
                 alpha = alpha_from_dist(dist)
-                np.save('alpha.npy', alpha)
                 alpha = np.expand_dims(alpha, axis=-1)
                 new_edited_img = alpha * original_image \
                     + (1 - alpha) * edited_img
@@ -58,11 +58,11 @@ def apply_domain_mixup(original_path, input_path, output_path,
 
 
 if __name__ == '__main__':
-    print('Mixup processing')
+    print('Applying domain mixup...')
     recompute_dist = False  # force recomputing distances to domains
-    original_path = 'data/input_images'
-    input_path = 'res/images_post_translation'
-    output_path = 'res/images_post_domain_mixup'
+    data_dir = 'data/face_challenge'
+    input_path = 'res/run1/images_post_translation'
+    output_path = 'res/run1/images_post_domain_mixup'
     # Distances to domains (computed with `utils/domain_mixup/dist.py`)
     domains_dist_path = 'postprocess/domain_mixup/distances'
     # Images representing the domains (black and white)
@@ -71,5 +71,5 @@ if __name__ == '__main__':
     if recompute_dist:
         compute_dist(domains_img_path, domains_dist_path)
 
-    apply_domain_mixup(original_path, input_path, output_path,
-                       domains_dist_path, domains_img_path)
+    domain_mix(data_dir, input_path, output_path, domains_dist_path,
+               domains_img_path)

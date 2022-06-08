@@ -23,23 +23,26 @@ def generate_image(generator, **input_kwargs):
         return out
 
 
-def apply_translations(latent_path, output_path, flexible_config):
-    config = 'anycost-ffhq-config-f-flexible' \
-        if flexible_config else 'anycost-ffhq-config-f'
+def apply_translations(proj_dir, output_path, config):
+    latent_dir = os.path.join(proj_dir, 'projected_latents')
+    translation_dir = os.path.join(proj_dir, 'translations_vect')
+
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     generator = get_pretrained('generator', config).to(device)
     input_kwargs = {'styles': None, 'noise': None, 'randomize_noise': False,
                     'input_is_style': True}
-    n_images = len(os.listdir(latent_path))
-    for i, fname in enumerate(os.listdir(latent_path)):
+    n_images = len(os.listdir(latent_dir))
+
+    for i, fname in enumerate(os.listdir(latent_dir)):
         basename = fname.split('.')[0]
         caract = list(map(int, basename.split('_')))
         # Get intial projected latent code
-        base_code = np.load(os.path.join(latent_path,
+        base_code = np.load(os.path.join(latent_dir,
                                          basename + '.npy'))
         base_code = torch.tensor(base_code).float().to(device)
         # Get translations for the image
-        translations = get_translations(caract, flexible_config=flexible_config)
+        translations = get_translations(caract,
+                                        translation_dir=translation_dir)
         translations = {k: v.to(device) for k, v in translations.items()}
 
         if not os.path.exists(os.path.join(output_path, basename)):
@@ -59,9 +62,11 @@ def apply_translations(latent_path, output_path, flexible_config):
 
 
 if __name__ == '__main__':
-    latent_path = 'data/projected_latents'
-    output_path = 'res/images_post_translation'
+    proj_dir = 'projection/run1'
+    output_path = 'res/run1/images_post_translation'
     flexible_config = False
 
-    print('Translate latent spaces')
-    apply_translations(latent_path, output_path, flexible_config)
+    config = 'anycost-ffhq-config-f-flexible' if flexible_config \
+        else 'anycost-ffhq-config-f'
+    print('Applying translations in latent space...')
+    apply_translations(proj_dir, output_path, config)

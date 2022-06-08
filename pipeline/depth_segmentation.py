@@ -14,16 +14,10 @@ from pipeline.utils.depth_segmentation.model import DPTDepthModel
 from sklearn.cluster import KMeans
 
 
-def depth_estimation_mix(edited_path, original_path, output_path, model_path):
+def depth_estimation_mix(data_dir, input_path, output_path, model_path):
     """Performs background correction of original
     images with using depth estimation model and saves
     the result in output_path
-
-    Args:
-        edited_path (str): path to the edited images
-        original_path (str): path to the original images
-        output_path (str): path to saved the output images
-        model_path (str): path to the trained depth estimation model
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if not os.path.exists(output_path):
@@ -47,11 +41,11 @@ def depth_estimation_mix(edited_path, original_path, output_path, model_path):
     with torch.no_grad():
         # Original images
         depth_original, original_imgs = {}, {}
-        for image_name in os.listdir(original_path):
+        for image_name in os.listdir(data_dir):
             base_image_name = image_name.split('.')[0]
             if not osp.exists(osp.join(output_path, base_image_name)):
                 os.makedirs(osp.join(output_path, base_image_name))
-            image = Image.open(osp.join(original_path, image_name))
+            image = Image.open(osp.join(data_dir, image_name))
             image = image.resize((512, 512), Image.BILINEAR)
             original_imgs[base_image_name] = image
             # resizing to network required input size
@@ -62,15 +56,15 @@ def depth_estimation_mix(edited_path, original_path, output_path, model_path):
                                interpolation = cv2.INTER_NEAREST)
             depth_original[base_image_name] = depth
         print('Original images depth estimation done')
-        n_images = len(os.listdir(edited_path))
-        for i, image_dir in enumerate(os.listdir(edited_path)):
+        n_images = len(os.listdir(input_path))
+        for i, image_dir in enumerate(os.listdir(input_path)):
             depth_org = depth_original[image_dir]
             img_org = original_imgs[image_dir]
 
-            for file_name in os.listdir(osp.join(edited_path, image_dir)):
+            for file_name in os.listdir(osp.join(input_path, image_dir)):
                 carac_name = file_name.split('.')[0]
 
-                image = Image.open(osp.join(edited_path, image_dir, file_name))
+                image = Image.open(osp.join(input_path, image_dir, file_name))
                 image = image.resize((512, 512), Image.BILINEAR)
                 if carac_name == 'bald' or carac_name.startswith("Se"):
                     image = np.array(image)
@@ -204,17 +198,16 @@ def depth_estimation(image, net, device):
 
 
 if __name__ == "__main__":
-
-    print('Depth estimation processing')
+    print('Applying depth estimation mixup...')
     # Path to the original images
-    original_path ='data/input_images'
+    data_dir ='data/face-challenge'
     # Path to the edited images
-    edited_path = 'res/images_post_segmentation'
+    input_path = 'res/run1/images_post_segmentation'
     # Path to the segmented edited images
-    output_path = 'res/images_post_depth_segmentation'
+    output_path = 'res/run1/images_post_depth_segmentation'
     # Path to the model
-    model_path = ("postprocess/depth_segmentation/model/"
-                  "dpt_large-midas-2f21e586.pt")
+    model_path = ('postprocess/depth_segmentation/model/'
+                  'dpt_large-midas-2f21e586.pt')
 
-    depth_estimation_mix(edited_path=edited_path, original_path=original_path,
+    depth_estimation_mix(data_dir=data_dir, input_path=input_path,
                          output_path=output_path, model_path=model_path)

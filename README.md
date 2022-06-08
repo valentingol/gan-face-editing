@@ -25,11 +25,15 @@ Licenses are provided in `third_party_licenses`.
 - [x] Solve specific issues (manually or with other methods)
 - [x] Focused change by semantic segmentation
 - [x] Resolve some artefacts and background problems with depth estimation
-- [ ] Refactor the code to make it more convenient - IN PROGRESS :construction:
-- [ ] Improve resolution (super resolution ?) - IN PROGRESS :construction:
+- [x] Refactor the code to make it more convenient
+- [ ] Add a convenient config system - IN PROGRESS 🚧
+- [ ] Improve realism with GFP GAN - IN PROGRESS 🚧
 - [ ] Look for other repo to solve skin and age
+- [ ] Test GAN retraining and extract direction features
 
 ## Quick Start
+
+**Note**: you need a Nvidia GPU to run the processing. Only editor API with pre-computed latent vectors is avalaible with CPU.
 
 ### Installation
 
@@ -50,7 +54,7 @@ pip install -r requirements.txt
 
 The original dataset of the competition is available here: [drive dataset](https://drive.google.com/drive/folders/1-R1863MV8CuCjmycsLy05Uc6bdkWfuOP?usp=sharing)
 
-Unzip the content in the `data/input_images` folder.
+Unzip the content in a folde called `data/face_challenge`.
 
 ### Compute latent space of images
 
@@ -69,10 +73,9 @@ Optionally, can run following the script to launch the image editing API.
 FORCE_NATIVE=1 python editor_API.py
 # otherwise:
 python apps/editor.py
-
 ```
 
-In this API you can visualize and edit the reconstructed images using attribute cursors to build the changes you want. Default translations are already available in this repository but you can edit your own with the button "Save trans". The translations will be saved at `data/translations_vect`. You can also save the edited images with the button "Save img". The images will be saved in `res/images_manual_edited`. Note that to allow an automatic translation in the competition dataset, the name of the translation should follow specific rules that are describe in "Save your own translations" section.
+In this API you can visualize and edit the reconstructed images using attribute cursors to build the changes you want. Default translations are already available in this repository but you can edit your own with the button "Save trans". The translations will be saved at `projection/run1/translations_vect`. You can also save the edited images with the button "Save img". The images will be saved in `projection/run1/images_manual_edited`. Note that to allow an automatic translation in the competition dataset, the name of the translation should follow specific rules that are describe in "Save your own translations" section.
 
 ### Translation and postprocessing pipeline
 
@@ -86,9 +89,9 @@ You can now run the full pipeline to apply automatic translation on all the inpu
 python apps/run_pipeline.py
 ```
 
-All steps of the pipeline can be run individually and the results after all steps are saved in `res`.
+All steps of the pipeline can be run individually and the results after all steps are saved in `res/run1`.
 
-The final images are saved under `res/images_post_depth_segmentation`.
+The final images are saved under `res/run1/images_post_depth_segmentation`.
 
 ## Postprocessing
 
@@ -100,7 +103,7 @@ To keep only the modification near the area where we expect them (called 'domain
 python pipeline/domain_mixup.py
 ```
 
-By default, the resulting images are in `res/images_post_domain_mixup/` and the distances from all pixels to the domains are saved in `postprocess/domain_mixup/distances`.
+By default, the resulting images are in `res/run1/images_post_domain_mixup/` and the distances from all pixels to the domains are saved in `postprocess/domain_mixup/distances`.
 
 ### Segmentation
 
@@ -118,7 +121,7 @@ Then you can run the following script to merge the previously edited images with
 python pipeline/segment.py
 ```
 
-By default, the resulting images are in `res/images_post_segmentation/`
+By default, the resulting images are in `res/run1/images_post_segmentation/`
 
 ### Depth estimation
 
@@ -131,13 +134,13 @@ Then you can run the following script to merge the previously edited images with
 python pipeline/depth_segmentation.py
 ```
 
-By default, the resulting images are in `res/images_post_depth_segmentation/`
+By default, the resulting images are in `res/run1/images_post_depth_segmentation/`
 
 ## To go further
 
 ### Save your own translations
 
-To save the tranlsations (= latent direction) you want in the `data/` folder, you can click on the "Save trans" button. **The name of the translation should follow the name convention:**
+To save the translations (= latent direction) you want in the `projection/run1` folder, you can click on the "Save trans" button. **The name of the translation should follow the name convention:**
 
 - for 'cursor' transformation (min - max): `{carac}_{'min' or 'max'}`. Example `Be_min` means cursor transformation to minimal bags under the eyes (Be_min).
 
@@ -148,7 +151,6 @@ To save the tranlsations (= latent direction) you want in the `data/` folder, yo
 All required transformations must be treated for all input caracterisics to make a valid submission. Note that this repository contains enough default translations to make a submission.
 
 Now, given an input image, the transformations to create caracterisitcs that are not in the initial image can automatically be processed with the function `pipeline/utils/translation/get_translations.py`.
-
 
 If the script raise an error indicating that the number of tranlations is not the same as expected, you should verify that your translations handle all caracteristics from all ones and have a valid name.
 

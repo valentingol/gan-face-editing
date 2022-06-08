@@ -8,6 +8,7 @@ PyQt5==5.15.6
 scikit_learn==1.0.2
 scipy==1.8.0
 setuptools==60.9.3
+timm==0.5.4
 torch==1.11.0
 torchprofile==0.0.4
 torchvision==0.12.0
