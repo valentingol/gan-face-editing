@@ -15,16 +15,6 @@ import anycostgan.models as models
 from anycostgan.models.dynamic_channel import (set_uniform_channel_ratio,
                                                reset_generator)
 
-flexible_config = False
-
-config = 'anycost-ffhq-config-f-flexible' \
-    if flexible_config else 'anycost-ffhq-config-f'
-data_dir = 'data/'
-res_dir = 'res/'
-n_style_to_change = 12
-device = 'cpu'
-
-
 class WorkerSignals(QObject):
     finished = pyqtSignal()
     error = pyqtSignal(tuple)
@@ -181,14 +171,15 @@ class FaceEditor(QMainWindow):
         self.save_button.move(280, 700)
         self.save_button.clicked.connect(partial(self.slider_update,
                                                  force_full_g=True,
-                                                 save=True, save_img=False))
+                                                 save_trans=True,
+                                                 save_img=False))
 
         # button for saving image
         self.save_img_button = QPushButton('Save img', self)
         self.save_img_button.move(280, 760)
         self.save_img_button.clicked.connect(partial(self.slider_update,
                                                      force_full_g=True,
-                                                     save=False,
+                                                     save_trans=False,
                                                      save_img=True))
 
 
@@ -306,8 +297,7 @@ class FaceEditor(QMainWindow):
             self.direction_dict[k] = boundaries[v].view(1, 1, -1)
 
         # 3. prepare the latent code and original images
-        file_names = sorted(os.listdir(os.path.join(data_dir,
-                                                    'input_images')))
+        file_names = sorted(os.listdir(data_dir))
         self.file_names = [f for f in file_names
                            if f.endswith('.png') or f.endswith('.jpg')]
         self.latent_code_list = []
@@ -315,11 +305,11 @@ class FaceEditor(QMainWindow):
 
         for fname in self.file_names:
             org_image = np.asarray(Image.open(
-                os.path.join(data_dir, 'input_images', fname)
+                os.path.join(data_dir, fname)
                 ).convert('RGB'))
             npy_name = fname.replace('.jpg', '.npy').replace('.png', '.npy')
             latent_code = torch.from_numpy(
-                np.load(os.path.join(data_dir, 'projected_latents', npy_name)))
+                np.load(os.path.join(proj_dir, 'projected_latents', npy_name)))
             self.org_image_list.append(org_image)
             self.latent_code_list.append(latent_code.view(1, -1, 512))
 
@@ -396,7 +386,8 @@ class FaceEditor(QMainWindow):
         for slider in self.attr_sliders.values():
             slider.setEnabled(active)
 
-    def slider_update(self, force_full_g=True, save=False, save_img=False):
+    def slider_update(self, force_full_g=True, save_trans=False,
+                      save_img=False):
         self.set_sliders_status(False)
         self.statusBar().showMessage('Running...')
         self.time_label.setText('')
@@ -409,13 +400,17 @@ class FaceEditor(QMainWindow):
                 * self.direction_dict[direction_name] / 100 \
                 * self.max_values[direction_name]
         self.input_kwargs['styles'] = edited_code
-        if save:
+
+        if save_trans:
             translation = edited_code - self.org_latent_code
             text, _ = QInputDialog.getText(self, "Name of translation","Name:",
                                            QLineEdit.Normal, "")
-            path = os.path.join(data_dir, 'translations_vect', text + '.npy')
+            path = os.path.join(proj_dir, 'translations_vect', text + '.npy')
+            if not os.path.exists(os.path.dirname(path)):
+                os.makedirs(os.path.dirname(path))
             np.save(path, translation.cpu().numpy())
             print(f'Direction "{text}" saved at {path}')
+
         if save_img:
             image = self.generate_image(pixmap=False)
             image = Image.fromarray(image)
@@ -423,7 +418,7 @@ class FaceEditor(QMainWindow):
             text, _ = QInputDialog.getText(self, "Name of image","Name:",
                                            QLineEdit.Normal, "")
             base_name = self.file_names[self.sample_idx].split('.')[0]
-            dir_path = os.path.join(res_dir, 'images_manual_edited', base_name)
+            dir_path = os.path.join(proj_dir, 'manual_edited_images', base_name)
             path = os.path.join(dir_path, text + '.png')
             if not os.path.exists(dir_path):
                 os.makedirs(dir_path)
@@ -463,6 +458,14 @@ class FaceEditor(QMainWindow):
 
 
 if __name__ == '__main__':
+    flexible_config = False
+    data_dir = 'data/face_challenge'
+    proj_dir = 'projection/run1'
+    n_style_to_change = 12
+
+    device = 'cpu'
+    config = 'anycost-ffhq-config-f-flexible' \
+        if flexible_config else 'anycost-ffhq-config-f'
     app = QApplication(sys.argv)
     ex = FaceEditor(config)
     sys.exit(app.exec_())
