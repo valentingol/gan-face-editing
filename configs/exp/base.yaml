@@ -1,0 +1,11 @@
+save_path: 'configs/runs/run1&1'
+
+projection_dir: 'projection/run1'
+result_dir: 'res/run1'
+
+# Overwrite default configs
+
+projection.n_iter: 50
+pipeline.save_intermediate: False
+translation.use_caracs_in_img: False
+translation.use_precomputed: True

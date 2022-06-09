@@ -1,0 +1,18 @@
+--- !pipeline
+save_intermediate: True
+skip_domain_mixup: True
+
+--- !translation
+use_precomputed: True
+use_caracs_in_img: False
+
+--- !domain_mixup
+recompute_dist: False
+margin: 42
+
+--- !segmentation
+margin: 21
+foreground_margin: 6
+
+--- !depth_segmentation
+foreground_coef: 8.0
