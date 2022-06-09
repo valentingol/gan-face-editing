@@ -1,6 +1,6 @@
 # Face editing with Style GAN 2 and facial segmentation (Ceteris Paribus Face Challenge Intercentrales 2022)
 
-![PEP8](https://github.com/valentingol/gan-face-editing/actions/workflows/python-lint.yaml/badge.svg)
+![linters](https://github.com/valentingol/gan-face-editing/actions/workflows/python_lint.yaml/badge.svg)
 
 Repository of Inter-Centrales 2022 AI competition: Ceteris Paribus Face Challenge: [site of the competition](https://transfer-learning.org/competition.html).
 
