@@ -1,8 +1,8 @@
 # Face editing with Style GAN 2 and facial segmentation (Ceteris Paribus Face Challenge Intercentrales 2022)
 
-![License](https://img.shields.io/github/license/valentingol/gan-face-editing?color=brightgreen)
-![pycodestyle](https://github.com/valentingol/gan-face-editing/actions/workflows/pycodestyle.yaml/badge.svg)
-![flake](https://github.com/valentingol/gan-face-editing/actions/workflows/flake.yaml/badge.svg)
+[![License](https://img.shields.io/github/license/valentingol/gan-face-editing?color=brightgreen)](https://stringfixer.com/fr/MIT_license)
+[![Pycodestyle](https://github.com/valentingol/gan-face-editing/actions/workflows/pycodestyle.yaml/badge.svg)](https://github.com/valentingol/gan-face-editing/actions/workflows/pycodestyle.yaml)
+[![Flake8](https://github.com/valentingol/gan-face-editing/actions/workflows/flake.yaml/badge.svg)](https://github.com/valentingol/gan-face-editing/actions/workflows/flake.yaml)
 
 Repository of Inter-Centrales 2022 AI competition: Ceteris Paribus Face Challenge: [site of the competition](https://transfer-learning.org/competition.html).
 
