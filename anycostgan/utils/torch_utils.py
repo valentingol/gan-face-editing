@@ -7,12 +7,13 @@ import torch.nn.functional as F
 def safe_load_state_dict_from_url(url, model_dir=None, map_location=None,
                                   progress=True, check_hash=False,
                                   file_name=None):
-    # A safe version of torch.hub.load_state_dict_from_url in distributed environment
-    # the main idea is to only download the file on worker 0
+    # A safe version of torch.hub.load_state_dict_from_url in
+    # distributed environment the main idea is to only download the
+    # file on worker 0
     try:
         import horovod.torch as hvd
         world_size = hvd.size()
-    except:  # load horovod failed, just normal environment
+    except ImportError:  # load horovod failed, just normal environment
         return torch.hub.load_state_dict_from_url(url, model_dir, map_location,
                                                   progress, check_hash,
                                                   file_name)
@@ -24,11 +25,13 @@ def safe_load_state_dict_from_url(url, model_dir=None, map_location=None,
     else:  # world size > 1
         # Possible download... let it only run on worker 0 to prevent conflict
         if hvd.rank() == 0:
-            _ = torch.hub.load_state_dict_from_url(url, model_dir, map_location,
+            _ = torch.hub.load_state_dict_from_url(url, model_dir,
+                                                   map_location,
                                                    progress, check_hash,
                                                    file_name)
         hvd.broadcast(torch.tensor(0), root_rank=0, name='dummy')
-        return torch.hub.load_state_dict_from_url(url, model_dir, map_location,
+        return torch.hub.load_state_dict_from_url(url, model_dir,
+                                                  map_location,
                                                   progress, check_hash,
                                                   file_name)
 
@@ -45,7 +48,8 @@ def adaptive_resize(img, target_res):
 class AverageMeter(object):
     """
     Computes and stores the average and current value
-    Copied from: https://github.com/pytorch/examples/blob/master/imagenet/main.py
+    Copied from: https://github.com/pytorch/examples/blob/master/
+    imagenet/main.py
     """
 
     def __init__(self):

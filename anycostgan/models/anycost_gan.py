@@ -271,7 +271,8 @@ class DiscriminatorMultiRes(nn.Module):
         for i_res in range(n_res):
             cur_res = resolution // (2 ** i_res)
             self.res2idx[cur_res] = i_res
-            self.convs.append(ConvLayer(3, channels[cur_res], 1, activate=act_func))
+            self.convs.append(ConvLayer(3, channels[cur_res], 1,
+                                        activate=act_func))
 
         log_res = int(math.log(resolution, 2))
         in_channel = channels[resolution]
@@ -282,8 +283,10 @@ class DiscriminatorMultiRes(nn.Module):
             out_channel = channels[2 ** (i - 1)]
             # Add g_arch modulation
             self.blocks.append(
-                ResBlock(in_channel, out_channel, blur_kernel, act_func=act_func,
-                         modulate=modulate and i in list(range(log_res, 2, -1))[-2:],
+                ResBlock(in_channel, out_channel, blur_kernel,
+                         act_func=act_func,
+                         modulate=modulate and i in list(range(log_res, 2, -1))
+                         [-2:],
                          g_arch_len=4 * (log_res * 2 - 2))
                 )
             in_channel = out_channel

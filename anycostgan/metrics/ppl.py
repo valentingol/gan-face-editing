@@ -2,8 +2,6 @@
 
 import argparse
 import math
-import sys
-sys.path.append('.')  # to run from the project root dir
 
 import horovod.torch as hvd
 import lpips

@@ -4,10 +4,9 @@ import argparse
 import json
 import os
 import random
-import sys
-sys.path.append('.')  # to run from the project root dir
 
 import lpips
+import numpy as np
 from PIL import Image
 import torch
 import torch.nn as nn
@@ -30,26 +29,28 @@ torch.backends.cudnn.benchmark = False
 def make_image(tensor):
     return (
         tensor.detach()
-            .clamp_(min=-1, max=1)
-            .add(1)
-            .div_(2)
-            .mul(255)
-            .type(torch.uint8)
-            .permute(0, 2, 3, 1)
-            .to("cpu")
-            .numpy()
-    )
+        .clamp_(min=-1, max=1)
+        .add(1)
+        .div_(2)
+        .mul(255)
+        .type(torch.uint8)
+        .permute(0, 2, 3, 1)
+        .to("cpu")
+        .numpy()
+        )
 
 
 def extract_left_eye(img):
     if img.shape[-1] != 1024:
-        img = F.interpolate(img, size=1024, mode='bilinear', align_corners=True)
+        img = F.interpolate(img, size=1024, mode='bilinear',
+                            align_corners=True)
     return img[:, :, 270:485, 425:545]
 
 
 def extract_right_eye(img):
     if img.shape[-1] != 1024:
-        img = F.interpolate(img, size=1024, mode='bilinear', align_corners=True)
+        img = F.interpolate(img, size=1024, mode='bilinear',
+                            align_corners=True)
     return img[:, :, 539:754, 425:545]
 
 
@@ -61,8 +62,8 @@ def compute_loss_sum(x, y, w):
     percep_loss = percept(adaptive_resize(x, resize),
                           adaptive_resize(y, resize)).sum()
 
-    # 2. compute the mse loss on fully resolution (empirically it is sharper)
-    # assert x.shape[-1] == y.shape[-1] == generator.resolution, (x.shape, y.shape)
+    # 2. compute the mse loss on fully resolution
+    # (empirically it is sharper)
     mse_loss = nn.MSELoss()(x, adaptive_resize(
         y, x.shape[-1]
         )) * x.shape[0] * args.mse_weight
@@ -88,15 +89,19 @@ def compute_loss_sum(x, y, w):
 def process_generator():
     if args.optimize_sub_g:
         if evolve_cfgs is not None:
-            # The generator is trained with elastic channels and evolved
-            if random.random() < 0.5:  # Randomly pick an evolution config
+            # The generator is trained with elastic channels and
+            # evolved
+
+            # Randomly pick an evolution config
+            if random.random() < 0.5:
                 rand_cfg = random.sample(list(evolve_cfgs.keys()))
                 set_sub_channel_config(generator, rand_cfg['channels'])
                 generator.target_res = rand_cfg['res']
             else:
                 reset_generator(generator)  # full G
         else:
-            set_uniform_channel_ratio(generator, random.choice(CHANNEL_CONFIGS))
+            set_uniform_channel_ratio(generator,
+                                      random.choice(CHANNEL_CONFIGS))
             generator.target_res = random.choice([256, 512, 1024])
     else:
         pass
@@ -172,8 +177,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Image projector to the generator latent spaces"
         )
-    # NOTE configs : 'anycost-ffhq-config-f', 'anycost-ffhq-config-f-flexible',
-    # 'stylegan2-ffhq-config-f'
+    # NOTE configs : 'anycost-ffhq-config-f',
+    # 'anycost-ffhq-config-f-flexible', 'stylegan2-ffhq-config-f'
     parser.add_argument("--config", type=str, default='anycost-ffhq-config-f',
                         help="models config")
     parser.add_argument("--encoder", action="store_true",
@@ -195,7 +200,8 @@ if __name__ == "__main__":
                         help="save intermediate images every 100 iterations")
     # output directory to save images and latent inside
     parser.add_argument("--output_dir", type=str, default='./',
-                        help="output directory to save images and latent inside")
+                        help="output directory to save images and latent "
+                        "inside")
     # file list (sep with space)
     parser.add_argument("files", metavar="FILES", nargs="+",
                         help="path to image files to be projected")
@@ -214,15 +220,17 @@ if __name__ == "__main__":
     else:
         encoder = None
 
-    # if the generator is trained with elastic channels and evolution search
+    # if the generator is trained with elastic channels and evolution
+    # search
     if 'flexible' in args.config:
         print(' * loading evolution configs...')
         with open(os.path.join(
-            f'anycostgan/evolve_configs/{args.config}.json'
-            )) as f:
+                f'anycostgan/evolve_configs/{args.config}.json'
+                )) as f:
             evolve_cfgs = json.load(f)
-        # pick some reduction ratios; you can modify this to include more or
-        # fewer reduction ratio: search MACs limit (the key in evolve cfgs)
+        # pick some reduction ratios; you can modify this to include
+        # more or fewer reduction ratio: search MACs limit (the key in
+        # evolve cfgs)
         cfg_map = {
             '2x': '73G',
             '4x': '36G',
@@ -268,11 +276,10 @@ if __name__ == "__main__":
         }
         basename = os.path.splitext(os.path.basename(input_name))[0]
         path_img = os.path.join(args.output_dir, 'projected_images', basename)
-        img_name =  path_img + "-project.png"
+        img_name = path_img + "-project.png"
         pil_img = Image.fromarray(img_ar[i])
         pil_img.save(img_name)
 
-        import numpy as np
         path_latent = os.path.join(args.output_dir, 'projected_latents',
                                    basename)
         np.save(path_latent + '.npy', projected_styles[i].cpu().numpy())

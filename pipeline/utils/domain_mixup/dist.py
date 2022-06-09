@@ -4,10 +4,12 @@ import cv2
 import numpy as np
 from scipy.ndimage import distance_transform_edt as dist_edt
 
+
 def compute_dist(domains_img_path, domains_dist_path):
     for domain_name in os.listdir(domains_img_path):
-        if domain_name.endswith('.png'):
-            domain_img = cv2.imread(os.path.join(domains_img_path, domain_name))
+        if domain_name.endswith('.png') or domain_name.endswith('.jpg'):
+            domain_img = cv2.imread(os.path.join(domains_img_path,
+                                                 domain_name))
             # domain: coords of pixel corresponding to black zones
             domain_y, domain_x = np.where(domain_img[..., 0] <= 100)
             domain_y = np.expand_dims(domain_y, axis=-1)
@@ -19,6 +21,7 @@ def compute_dist(domains_img_path, domains_dist_path):
             np.save(os.path.join(domains_dist_path,
                                  domain_basename + '_dist.npy'), dist)
         print(f'distance to {domain_basename} computed')
+
 
 if __name__ == '__main__':
     # domains img: black and white image (domain is black pixels)

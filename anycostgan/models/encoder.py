@@ -49,6 +49,6 @@ class ResNet50Encoder(nn.Module):
         x = self.fc(x)
 
         x = x.view(x.shape[0], self.n_style, self.style_dim) \
-                + self.mean_latent.view(1, 1, -1).detach()
+            + self.mean_latent.view(1, 1, -1).detach()
 
         return x  # shape: n, n_style, style_dim

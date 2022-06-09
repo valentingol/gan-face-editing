@@ -44,8 +44,9 @@ class FusedLeakyReLUFunctionBackward(Function):
     def backward(ctx, gradgrad_input, gradgrad_bias):
         out, = ctx.saved_tensors
         gradgrad_out = fused.fused_bias_act(
-            gradgrad_input, gradgrad_bias, out, 3, 1, ctx.negative_slope, ctx.scale
-        )
+            gradgrad_input, gradgrad_bias, out, 3, 1, ctx.negative_slope,
+            ctx.scale
+            )
 
         return gradgrad_out, None, None, None
 
@@ -54,7 +55,8 @@ class FusedLeakyReLUFunction(Function):
     @staticmethod
     def forward(ctx, input, bias, negative_slope, scale):
         empty = input.new_empty(0)
-        out = fused.fused_bias_act(input, bias, empty, 3, 0, negative_slope, scale)
+        out = fused.fused_bias_act(input, bias, empty, 3, 0, negative_slope,
+                                   scale)
         ctx.save_for_backward(out)
         ctx.negative_slope = negative_slope
         ctx.scale = scale
@@ -81,8 +83,10 @@ class FusedLeakyReLU(nn.Module):
         self.scale = scale
 
     def forward(self, input):
-        return fused_leaky_relu(input, self.bias[:input.shape[1]], self.negative_slope, self.scale)
+        return fused_leaky_relu(input, self.bias[:input.shape[1]],
+                                self.negative_slope, self.scale)
 
 
 def fused_leaky_relu(input, bias, negative_slope=0.2, scale=2 ** 0.5):
-    return FusedLeakyReLUFunction.apply(input, bias[:input.shape[1]], negative_slope, scale)
+    return FusedLeakyReLUFunction.apply(input, bias[:input.shape[1]],
+                                        negative_slope, scale)

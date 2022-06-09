@@ -1,15 +1,13 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 
-""" get edit directions for FFHQ models """
-
-import sys
-sys.path.append('.')  # to run from the project root dir
+""" Get edit directions for FFHQ models """
 
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 
 import anycostgan.models as models
+
 
 # configurations for the job
 device = 'cuda'
@@ -24,8 +22,9 @@ attr_list = ['5_o_Clock_Shadow', 'Arched_Eyebrows', 'Attractive',
              'Mouth_Slightly_Open', 'Mustache', 'Narrow_Eyes', 'No_Beard',
              'Oval_Face', 'Pale_Skin', 'Pointy_Nose', 'Receding_Hairline',
              'Rosy_Cheeks', 'Sideburns', 'Smiling', 'Straight_Hair',
-             'Wavy_Hair', 'Wearing_Earrings', 'Wearing_Hat', 'Wearing_Lipstick',
-             'Wearing_Necklace', 'Wearing_Necktie', 'Young']
+             'Wavy_Hair', 'Wearing_Earrings', 'Wearing_Hat',
+             'Wearing_Lipstick', 'Wearing_Necklace', 'Wearing_Necktie',
+             'Young']
 space = 'w'  # chosen from ['z', 'w', 'w+']
 config = 'anycost-ffhq-config-f'
 
@@ -139,9 +138,9 @@ def project_boundaries():  # only project the ones used for demo
         this_sim = similarity[i_b]
         this_sim[i_b] = -100.  # exclude self
         idx1, idx2 = np.argsort(this_sim)[-2:]  # most similar 2
-        projected_boundaries.append(project_boundary(all_boundaries[i_b][None],
-                                                     all_boundaries[idx1][None],
-                                                     all_boundaries[idx2][None]))
+        projected_boundaries.append(project_boundary(
+            all_boundaries[i_b][None], all_boundaries[idx1][None],
+            all_boundaries[idx2][None]))
     boundaries = {k: v for k, v in zip(sorted_keys,
                                        torch.tensor(projected_boundaries))}
     torch.save(boundaries, 'boundary_projected_{}.pt'.format(config))

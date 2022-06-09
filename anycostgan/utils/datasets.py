@@ -12,6 +12,7 @@ class NativeDataset(datasets.ImageFolder):
         # Only return the image
         return super(NativeDataset, self).__getitem__(index)[0]
 
+
 class MultiResize(object):
     def __init__(self, highest_res, n_res=4, interpolation=Image.BILINEAR):
         all_res = []
@@ -19,7 +20,8 @@ class MultiResize(object):
             all_res.append(highest_res)
             highest_res = highest_res // 2
         all_res = sorted(all_res)  # always low to high
-        self.transforms = [transforms.Resize(r, interpolation) for r in all_res]
+        self.transforms = [transforms.Resize(r, interpolation)
+                           for r in all_res]
 
     def __call__(self, img):
         return [t(img) for t in self.transforms]

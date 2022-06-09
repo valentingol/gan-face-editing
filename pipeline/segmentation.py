@@ -15,7 +15,7 @@ from pipeline.utils.segmentation.model import BiSeNet
 
 
 def alpha_from_dist(dist, margin=21):
-        return np.where(dist < margin, dist / margin, 1.0)
+    return np.where(dist < margin, dist / margin, 1.0)
 
 
 def segmentation_mix(data_dir, input_path, output_path, model_path):
@@ -29,7 +29,6 @@ def segmentation_mix(data_dir, input_path, output_path, model_path):
     net.to(device)
     net.load_state_dict(torch.load(model_path))
     net.eval()
-
 
     to_tensor = transforms.Compose([
         transforms.ToTensor(),
@@ -115,7 +114,7 @@ def merge_by_segmentation(img_org, seg_org, img, seg):
 def process_segmentation(seg, carac_name):
     """ Return a relevant segmentation depending on the current caracteristic.
 
-    Prameters:
+    Prameters
     ----------
     seg: np.ndarray
         Segmentation of the image (labels 0: background, 1: eyes,
@@ -123,16 +122,13 @@ def process_segmentation(seg, carac_name):
     carac_name: str
         Ident of the caracteristic ('Sk', 'A', 'Se', 'bald', ...)
 
-    Returns:
+    Returns
     --------
-    seg: np.ndarray or None
+    seg: np.ndarray, optional
         New segmentation with 1 = pixel to keep in the original image
         and 0 = pixel to change with edited image. Return None if the
         caracteristic is not handled.
-    """
 
-
-    """
     Labels:
     0: background
     1: eyes
@@ -238,7 +234,7 @@ def segmentation(images, net, device):
 if __name__ == "__main__":
     print('Applying segmentation mixup...')
     # Path to the original images
-    data_dir ='data/face_challenge'
+    data_dir = 'data/face_challenge'
     # Path to the edited images
     input_path = 'res/run1/images_post_domain_mixup'
     # Path to the segmented edited images

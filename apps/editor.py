@@ -15,6 +15,7 @@ import anycostgan.models as models
 from anycostgan.models.dynamic_channel import (set_uniform_channel_ratio,
                                                reset_generator)
 
+
 class WorkerSignals(QObject):
     finished = pyqtSignal()
     error = pyqtSignal(tuple)
@@ -49,7 +50,7 @@ class FaceEditor(QMainWindow):
         # Window size
         self.setFixedSize(1800, 1200)
 
-        # plot the original image
+        # Plot the original image
         self.original_image = QLabel(self)
         self.set_img_location(self.original_image, 100, 72, 360, 360)
         pixmap = self.np2pixmap(self.org_image_list[0])
@@ -59,7 +60,7 @@ class FaceEditor(QMainWindow):
         self.set_text_format(self.original_image_label)
         self.original_image_label.move(230, 42)
 
-        # display the edited image
+        # Display the edited image
         self.edited_image = QLabel(self)
         self.set_img_location(self.edited_image, 700, 72, 360, 360)
         self.projected_image = self.generate_image()
@@ -69,7 +70,7 @@ class FaceEditor(QMainWindow):
         self.set_text_format(self.edited_image_label)
         self.edited_image_label.move(830, 42)
 
-        # build the sample list
+        # Build the sample list
         drop_list = QComboBox(self)
         drop_list.addItems(self.file_names)
         drop_list.currentIndexChanged.connect(self.select_image)
@@ -80,7 +81,7 @@ class FaceEditor(QMainWindow):
         self.set_text_format(drop_list_label, 'left', 15)
         drop_list_label.setGeometry(100, 470, 200, 30)
 
-        # build editing sliders
+        # Build editing sliders
         self.attr_sliders = dict()
         for i_slider, key in enumerate(self.direction_dict.keys()):
             if i_slider < 18:
@@ -123,7 +124,7 @@ class FaceEditor(QMainWindow):
                 self.set_text_format(attr_label, 'right', 13)
                 attr_label.move(1300 - 110, 470 + (i_slider - 18) * 30 + 2)
 
-        # build models sliders
+        # Build models sliders
         base_h = 560
         channel_label = QLabel(self)
         channel_label.setText('channel:')
@@ -161,12 +162,12 @@ class FaceEditor(QMainWindow):
             resolution_label.setGeometry(190 + i * 63 - 50 // 2 + 10,
                                          base_h + 70, 50, 20)
 
-        # build button slider
+        # Build button slider
         self.reset_button = QPushButton('Reset', self)
         self.reset_button.move(100, 700)
         self.reset_button.clicked.connect(self.reset_clicked)
 
-        # build button slider
+        # Build button slider
         self.save_button = QPushButton('Save trans', self)
         self.save_button.move(280, 700)
         self.save_button.clicked.connect(partial(self.slider_update,
@@ -174,7 +175,7 @@ class FaceEditor(QMainWindow):
                                                  save_trans=True,
                                                  save_img=False))
 
-        # button for saving image
+        # Button for saving image
         self.save_img_button = QPushButton('Save img', self)
         self.save_img_button.move(280, 760)
         self.save_img_button.clicked.connect(partial(self.slider_update,
@@ -182,9 +183,8 @@ class FaceEditor(QMainWindow):
                                                      save_trans=False,
                                                      save_img=True))
 
-
-        # add loading gif
-        # create label
+        # Add loading gif
+        # Create label
         self.loading_label = QLabel(self)
         self.loading_label.setGeometry(500 - 25, 240, 50, 50)
 
@@ -195,16 +195,16 @@ class FaceEditor(QMainWindow):
         self.movie.setScaledSize(QSize(50, 50))
         self.loading_label.setVisible(False)
 
-        # extra time stat
+        # Extra time stat
         self.time_label = QLabel(self)
         self.time_label.setText('')
         self.set_text_format(self.time_label, 'center', 18)
         self.time_label.setGeometry(500 - 25, 240, 50, 50)
 
-        # status bar
+        # Status bar
         self.statusBar().showMessage('Ready.')
 
-        # multi-thread
+        # Multi-thread
         self.thread_pool = QThreadPool()
 
         self.show()
@@ -213,12 +213,12 @@ class FaceEditor(QMainWindow):
         self.anycost_channel = 1.0
         self.anycost_resolution = 1024
 
-        # build the generator
+        # Build the generator
         self.generator = models.get_pretrained('generator', config).to(device)
         self.generator.eval()
         self.mean_latent = self.generator.mean_style(10000)
 
-        # select only a subset of the directions to use
+        # Select only a subset of the directions to use
         '''
         possible keys:
         ['00_5_o_Clock_Shadow', '01_Arched_Eyebrows', '02_Attractive',
@@ -274,7 +274,7 @@ class FaceEditor(QMainWindow):
         # Default max values 0.6
         max_values = {k: 0.6 for k in direction_map.keys()}
         # Overwrite some max values
-        max_values = {**max_values , **{
+        max_values = {**max_values, **{
             'skin': 1.2,
             'age': 2,
             'sexe': 1,
@@ -296,7 +296,7 @@ class FaceEditor(QMainWindow):
         for k, v in direction_map.items():
             self.direction_dict[k] = boundaries[v].view(1, 1, -1)
 
-        # 3. prepare the latent code and original images
+        # 3. Prepare the latent code and original images
         file_names = sorted(os.listdir(data_dir))
         self.file_names = [f for f in file_names
                            if f.endswith('.png') or f.endswith('.jpg')]
@@ -313,11 +313,11 @@ class FaceEditor(QMainWindow):
             self.org_image_list.append(org_image)
             self.latent_code_list.append(latent_code.view(1, -1, 512))
 
-        # set up the initial display
+        # Set up the initial display
         self.sample_idx = 0
         self.org_latent_code = self.latent_code_list[self.sample_idx]
 
-        # input kwargs for the generator
+        # Input kwargs for the generator
         self.input_kwargs = {'styles': self.org_latent_code, 'noise': None,
                              'randomize_noise': False,
                              'input_is_style': True}
@@ -403,7 +403,8 @@ class FaceEditor(QMainWindow):
 
         if save_trans:
             translation = edited_code - self.org_latent_code
-            text, _ = QInputDialog.getText(self, "Name of translation","Name:",
+            text, _ = QInputDialog.getText(self, "Name of translation",
+                                           "Name:",
                                            QLineEdit.Normal, "")
             path = os.path.join(proj_dir, 'translations_vect', text + '.npy')
             if not os.path.exists(os.path.dirname(path)):
@@ -415,10 +416,11 @@ class FaceEditor(QMainWindow):
             image = self.generate_image(pixmap=False)
             image = Image.fromarray(image)
             image = image.resize((512, 512), Image.ANTIALIAS)
-            text, _ = QInputDialog.getText(self, "Name of image","Name:",
+            text, _ = QInputDialog.getText(self, "Name of image", "Name:",
                                            QLineEdit.Normal, "")
             base_name = self.file_names[self.sample_idx].split('.')[0]
-            dir_path = os.path.join(proj_dir, 'manual_edited_images', base_name)
+            dir_path = os.path.join(proj_dir, 'manual_edited_images',
+                                    base_name)
             path = os.path.join(dir_path, text + '.png')
             if not os.path.exists(dir_path):
                 os.makedirs(dir_path)
@@ -433,7 +435,6 @@ class FaceEditor(QMainWindow):
         worker = Worker(partial(self.generate_image, pixmap=True))
         worker.signals.result.connect(self.after_slider_update)
         self.thread_pool.start(worker)
-
 
     def after_slider_update(self, ret):
         edited, used_time = ret
