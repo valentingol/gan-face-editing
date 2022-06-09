@@ -59,21 +59,21 @@ def train_boundary(latent_codes,
     """
     if (not isinstance(latent_codes, np.ndarray) or
             not len(latent_codes.shape) == 2):
-        raise ValueError(f'Input `latent_codes` should be with type'
-                         f'`numpy.ndarray`, and shape [num_samples, '
-                         f'latent_space_dim]!')
+        raise ValueError('Input `latent_codes` should be with type'
+                         '`numpy.ndarray`, and shape [num_samples, '
+                         'latent_space_dim]!')
     num_samples = latent_codes.shape[0]
     latent_space_dim = latent_codes.shape[1]
     if (not isinstance(scores, np.ndarray)
             or not len(scores.shape) == 2
             or not scores.shape[0] == num_samples
             or not scores.shape[1] == 1):
-        raise ValueError(f'Input `scores` should be with type `numpy.ndarray`,'
-                         f' and shape [num_samples, 1], where `num_samples` '
-                         f'should be exactly same as that of input '
-                         f'`latent_codes`!')
+        raise ValueError('Input `scores` should be with type `numpy.ndarray`,'
+                         ' and shape [num_samples, 1], where `num_samples` '
+                         'should be exactly same as that of input '
+                         '`latent_codes`!')
     if chosen_num_or_ratio <= 0:
-        raise ValueError(f'Input `chosen_num_or_ratio` should be positive, '
+        raise ValueError('Input `chosen_num_or_ratio` should be positive, '
                          f'but {chosen_num_or_ratio} received!')
 
     # print(f'Filtering training data.')
@@ -139,13 +139,6 @@ def train_boundary(latent_codes,
               f'{correct_num} / {val_num * 2} = '
               f'{correct_num / (val_num * 2):.6f}')
 
-    if False:  # remaining_num:  # here we skip the remaining to save time
-        remaining_prediction = classifier.predict(remaining_data)
-        correct_num = np.sum(remaining_label == remaining_prediction)
-        print(f'Accuracy for remaining set: '
-              f'{correct_num} / {remaining_num} = '
-              f'{correct_num / remaining_num:.6f}')
-
     a = classifier.coef_.reshape(1, latent_space_dim).astype(np.float32)
     return a / np.linalg.norm(a)
 
@@ -180,8 +173,8 @@ def project_boundary(primal, *args):
         There are more than two condition boundaries.
     """
     if len(args) > 2:
-        raise NotImplementedError(f'This function supports projecting with '
-                                  f'at most two conditions.')
+        raise NotImplementedError('This function supports projecting with '
+                                  'at most two conditions.')
     assert len(primal.shape) == 2 and primal.shape[0] == 1
 
     if not args:

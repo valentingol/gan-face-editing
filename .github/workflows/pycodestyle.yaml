@@ -1,8 +1,12 @@
-on: push
-name: Pass Python linters
+on:
+  push:
+    paths:
+      - '*.py'
+
+name: Pycodestyle
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-    - name: Pycodestyle
+    - name: pycodestyle
       uses: andymckay/pycodestyle-action@0.1.3

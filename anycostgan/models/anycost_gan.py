@@ -6,7 +6,9 @@ import random
 import torch
 from torch import nn
 
-from anycostgan.models.ops import *
+from anycostgan.models.ops import (ConstantInput, ConvLayer, EqualLinear,
+                                   PixelNorm, ResBlock, StyledConv, ToRGB)
+
 
 G_CHANNEL_CONFIG = {
     4: 4096,

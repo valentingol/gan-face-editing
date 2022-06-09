@@ -1,4 +1,5 @@
 # Code adapted from https://github.com/mit-han-lab/anycost-gan
+
 from functools import partial
 import os
 import sys
@@ -6,9 +7,11 @@ import time
 
 import numpy as np
 from PIL import Image
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from PyQt5.QtWidgets import (QApplication, QComboBox, QInputDialog, QLabel,
+                             QLineEdit, QPushButton, QMainWindow, QSlider)
+from PyQt5.QtGui import QFont, QImage, QMovie, QPixmap
+from PyQt5.QtCore import (QObject, QRunnable, QSize, Qt, QThreadPool,
+                          pyqtSignal, pyqtSlot)
 import torch
 
 import anycostgan.models as models
