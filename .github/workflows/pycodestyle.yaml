@@ -1,7 +1,4 @@
-on:
-  commit:
-    paths:
-      - '**.py'
+on: ["push"]
 
 name: Pycodestyle
 jobs:

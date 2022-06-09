@@ -1,9 +1,4 @@
-name: Flake 8
-
-on:
-  commit:
-    paths:
-      - '**.py'
+on: ["push"]
 
 jobs:
   flake8-lint:
