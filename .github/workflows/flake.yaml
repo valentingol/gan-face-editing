@@ -1,5 +1,6 @@
 on: ["push"]
 
+name: Flake 8
 jobs:
   flake8-lint:
     runs-on: ubuntu-latest
