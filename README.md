@@ -26,7 +26,7 @@ Licenses are provided in `third_party_licenses`.
 - [x] Focused change by semantic segmentation
 - [x] Resolve some artefacts and background problems with depth estimation
 - [x] Refactor the code to make it more convenient
-- [ ] Add a convenient config system - IN PROGRESS 🚧
+- [x] Add a convenient config system
 - [ ] Improve realism with GFP GAN - IN PROGRESS 🚧
 - [ ] Look for other repo to solve skin and age
 - [ ] Test GAN retraining and extract direction features
@@ -58,10 +58,10 @@ Unzip the content in a folde called `data/face_challenge`.
 
 ### Compute latent space of images
 
-Once the data are downloaded, you must compute the projected latent vectors of the images. It can take some hours to compute as the script optimize the latent vector through multiple gradient descent steps but you can significantly reduce the time by reducing the number of iterations in configurations (0 iteration mean that you get the latent vector computed by the pretrained encoder and the time is reduce to about 1 minute).
+Once the data are downloaded, you must compute the projected latent vectors of the images. It can take some time to compute as the script optimize the latent vector through multiple gradient descent steps but you can significantly reduce the time by reducing the number of iterations in configurations (0 iteration mean that you get the latent vector computed by the pretrained encoder). By default, it is 200 iterations.
 
 ```bash
-python apps/project_images.py
+python apps/project_images.py [--projection.n_iter=<n_iter>]
 ```
 
 ### Editor API
@@ -75,7 +75,7 @@ FORCE_NATIVE=1 python editor_API.py
 python apps/editor.py
 ```
 
-In this API you can visualize and edit the reconstructed images using attribute cursors to build the changes you want. Default translations are already available in this repository but you can edit your own with the button "Save trans". The translations will be saved at `projection/run1/translations_vect`. You can also save the edited images with the button "Save img". The images will be saved in `projection/run1/images_manual_edited`. Note that to allow an automatic translation in the competition dataset, the name of the translation should follow specific rules that are describe in "Save your own translations" section.
+In this API you can visualize and edit the reconstructed images using attribute cursors to build the changes you want. Default translations are already available in this repository but you can edit your own with the button "Save trans". The translations will be saved at `projection/run1/translations_vect`. You can also save the edited images with the button "Save img". The images will be saved in `projection/run1/images_manual_edited`. You can have more information about creating your own translation in the "Save your own translations" section. **Note that this repository already provide a lot of preconstructed translations.**
 
 ### Translation and postprocessing pipeline
 
@@ -86,14 +86,18 @@ You can now run the full pipeline to apply automatic translation on all the inpu
 - depth segmentation mixup (using ViT)
 
 ```bash
-python apps/run_pipeline.py
+FORCE_NATIVE=1 python apps/run_pipeline.py
 ```
 
 All steps of the pipeline can be run individually and the results after all steps are saved in `res/run1`.
 
 The final images are saved under `res/run1/images_post_depth_segmentation`.
 
+You can avoid using the pre-computed translation with `--translation.use_precomputed=False`.
+
 ## Postprocessing
+
+All transformation can be run individually even if the project was designed to work with `apps/run_pipeline.py` in order to be consistent with cuestom configurations (see "Configurations" section).
 
 ### Domain Mixup
 
@@ -104,6 +108,8 @@ python pipeline/domain_mixup.py
 ```
 
 By default, the resulting images are in `res/run1/images_post_domain_mixup/` and the distances from all pixels to the domains are saved in `postprocess/domain_mixup/distances`.
+
+As domain mixup shows no significant improvement and can even add some unwanted artifats, it is disable by default. You can enable it with `--pipeline.skip_domain_mixup=False`.
 
 ### Segmentation
 
@@ -138,9 +144,40 @@ By default, the resulting images are in `res/run1/images_post_depth_segmentation
 
 ## To go further
 
+### Configuration
+
+This project use the [rr-ml-config](https://gitlab.com/reactivereality/public/rr-ml-config-public) configuration system to configure all the main functions (in `apps/`). You can find all the configurations on yaml files in the `config/` folder. The default configs are in `config/default/` folder and splitted on multiple files (creating multiple sub-configs) to make it easier to use. Then, you can create your own expermients by editing a file `config/exp/my_exp.yaml` and add lines to overwritting some default configs (an example is provided in `config/exp/base.yaml`, that is used by default). Then you can run the `apps/` functions using your experiment configs. For instance:
+
+```bash
+python apps/project_images.py --config config/exp/my_exp.yaml
+FORCE_NATIVE=1 python apps/editor.py --config config/exp/my_exp.yaml
+FORCE_NATIVE=1 python apps/run_pipeline.py --config config/exp/my_exp.yaml
+```
+
+You can also change all the configurations with comand line arguments and combine the two. For instance:
+
+```bash
+python apps/project_images.py --config config/exp/my_exp.yaml --projection.n_iter=50 --projection.enc_reg_weight=0.5
+FORCE_NATIVE=1 python apps/editor.py --config config/exp/my_exp.yaml --editor.n_style_to_change=8
+FORCE_NATIVE=1 python apps/run_pipeline.py --config config/exp/my_exp.yaml --segmentation.margin=10
+```
+
+This make your experiments very convenient because you can set your main configurations in your configuration file and you no longer need to write all your configurations in the command line.
+
+All your configurations are saved that allow full reproductibility of your experiments.
+
+Each time you want to create a new expermient configuration, you need to overwrite the projection dir with the name of your "projection run" (e.g. `projection/run_with_1000_iter`), the result dir (with the name of your "pipeline run" (e.g. `res/test_with_domain_mixup`), and the save path with the name of your "global run", (e.g. `configs/runs/1000_iter_proj_with_domain_mixup`). By default, it is "run1", "run1" and "run1&1" respectively.
+
 ### Save your own translations
 
-To save the translations (= latent direction) you want in the `projection/run1` folder, you can click on the "Save trans" button. **The name of the translation should follow the name convention:**
+To save the translations (= latent direction) you want in the `projection/run1` folder, you can click on the "Save trans" button and set the name of the direction. In all cases, the pipeline will try to use your new translation to modify the images.
+
+You can use this project for two purposes:
+
+- apply automatically some changes in all the images with the same maneer (by default)
+- use already known characteristics of the images to adapt the changes (use `--translation.use_caracs_in_img=True` when running the pipeline or edit you configuration file, see "Configurations" section for details)
+
+**In this second case, the images should have a specific name indcating the characteristics of the image. The name should follow the rule presented [here](https://transfer-learning.org/rules). Moreover, the translations vector should also have a specific name.**
 
 - for 'cursor' transformation (min - max): `{carac}_{'min' or 'max'}`. Example `Be_min` means cursor transformation to minimal bags under the eyes (Be_min).
 
@@ -152,7 +189,7 @@ All required transformations must be treated for all input caracterisics to make
 
 Now, given an input image, the transformations to create caracterisitcs that are not in the initial image can automatically be processed with the function `pipeline/utils/translation/get_translations.py`.
 
-If the script raise an error indicating that the number of tranlations is not the same as expected, you should verify that your translations handle all caracteristics from all ones and have a valid name.
+Note that if you not used the caracteristics in the image, you can name the translation vectors as you want.
 
 ### Extract other attribute directions
 
