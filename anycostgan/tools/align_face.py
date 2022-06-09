@@ -71,15 +71,9 @@ def align_face(filepath):
 
     lm = get_landmark(filepath)
 
-    lm_chin = lm[0: 17]  # left-right
-    lm_eyebrow_left = lm[17: 22]  # left-right
-    lm_eyebrow_right = lm[22: 27]  # left-right
-    lm_nose = lm[27: 31]  # top-down
-    lm_nostrils = lm[31: 36]  # top-down
     lm_eye_left = lm[36: 42]  # left-clockwise
     lm_eye_right = lm[42: 48]  # left-clockwise
     lm_mouth_outer = lm[48: 60]  # left-clockwise
-    lm_mouth_inner = lm[60: 68]  # left-clockwise
 
     # Calculate auxiliary vectors.
     eye_left = np.mean(lm_eye_left, axis=0)

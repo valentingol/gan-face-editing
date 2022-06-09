@@ -105,9 +105,7 @@ class Transpose(nn.Module):
 
 
 def forward_vit(pretrained, x):
-    b, c, h, w = x.shape
-
-    glob = pretrained.model.forward_flex(x)
+    _, _, h, w = x.shape
 
     layer_1 = pretrained.activations["1"]
     layer_2 = pretrained.activations["2"]
@@ -172,7 +170,7 @@ def _resize_pos_embed(self, posemb, gs_h, gs_w):
 
 
 def forward_flex(self, x):
-    b, c, h, w = x.shape
+    _, _, h, w = x.shape
 
     pos_embed = self._resize_pos_embed(
         self.pos_embed, h // self.patch_size[1], w // self.patch_size[0]

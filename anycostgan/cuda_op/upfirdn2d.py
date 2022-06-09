@@ -3,7 +3,6 @@
 import os
 
 import torch
-from torch.nn import functional as F
 from torch.autograd import Function
 from torch.utils.cpp_extension import load
 
