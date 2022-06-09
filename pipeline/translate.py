@@ -23,26 +23,42 @@ def generate_image(generator, **input_kwargs):
         return out
 
 
-def apply_translations(proj_dir, output_path, config):
-    latent_dir = os.path.join(proj_dir, 'projected_latents')
-    translation_dir = os.path.join(proj_dir, 'translations_vect')
+def apply_translations(projection_dir, output_path, anycost_config, configs):
+    use_caracs_in_img = configs['use_caracs_in_img']
+    use_precomputed = configs['use_precomputed']
+
+    latent_dir = os.path.join(projection_dir, 'projected_latents')
+    translation_dir = os.path.join(projection_dir, 'translations_vect')
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    generator = get_pretrained('generator', config).to(device)
+    generator = get_pretrained('generator', anycost_config).to(device)
     input_kwargs = {'styles': None, 'noise': None, 'randomize_noise': False,
                     'input_is_style': True}
     n_images = len(os.listdir(latent_dir))
 
     for i, fname in enumerate(os.listdir(latent_dir)):
         basename = fname.split('.')[0]
-        caract = list(map(int, basename.split('_')))
+        if use_caracs_in_img:
+            try:
+                carac_list = list(map(int, basename.split('_')))
+            except ValueError:
+                raise ValueError(
+                    'When "use_caracs_in_img" is set to True, the name of '
+                    'images should be like: "%d_%d_%d_%d_%d_%d_%d_%d_%d.png/'
+                    '.jpg" where "%d" are integer cararacteristics '
+                    '(see https://transfer-learning.org/rules for details).'
+                    'Otherwise you can set "use_caracs_in_img" to '
+                    'False to get all translation for all images.')
+        else:
+            carac_list = None
         # Get intial projected latent code
         base_code = np.load(os.path.join(latent_dir,
                                          basename + '.npy'))
         base_code = torch.tensor(base_code).float().to(device)
         # Get translations for the image
-        translations = get_translations(caract,
-                                        translation_dir=translation_dir)
+        translations = get_translations(translation_dir=translation_dir,
+                                        carac_list=carac_list,
+                                        use_precomputed=use_precomputed)
         translations = {k: v.to(device) for k, v in translations.items()}
 
         if not os.path.exists(os.path.join(output_path, basename)):
@@ -62,11 +78,14 @@ def apply_translations(proj_dir, output_path, config):
 
 
 if __name__ == '__main__':
-    proj_dir = 'projection/run1'
+    projection_dir = 'projection/run1'
     output_path = 'res/run1/images_post_translation'
     flexible_config = False
 
-    config = 'anycost-ffhq-config-f-flexible' if flexible_config \
+    anycost_config = 'anycost-ffhq-config-f-flexible' if flexible_config \
         else 'anycost-ffhq-config-f'
     print('Applying translations in latent space...')
-    apply_translations(proj_dir, output_path, config)
+
+    configs = {'use_caracs_in_img': True, 'use_precomputed': True}
+
+    apply_translations(projection_dir, output_path, anycost_config, configs)

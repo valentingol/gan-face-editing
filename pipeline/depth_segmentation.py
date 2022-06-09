@@ -14,7 +14,8 @@ from pipeline.utils.depth_segmentation.model import DPTDepthModel
 from sklearn.cluster import KMeans
 
 
-def depth_estimation_mix(data_dir, input_path, output_path, model_path):
+def depth_estimation_mix(data_dir, input_path, output_path, model_path,
+                         configs):
     """
     Performs background correction of original
     images with using depth estimation model and saves
@@ -85,13 +86,15 @@ def depth_estimation_mix(data_dir, input_path, output_path, model_path):
                 image = np.array(image)
 
                 # Add Foreground of the original image
-                img_final = fix_background(depth_org, depth, img_org, image)
+                img_final = fix_background(
+                    depth_org, depth, img_org, image,
+                    foreground_coef=configs['foreground_coef'])
                 img_final = img_final.astype(np.uint8)
                 img_final = cvtColor(img_final, cv2.COLOR_RGB2BGR)
                 # Save image
                 cv2.imwrite(osp.join(output_path, image_dir, file_name),
                             img_final)
-                print(f'image {i+1}/{n_images} done  ', end='\r')
+            print(f'image {i+1}/{n_images} done  ', end='\r')
     print()
 
 
@@ -137,7 +140,7 @@ def get_foreground_mask(depth):
     return mask
 
 
-def fix_background(depth_org, depth_img, img_org, img):
+def fix_background(depth_org, depth_img, img_org, img, foreground_coef):
     """Return target image with base_image background
     using monocular depth estimation
 
@@ -151,6 +154,9 @@ def fix_background(depth_org, depth_img, img_org, img):
         Original image
     image : np.array
         Target image
+    foreground_coef: float
+        Coefficient of foreground exponential weighting:
+        exp(-coef * mask)
 
     Returns
     -------
@@ -175,7 +181,8 @@ def fix_background(depth_org, depth_img, img_org, img):
     mask_background = np.multiply(mask_background, 1-mask)
 
     # Foreground coefficients
-    mask_foreground_smooth = np.exp(-8*mask_background[:, :, None])
+    mask_foreground_smooth = np.exp(-foreground_coef
+                                    * mask_background[:, :, None])
 
     # Background coefficients
     mask_background_smooth = mask_background[:, :, None]
@@ -230,6 +237,10 @@ if __name__ == "__main__":
     # Path to the model
     model_path = ('postprocess/depth_segmentation/model/'
                   'dpt_large-midas-2f21e586.pt')
+    configs = {
+        'foreground_coef': 8.0,
+        }
 
     depth_estimation_mix(data_dir=data_dir, input_path=input_path,
-                         output_path=output_path, model_path=model_path)
+                         output_path=output_path, model_path=model_path,
+                         configs=configs)

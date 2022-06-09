@@ -18,7 +18,7 @@ def alpha_from_dist(dist, margin=21):
     return np.where(dist < margin, dist / margin, 1.0)
 
 
-def segmentation_mix(data_dir, input_path, output_path, model_path):
+def segmentation_mix(data_dir, input_path, output_path, model_path, configs):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -59,7 +59,8 @@ def segmentation_mix(data_dir, input_path, output_path, model_path):
                 image = Image.open(osp.join(input_path, image_dir, file_name))
                 image = image.resize((512, 512), Image.BILINEAR)
                 if carac_name == 'N_max':  # Not handled
-                    image = add_foreground(image, img_org, seg_org)
+                    image = add_foreground(image, img_org, seg_org,
+                                           margin=configs['foreground_margin'])
                     cv2.imwrite(osp.join(output_path, image_dir, file_name),
                                 image)
                     print(f'image {i+1}/{n_images} done  ', end='\r')
@@ -73,7 +74,8 @@ def segmentation_mix(data_dir, input_path, output_path, model_path):
                 seg_carac = process_segmentation(seg, carac_name)
 
                 if seg_carac is None:  # Not handled
-                    image = add_foreground(image, img_org, seg_org)
+                    image = add_foreground(image, img_org, seg_org,
+                                           margin=configs['foreground_margin'])
                     cv2.imwrite(osp.join(output_path, image_dir, file_name),
                                 image)
                     print(f'image {i+1}/{n_images} done  ', end='\r')
@@ -83,30 +85,32 @@ def segmentation_mix(data_dir, input_path, output_path, model_path):
                 seg_org_carac = process_segmentation(seg_org, carac_name)
                 # Merge the images continuously
                 img_final = merge_by_segmentation(img_org, seg_org_carac,
-                                                  image, seg_carac)
+                                                  image, seg_carac,
+                                                  margin=configs['margin'])
                 # Add Foreground of the original image
-                img_final = add_foreground(img_final, img_org, seg_org)
+                img_final = add_foreground(img_final, img_org, seg_org,
+                                           margin=configs['foreground_margin'])
                 # Save image
                 cv2.imwrite(osp.join(output_path, image_dir, file_name),
                             img_final)
-                print(f'image {i+1}/{n_images} done  ', end='\r')
+            print(f'image {i+1}/{n_images} done  ', end='\r')
     print()
 
 
-def add_foreground(img, img_org, seg_org):
+def add_foreground(img, img_org, seg_org, margin):
     foreground = np.where(seg_org == 5, 1, 0)
     dist = dist_edt(foreground)
-    alpha = alpha_from_dist(dist, margin=6)[..., None]
+    alpha = alpha_from_dist(dist, margin=margin)[..., None]
     img = alpha * img_org + (1 - alpha) * img
     img = img.astype(np.uint8)
     img = cvtColor(img, cv2.COLOR_RGB2BGR)
     return img
 
 
-def merge_by_segmentation(img_org, seg_org, img, seg):
+def merge_by_segmentation(img_org, seg_org, img, seg, margin):
     seg_both = seg_org * seg
     dist = dist_edt(seg_both)
-    alpha = alpha_from_dist(dist)[..., None]
+    alpha = alpha_from_dist(dist, margin=margin)[..., None]
     new_img = img_org * alpha + img * (1.0 - alpha)
     return new_img
 
@@ -242,5 +246,8 @@ if __name__ == "__main__":
     # Path to the model
     model_path = 'postprocess/segmentation/model/79999_iter.pth'
 
+    configs = {'margin': 21, 'foreground_margin': 6}
+
     segmentation_mix(data_dir=data_dir, input_path=input_path,
-                     output_path=output_path, model_path=model_path)
+                     output_path=output_path, model_path=model_path,
+                     configs=configs)

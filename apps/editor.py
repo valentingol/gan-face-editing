@@ -14,6 +14,7 @@ import torch
 import anycostgan.models as models
 from anycostgan.models.dynamic_channel import (set_uniform_channel_ratio,
                                                reset_generator)
+from pipeline.utils.global_config import GlobalConfig
 
 
 class WorkerSignals(QObject):
@@ -40,11 +41,11 @@ class Worker(QRunnable):
 
 
 class FaceEditor(QMainWindow):
-    def __init__(self, config):
+    def __init__(self, anycost_config, default_max_value, custom_max_value):
         super().__init__()
-        self.config = config
+        self.anycost_config = anycost_config
         # Load assets
-        self.load_assets()
+        self.load_assets(default_max_value, custom_max_value)
         # Title
         self.setWindowTitle('Face Editing with Anycost GAN')
         # Window size
@@ -209,12 +210,13 @@ class FaceEditor(QMainWindow):
 
         self.show()
 
-    def load_assets(self):
+    def load_assets(self, default_max_value, custom_max_values):
         self.anycost_channel = 1.0
         self.anycost_resolution = 1024
 
         # Build the generator
-        self.generator = models.get_pretrained('generator', config).to(device)
+        self.generator = models.get_pretrained('generator',
+                                               self.anycost_config).to('cpu')
         self.generator.eval()
         self.mean_latent = self.generator.mean_style(10000)
 
@@ -271,33 +273,17 @@ class FaceEditor(QMainWindow):
             'lipstick': '36_Wearing_Lipstick',
             'rosy cheeks': '29_Rosy_Cheeks',
         }
-        # Default max values 0.6
-        max_values = {k: 0.6 for k in direction_map.keys()}
-        # Overwrite some max values
-        max_values = {**max_values, **{
-            'skin': 1.2,
-            'age': 2,
-            'sexe': 1,
-            'bangs': 1.6,
-            'black hair': 1.3,
-            'brown hair': 1,
-            'gray hair': 2,
-            'bald': 1.6,
-            'lips size': 0.6,
-            'air line': 1.5,
-            'blurry': 1.2,
-            'eyes bags': 1,
-        }}
-
+        max_values = {k: default_max_value for k in direction_map.keys()}
+        max_values = {**max_values, **custom_max_values}
         self.max_values = max_values
 
-        boundaries = models.get_pretrained('boundary', config)
+        boundaries = models.get_pretrained('boundary', self.anycost_config)
         self.direction_dict = dict()
         for k, v in direction_map.items():
             self.direction_dict[k] = boundaries[v].view(1, 1, -1)
 
         # 3. Prepare the latent code and original images
-        file_names = sorted(os.listdir(data_dir))
+        file_names = sorted(os.listdir(DATA_DIR))
         self.file_names = [f for f in file_names
                            if f.endswith('.png') or f.endswith('.jpg')]
         self.latent_code_list = []
@@ -305,11 +291,12 @@ class FaceEditor(QMainWindow):
 
         for fname in self.file_names:
             org_image = np.asarray(Image.open(
-                os.path.join(data_dir, fname)
+                os.path.join(DATA_DIR, fname)
                 ).convert('RGB'))
             npy_name = fname.replace('.jpg', '.npy').replace('.png', '.npy')
             latent_code = torch.from_numpy(
-                np.load(os.path.join(proj_dir, 'projected_latents', npy_name)))
+                np.load(os.path.join(PROJECTION_DIR, 'projected_latents',
+                                     npy_name)))
             self.org_image_list.append(org_image)
             self.latent_code_list.append(latent_code.view(1, -1, 512))
 
@@ -394,8 +381,8 @@ class FaceEditor(QMainWindow):
         self.loading_label.setVisible(True)
         edited_code = self.org_latent_code.clone()
         for direction_name in self.attr_sliders.keys():
-            edited_code[:, :n_style_to_change] = \
-                edited_code[:, :n_style_to_change] \
+            edited_code[:, : N_STYLE_TO_CHANGE] = \
+                edited_code[:, : N_STYLE_TO_CHANGE] \
                 + self.attr_sliders[direction_name].value() \
                 * self.direction_dict[direction_name] / 100 \
                 * self.max_values[direction_name]
@@ -406,7 +393,8 @@ class FaceEditor(QMainWindow):
             text, _ = QInputDialog.getText(self, "Name of translation",
                                            "Name:",
                                            QLineEdit.Normal, "")
-            path = os.path.join(proj_dir, 'translations_vect', text + '.npy')
+            path = os.path.join(PROJECTION_DIR, 'translations_vect',
+                                text + '.npy')
             if not os.path.exists(os.path.dirname(path)):
                 os.makedirs(os.path.dirname(path))
             np.save(path, translation.cpu().numpy())
@@ -419,7 +407,7 @@ class FaceEditor(QMainWindow):
             text, _ = QInputDialog.getText(self, "Name of image", "Name:",
                                            QLineEdit.Normal, "")
             base_name = self.file_names[self.sample_idx].split('.')[0]
-            dir_path = os.path.join(proj_dir, 'manual_edited_images',
+            dir_path = os.path.join(PROJECTION_DIR, 'manual_edited_images',
                                     base_name)
             path = os.path.join(dir_path, text + '.png')
             if not os.path.exists(dir_path):
@@ -459,14 +447,20 @@ class FaceEditor(QMainWindow):
 
 
 if __name__ == '__main__':
-    flexible_config = False
-    data_dir = 'data/face_challenge'
-    proj_dir = 'projection/run1'
-    n_style_to_change = 12
+    config = GlobalConfig.build_from_argv(fallback='configs/exp/base.yaml')
 
-    device = 'cpu'
-    config = 'anycost-ffhq-config-f-flexible' \
-        if flexible_config else 'anycost-ffhq-config-f'
-    app = QApplication(sys.argv)
-    ex = FaceEditor(config)
+    # Get the configs
+    DATA_DIR = config.data_dir
+    PROJECTION_DIR = config.projection_dir
+    N_STYLE_TO_CHANGE = config.editor.n_style_to_change
+    default_max_val = config.editor.default_max_value
+    custom_max_val = config.editor.custom_max_value
+
+    flexible_config = config.anycost_config_flexible
+    anycost_config = ('anycost-ffhq-config-f-flexible'
+                      if flexible_config else 'anycost-ffhq-config-f')
+
+    # Run the editor
+    app = QApplication(sys.argv[0:1])
+    ex = FaceEditor(anycost_config, default_max_val, custom_max_val)
     sys.exit(app.exec_())
