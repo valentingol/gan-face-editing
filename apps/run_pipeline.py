@@ -5,6 +5,7 @@ from pipeline.domain_mixup import domain_mix
 from pipeline.segmentation import segmentation_mix
 from pipeline.depth_segmentation import depth_estimation_mix
 
+
 def get_config_pipeline():
     config_pipeline = {
         'data_dir': 'data/face_challenge',
@@ -22,13 +23,13 @@ def get_config_pipeline():
         'segmentation_mix': {
             'input_path': 'res/run1/images_post_domain_mixup',
             'output_path': 'res/run1/images_post_segmentation',
-            'model_path': 'postprocess/segmentation/model/79999_iter.pth',
+            'model_path': 'postprocess/segmentation/model/79999_iter.pth'
             },
         'depth_estimation_mix': {
             'input_path': 'res/run1/images_post_segmentation',
             'output_path': 'res/run1/images_post_depth_segmentation',
             'model_path': ('postprocess/depth_segmentation/model/'
-                  'dpt_large-midas-2f21e586.pt'),
+                           'dpt_large-midas-2f21e586.pt'),
             },
         }
     return config_pipeline
@@ -36,9 +37,10 @@ def get_config_pipeline():
 
 if __name__ == '__main__':
     # Check if the environ is correctly set (forcing native GPU)
-    assert 'FORCE_NATIVE' in os.environ and os.environ['FORCE_NATIVE'] == '1', (
-        'Please run the command: "FORCE_NATIVE=1 python3 apps/'
-        'run_pipeline.py" instead!'
+    assert 'FORCE_NATIVE' in os.environ \
+        and os.environ['FORCE_NATIVE'] == '1', (
+            'Please run the command: "FORCE_NATIVE=1 python3 apps/'
+            'run_pipeline.py" instead!'
         )
 
     config_pipeline = get_config_pipeline()

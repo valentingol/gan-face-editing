@@ -1,9 +1,6 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 
 import argparse
-import sys
-
-sys.path.append('.')  # to run from the project root dir
 
 import lpips
 import torch
@@ -71,7 +68,7 @@ def validate():
 
                         sub_lpips_loss_meter.update(lpips_func(
                             fake_sub_image, real_img
-                            ).mean().item(),real_img.shape[0])
+                            ).mean().item(), real_img.shape[0])
                         sub_mse_loss_meter.update(nn.MSELoss()(
                             fake_sub_image, real_img
                             ).item(), real_img.shape[0])

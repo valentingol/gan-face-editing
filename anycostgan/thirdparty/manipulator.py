@@ -1,4 +1,6 @@
-# Code taken from https://raw.githubusercontent.com/genforce/interfacegan/6f448e0c5beec97722a9f3a498720bd037125154/utils/manipulator.py
+# Code taken from https://raw.githubusercontent.com/genforce/
+# interfacegan/6f448e0c5beec97722a9f3a498720bd037125154/utils/
+# manipulator.py
 
 # python3.7
 """Utility functions for latent codes manipulation."""
@@ -14,32 +16,46 @@ def train_boundary(latent_codes,
                    chosen_num_or_ratio=0.02,
                    split_ratio=0.7,
                    invalid_value=None):
-    """Trains boundary in latent space with offline predicted attribute scores.
+    """Trains boundary in latent space with offline predicted attribute
+    scores.
 
-    Given a collection of latent codes and the attribute scores predicted from the
-    corresponding images, this function will train a linear SVM by treating it as
-    a bi-classification problem. Basically, the samples with highest attribute
-    scores are treated as positive samples, while those with lowest scores as
-    negative. For now, the latent code can ONLY be with 1 dimension.
+    Given a collection of latent codes and the attribute scores
+    predicted from the corresponding images, this function will train
+    a linear SVM by treating it as a bi-classification problem.
+    Basically, the samples with highest attribute scores are treated as
+    positive samples, while those with lowest scores as negative.
+    For now, the latent code can ONLY be with 1 dimension.
 
-    NOTE: The returned boundary is with shape (1, latent_space_dim), and also
-    normalized with unit norm.
+    NOTE: The returned boundary is with shape (1, latent_space_dim),
+    and also normalized with unit norm.
 
-    Args:
-      latent_codes: Input latent codes as training data.
-      scores: Input attribute scores used to generate training labels.
-      chosen_num_or_ratio: How many samples will be chosen as positive (negative)
-        samples. If this field lies in range (0, 0.5], `chosen_num_or_ratio *
-        latent_codes_num` will be used. Otherwise, `min(chosen_num_or_ratio,
-        0.5 * latent_codes_num)` will be used. (default: 0.02)
-      split_ratio: Ratio to split training and validation sets. (default: 0.7)
-      invalid_value: This field is used to filter out data. (default: None)
+    Parameters
+    ----------
+    latent_codes : np.ndarray
+        Input latent codes as training data.
+    scores : np.ndarray
+        Input attribute scores used to generate training labels.
+    chosen_num_or_ratio : float
+        How many samples will be chosen as positive (negative)
+        samples. If this field lies in range (0, 0.5],
+        `chosen_num_or_ratio * latent_codes_num` will be used.
+        Otherwise, `min(chosen_num_or_ratio, 0.5 * latent_codes_num)`
+        will be used. By default 0.02
+    split_ratio : float
+        Ratio to split training and validation sets. By default 0.7
+    invalid_value: float, optional
+        This field is used to filter out data. If None, no filer is
+        applied. By default None
 
-    Returns:
-      A decision boundary with type `numpy.ndarray`.
+    Returns
+    -------
+    np.ndarray:
+        The decision boundary.
 
-    Raises:
-      ValueError: If the input `latent_codes` or `scores` are with invalid format.
+    Raises
+    ------
+    ValueError:
+        The input `latent_codes` or `scores` are with invalid format.
     """
     if (not isinstance(latent_codes, np.ndarray) or
             not len(latent_codes.shape) == 2):
@@ -48,11 +64,14 @@ def train_boundary(latent_codes,
                          f'latent_space_dim]!')
     num_samples = latent_codes.shape[0]
     latent_space_dim = latent_codes.shape[1]
-    if (not isinstance(scores, np.ndarray) or not len(scores.shape) == 2 or
-            not scores.shape[0] == num_samples or not scores.shape[1] == 1):
-        raise ValueError(f'Input `scores` should be with type `numpy.ndarray`, and '
-                         f'shape [num_samples, 1], where `num_samples` should be '
-                         f'exactly same as that of input `latent_codes`!')
+    if (not isinstance(scores, np.ndarray)
+            or not len(scores.shape) == 2
+            or not scores.shape[0] == num_samples
+            or not scores.shape[1] == 1):
+        raise ValueError(f'Input `scores` should be with type `numpy.ndarray`,'
+                         f' and shape [num_samples, 1], where `num_samples` '
+                         f'should be exactly same as that of input '
+                         f'`latent_codes`!')
     if chosen_num_or_ratio <= 0:
         raise ValueError(f'Input `chosen_num_or_ratio` should be positive, '
                          f'but {chosen_num_or_ratio} received!')
@@ -134,27 +153,35 @@ def train_boundary(latent_codes,
 def project_boundary(primal, *args):
     """Projects the primal boundary onto condition boundaries.
 
-    The function is used for conditional manipulation, where the projected vector
-    will be subscribed from the normal direction of the original boundary. Here,
-    all input boundaries are supposed to have already been normalized to unit
-    norm, and with same shape [1, latent_space_dim].
+    The function is used for conditional manipulation, where the
+    projected vector will be subscribed from the normal direction of
+    the original boundary. Here, all input boundaries are supposed to
+    have already been normalized to unit norm, and with same shape
+    [1, latent_space_dim].
 
     NOTE: For now, at most two condition boundaries are supported.
 
-    Args:
-      primal: The primal boundary.
-      *args: Other boundaries as conditions.
+    Parameters
+    ----------
+    primal : np.ndarray
+        The primal boundary.
+    *args :
+        Other boundaries as conditions.
 
-    Returns:
-      A projected boundary (also normalized to unit norm), which is orthogonal to
-        all condition boundaries.
+    Returns
+    -------
+    np.ndarray :
+        A projected boundary (also normalized to unit norm), which is
+        orthogonal to all condition boundaries.
 
-    Raises:
-      NotImplementedError: If there are more than two condition boundaries.
+    Raises
+    ------
+    NotImplementedError:
+        There are more than two condition boundaries.
     """
     if len(args) > 2:
-        raise NotImplementedError(f'This function supports projecting with at most '
-                                  f'two conditions.')
+        raise NotImplementedError(f'This function supports projecting with '
+                                  f'at most two conditions.')
     assert len(primal.shape) == 2 and primal.shape[0] == 1
 
     if not args:
@@ -190,33 +217,42 @@ def linear_interpolate(latent_code,
                        start_distance=-3.0,
                        end_distance=3.0,
                        steps=10):
-    """Manipulates the given latent code with respect to a particular boundary.
+    """Manipulates the given latent code with respect to a particular
+    boundary.
 
-    Basically, this function takes a latent code and a boundary as inputs, and
-    outputs a collection of manipulated latent codes. For example, let `steps` to
-    be 10, then the input `latent_code` is with shape [1, latent_space_dim], input
-    `boundary` is with shape [1, latent_space_dim] and unit norm, the output is
-    with shape [10, latent_space_dim]. The first output latent code is
-    `start_distance` away from the given `boundary`, while the last output latent
-    code is `end_distance` away from the given `boundary`. Remaining latent codes
-    are linearly interpolated.
+    Basically, this function takes a latent code and a boundary as
+    inputs, and outputs a collection of manipulated latent codes.
+    For example, let `steps` to be 10, then the input `latent_code` is
+    with shape [1, latent_space_dim], input `boundary` is with shape
+    [1, latent_space_dim] and unit norm, the output is with shape
+    [10, latent_space_dim]. The first output latent code is
+    `start_distance` away from the given `boundary`, while the last
+    output latent code is `end_distance` away from the given `boundary`.
+    Remaining latent codes are linearly interpolated.
 
-    Input `latent_code` can also be with shape [1, num_layers, latent_space_dim]
-    to support W+ space in Style GAN. In this case, all features in W+ space will
-    be manipulated same as each other. Accordingly, the output will be with shape
+    Input `latent_code` can also be with shape [1, num_layers,
+    latent_space_dim] to support W+ space in Style GAN. In this case,
+    all features in W+ space will be manipulated same as each other.
+    Accordingly, the output will be with shape
     [10, num_layers, latent_space_dim].
 
     NOTE: Distance is sign sensitive.
 
-    Args:
-      latent_code: The input latent code for manipulation.
-      boundary: The semantic boundary as reference.
-      start_distance: The distance to the boundary where the manipulation starts.
-        (default: -3.0)
-      end_distance: The distance to the boundary where the manipulation ends.
-        (default: 3.0)
-      steps: Number of steps to move the latent code from start position to end
-        position. (default: 10)
+    Parameters
+    ----------
+    latent_code : np.ndarray
+        The input latent code for manipulation.
+    boundary : np.ndarray
+        The semantic boundary as reference.
+    start_distance : float
+        The distance to the boundary where the manipulation starts.
+        By default -3.0
+    end_distance : float
+        The distance to the boundary where the manipulation ends.
+        By default: 3.0
+    steps : int
+        Number of steps to move the latent code from start position
+        to end position. By default: 10
     """
     assert (latent_code.shape[0] == 1 and boundary.shape[0] == 1 and
             len(boundary.shape) == 2 and

@@ -1,5 +1,6 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
-# Code adapted from https://gist.github.com/lzhbrian/bde87ab23b499dd02ba4f588258f57d5
+# Code adapted from https://gist.github.com/lzhbrian/
+# bde87ab23b499dd02ba4f588258f57d5
 
 """
 brief: face alignment with FFHQ method (https://github.com/NVlabs/ffhq-dataset)
@@ -25,7 +26,8 @@ import scipy
 import scipy.ndimage
 import dlib  # pip install dlib if not found
 
-# download models from: http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2
+# download models from: http://dlib.net/files/shape_predictor_68_face_
+# landmarks.dat.bz2
 predictor = dlib.shape_predictor('./shape_predictor_68_face_landmarks.dat')
 
 

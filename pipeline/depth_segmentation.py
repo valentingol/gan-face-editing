@@ -15,15 +15,16 @@ from sklearn.cluster import KMeans
 
 
 def depth_estimation_mix(data_dir, input_path, output_path, model_path):
-    """Performs background correction of original
+    """
+    Performs background correction of original
     images with using depth estimation model and saves
-    the result in output_path
+    the result in output_path.
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
-    # load depth estimation model. Input needs to be (1, 3, 384, 384)
+    # Load depth estimation model. Input needs to be (1, 3, 384, 384)
     net = DPTDepthModel(
         path=model_path,
         backbone="vitl16_384",
@@ -53,7 +54,7 @@ def depth_estimation_mix(data_dir, input_path, output_path, model_path):
             image_tsr = to_tensor(image)
             depth = depth_estimation(image_tsr, net, device)
             depth = cv2.resize(depth, (512, 512),
-                               interpolation = cv2.INTER_NEAREST)
+                               interpolation=cv2.INTER_NEAREST)
             depth_original[base_image_name] = depth
         print('Original images depth estimation done')
         n_images = len(os.listdir(input_path))
@@ -80,7 +81,7 @@ def depth_estimation_mix(data_dir, input_path, output_path, model_path):
                 image_tsr = to_tensor(image_resized)
                 depth = depth_estimation(image_tsr, net, device)
                 depth = cv2.resize(depth, (512, 512),
-                                   interpolation = cv2.INTER_NEAREST)
+                                   interpolation=cv2.INTER_NEAREST)
                 image = np.array(image)
 
                 # Add Foreground of the original image
@@ -95,35 +96,43 @@ def depth_estimation_mix(data_dir, input_path, output_path, model_path):
 
 
 def get_foreground(depth):
-    """Get foreground pixels from depth map
-    using K-means clustering
+    """Get foreground pixels from depth map using K-means clustering.
 
-    Args:
-        depth (np.array): depth map array
+    Parameters
+    ----------
+        depth : np.array
+            Depth map array
 
-    Returns:
-        np.array: np.array of shape (n_foreground_pixels, 1)
-                  containing the values of foreground pixels
+    Returns
+    -------
+    np.array, shape (n_foreground_pixels, 1):
+        Values of foreground pixels
     """
-    Z = depth.flatten().reshape(-1,1)
+    Z = depth.flatten().reshape(-1, 1)
     km = KMeans(n_clusters=2, random_state=0).fit(Z)
-    label = km.labels_.reshape(-1,1)
+    label = km.labels_.reshape(-1, 1)
 
     return Z[label.flatten() == 0]
+
 
 def get_foreground_mask(depth):
     """Get foreground mask from depth map
 
-    Args:
-        depth (np.array): depth map array
+    Parameters
+    ----------
+    depth : np.array
+        Depth map array
 
-    Returns:
-        np.array: foreground mask array of shape depth.shape
+    Returns
+    -------
+    mask : np.array
+        foreground mask array of shape depth.shape
     """
-    # get foreground pixels values
+    # Get foreground pixels values
     ground = get_foreground(depth)
     mask = np.ones_like(depth)
-    # take pixels with depth value greater than the mean of foreground pixels
+    # Take pixels with depth value greater than the mean of
+    # foreground pixels
     mask[np.where(depth < ground[:, 0].mean())] = 0
     return mask
 
@@ -132,75 +141,88 @@ def fix_background(depth_org, depth_img, img_org, img):
     """Return target image with base_image background
     using monocular depth estimation
 
-    Args:
-        depth_org (np.array): depth map of original image
-        depth (np.array): depth map of target image
-        img_org (np.array): original image
-        image (np.array): target image
+    Parameters
+    ----------
+    depth_org : np.array
+        Depth map of original image
+    depth np.array:
+        Depth map of target image
+    img_org : np.array
+        Original image
+    image : np.array
+        Target image
 
-    Returns:
-        np.array: target image with img_org background
+    Returns
+    -------
+    np.array:
+        Target image with img_org background
     """
-    #foreground of the transformed image
+    # Foreground of the transformed image
     mask_target = get_foreground_mask(depth_img)
     mask_base = get_foreground_mask(depth_org)
 
-
     if np.sum(mask_target) > np.sum(mask_base):
-        #if the target image has more foreground pixels than the original image
-        #take the original image foregroud mask
+        # If the target image has more foreground pixels than the
+        # original image take the original image foregroud mask
         mask = mask_base
     else:
-        #else take the target image foreground mask
+        # Else take the target image foreground mask
         mask = mask_target
 
-    # smooth foreground mask
+    # Smooth foreground mask
     mask_background = dist_edt(1-mask)
     mask_background = mask_background/mask_background.max()
     mask_background = np.multiply(mask_background, 1-mask)
 
-    # foreground coefficients
-    mask_foreground_smooth = np.exp(-8*mask_background[:,:,None])
+    # Foreground coefficients
+    mask_foreground_smooth = np.exp(-8*mask_background[:, :, None])
 
-    #background coefficients
-    mask_background_smooth = mask_background[:,:,None]
+    # Background coefficients
+    mask_background_smooth = mask_background[:, :, None]
 
     mask_total = mask_foreground_smooth + mask_background_smooth
 
-    # normalized foreground and background coefficients
+    # Normalized foreground and background coefficients
     mask_foreground_smooth_final = mask_foreground_smooth / mask_total
     mask_background_smooth_final = mask_background_smooth / mask_total
 
-    # take the foreground of image, and the background of the img_org
+    # Take the foreground of image, and the background of the img_org
     image = np.multiply(mask_foreground_smooth_final, img) + \
         np.multiply(mask_background_smooth_final, img_org)
     return image
 
+
 def depth_estimation(image, net, device):
     """Compute depth map from image using monocular depth estimation
 
-    Args:
-        image (torch.Tensor): image tensor of shape (1, 3, H, W)
-        net (torch.nn.Module): depth estimation model
-        device (torch.device): device to run the model
+    Parameters
+    ----------
+    image : torch.Tensor
+        Image tensor of shape (1, 3, H, W)
+    net : torch.nn.Module
+        Depth estimation model
+    device : torch.device
+        Device to run the model
 
-    Returns:
-        np.array: depth map array of shape (H, W)
+    Returns
+    -------
+    depth_map : np.array
+        Depth map array of shape (H, W). On CPU device.
     """
     if image.ndim == 3:
         image = torch.unsqueeze(image, 0)
     image = image.to(device)
     net.eval()
     with torch.no_grad():
-        pred = net(image)[0]
-    pred = pred.cpu().numpy()
-    return pred
+        depth_map = net(image)[0]
+    depth_map = depth_map.cpu().numpy()
+    return depth_map
 
 
 if __name__ == "__main__":
     print('Applying depth estimation mixup...')
     # Path to the original images
-    data_dir ='data/face-challenge'
+    data_dir = 'data/face-challenge'
     # Path to the edited images
     input_path = 'res/run1/images_post_segmentation'
     # Path to the segmented edited images

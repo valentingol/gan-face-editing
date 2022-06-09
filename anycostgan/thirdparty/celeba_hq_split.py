@@ -6,7 +6,7 @@ def get_celeba_hq_split():
 
     with open('thirdparty/CelebA-HQ-to-CelebA-mapping.txt') as f:
         lines = f.readlines()
-    celeba_ids = [int(l.strip().split()[1]) for l in lines]
+    celeba_ids = [int(line.strip().split()[1]) for line in lines]
 
     for idx, x in enumerate(celeba_ids):  # celeba-hq idx, celeba idx
         if 162771 <= x < 182638:

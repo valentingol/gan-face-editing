@@ -11,6 +11,7 @@ from pipeline.utils.depth_segmentation.blocks import (
     )
 from pipeline.utils.depth_segmentation.vit import forward_vit
 
+
 def _make_fusion_block(features, use_bn):
     return FeatureFusionBlock_custom(
         features,
@@ -24,15 +25,15 @@ def _make_fusion_block(features, use_bn):
 
 class DPT(BaseModel):
     def __init__(
-        self,
-        head,
-        features=256,
-        backbone="vitb_rn50_384",
-        readout="project",
-        channels_last=False,
-        use_bn=False,
-        enable_attention_hooks=False,
-        ):
+            self,
+            head,
+            features=256,
+            backbone="vitb_rn50_384",
+            readout="project",
+            channels_last=False,
+            use_bn=False,
+            enable_attention_hooks=False,
+            ):
 
         super(DPT, self).__init__()
 
@@ -65,7 +66,7 @@ class DPT(BaseModel):
         self.scratch.output_conv = head
 
     def forward(self, x):
-        if self.channels_last == True:
+        if self.channels_last:
             x.contiguous(memory_format=torch.channels_last)
 
         layer_1, layer_2, layer_3, layer_4 = forward_vit(self.pretrained, x)
@@ -86,10 +87,8 @@ class DPT(BaseModel):
 
 
 class DPTDepthModel(DPT):
-    def __init__(
-        self, path=None, non_negative=True, scale=1.0, shift=0.0, invert=False,
-        **kwargs
-        ):
+    def __init__(self, path=None, non_negative=True, scale=1.0, shift=0.0,
+                 invert=False, **kwargs):
         features = kwargs["features"] if "features" in kwargs else 256
 
         self.scale = scale

@@ -20,9 +20,8 @@ upfirdn2d_op = load(
 
 class UpFirDn2dBackward(Function):
     @staticmethod
-    def forward(
-        ctx, grad_output, kernel, grad_kernel, up, down, pad, g_pad, in_size, out_size
-    ):
+    def forward(ctx, grad_output, kernel, grad_kernel, up, down, pad, g_pad,
+                in_size, out_size):
 
         up_x, up_y = up
         down_x, down_y = down
@@ -42,7 +41,8 @@ class UpFirDn2dBackward(Function):
             g_pad_y0,
             g_pad_y1,
         )
-        grad_input = grad_input.view(in_size[0], in_size[1], in_size[2], in_size[3])
+        grad_input = grad_input.view(in_size[0], in_size[1], in_size[2],
+                                     in_size[3])
 
         ctx.save_for_backward(kernel)
 
@@ -65,7 +65,8 @@ class UpFirDn2dBackward(Function):
     def backward(ctx, gradgrad_input):
         kernel, = ctx.saved_tensors
 
-        gradgrad_input = gradgrad_input.reshape(-1, ctx.in_size[2], ctx.in_size[3], 1)
+        gradgrad_input = gradgrad_input.reshape(-1, ctx.in_size[2],
+                                                ctx.in_size[3], 1)
 
         gradgrad_out = upfirdn2d_op.upfirdn2d(
             gradgrad_input,
@@ -79,7 +80,6 @@ class UpFirDn2dBackward(Function):
             ctx.pad_y0,
             ctx.pad_y1,
         )
-        # gradgrad_out = gradgrad_out.view(ctx.in_size[0], ctx.out_size[0], ctx.out_size[1], ctx.in_size[3])
         gradgrad_out = gradgrad_out.view(
             ctx.in_size[0], ctx.in_size[1], ctx.out_size[0], ctx.out_size[1]
         )
@@ -118,8 +118,9 @@ class UpFirDn2d(Function):
         ctx.g_pad = (g_pad_x0, g_pad_x1, g_pad_y0, g_pad_y1)
 
         out = upfirdn2d_op.upfirdn2d(
-            input, kernel, up_x, up_y, down_x, down_y, pad_x0, pad_x1, pad_y0, pad_y1
-        )
+            input, kernel, up_x, up_y, down_x, down_y, pad_x0, pad_x1, pad_y0,
+            pad_y1
+            )
         # out = out.view(major, out_h, out_w, minor)
         out = out.view(-1, channel, out_h, out_w)
 
@@ -153,7 +154,8 @@ def upfirdn2d(input, kernel, up=1, down=1, pad=(0, 0)):
 
     else:
         out = UpFirDn2d.apply(
-            input, kernel, (up, up), (down, down), (pad[0], pad[1], pad[0], pad[1])
+            input, kernel, (up, up), (down, down), (pad[0], pad[1], pad[0],
+                                                    pad[1])
         )
 
     return out

@@ -124,7 +124,8 @@ def sample_random_sub_channel(model, min_channel=8, divided_by=1, seed=None,
     elif mode == 'flexible':
         # Case 2: sample flexible per-channel ratio
         full_channels = get_full_channel_configs(model)
-        org_channel_mult = full_channels[-1] / G_CHANNEL_CONFIG[model.resolution]
+        org_channel_mult = full_channels[-1] \
+            / G_CHANNEL_CONFIG[model.resolution]
         rand_channels, rand_ratios = get_random_channel_config(
             full_channels, org_channel_mult, min_channel, divided_by
             )
@@ -136,7 +137,8 @@ def sample_random_sub_channel(model, min_channel=8, divided_by=1, seed=None,
         rrr = random.random()
         if rrr < 0.25:  # largest
             if set_channels:
-                remove_sub_channel_config(model)  # i.e., use the largest channel
+                # Use the largest channel
+                remove_sub_channel_config(model)
             return [CHANNEL_CONFIGS[-1]] * len(get_full_channel_configs(model))
         elif rrr < 0.5:  # smallest
             if set_channels:
@@ -144,7 +146,8 @@ def sample_random_sub_channel(model, min_channel=8, divided_by=1, seed=None,
             return [CHANNEL_CONFIGS[0]] * len(get_full_channel_configs(model))
         else:  # random sample
             full_channels = get_full_channel_configs(model)
-            org_channel_mult = full_channels[-1] / G_CHANNEL_CONFIG[model.resolution]
+            org_channel_mult = full_channels[-1] \
+                / G_CHANNEL_CONFIG[model.resolution]
             rand_channels, rand_ratios = get_random_channel_config(
                 full_channels, org_channel_mult, min_channel, divided_by
                 )
@@ -176,7 +179,8 @@ def sort_channel(g):
         style_conv.conv.modulation.weight.data = torch.index_select(
             style_conv.conv.modulation.weight.data, 0, idx
             )
-        style_conv.conv.modulation.bias.data = style_conv.conv.modulation.bias.data[idx]
+        style_conv_bias_idx = style_conv.conv.modulation.bias.data[idx]
+        style_conv.conv.modulation.bias.data = style_conv_bias_idx
 
     def _reorg_output_channel(style_conv, idx):
         assert idx.numel() == style_conv.conv.weight.data.shape[1]
@@ -192,7 +196,8 @@ def sort_channel(g):
     latent_in = torch.randn(100000, 512, device=next(g.parameters()).device)
     latents = g.style(latent_in)  # get the input latents
 
-    for conv1, conv2, to_rgb in zip(g.convs[::2][::-1], g.convs[1::2][::-1], g.to_rgbs[::-1]):
+    for conv1, conv2, to_rgb in zip(g.convs[::2][::-1], g.convs[1::2][::-1],
+                                    g.to_rgbs[::-1]):
         # Modulate conv weight shape: [1, oup, inp, h, w]
         # Modulation linear shape: [style_dim, inp]
         if sorted_idx is None:

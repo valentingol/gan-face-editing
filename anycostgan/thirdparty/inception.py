@@ -9,7 +9,8 @@ from anycostgan.utils.torch_utils import safe_load_state_dict_from_url
 
 # Inception weights ported to Pytorch from
 # http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz
-FID_WEIGHTS_URL = 'https://github.com/mseitzer/pytorch-fid/releases/download/fid_weights/pt_inception-2015-12-05-6726825d.pth'
+FID_WEIGHTS_URL = ('https://github.com/mseitzer/pytorch-fid/releases/download/'
+                   'fid_weights/pt_inception-2015-12-05-6726825d.pth')
 
 
 class InceptionV3(nn.Module):
@@ -40,30 +41,33 @@ class InceptionV3(nn.Module):
         Parameters
         ----------
         output_blocks : list of int
-            Indices of blocks to return features of. Possible values are:
-                - 0: corresponds to output of first max pooling
-                - 1: corresponds to output of second max pooling
-                - 2: corresponds to output which is fed to aux classifier
-                - 3: corresponds to output of final average pooling
+            Indices of blocks to return features of.
+            Possible values are:
+              - 0: corresponds to output of first max pooling
+              - 1: corresponds to output of second max pooling
+              - 2: corresponds to output which is fed to aux classifier
+              - 3: corresponds to output of final average pooling
         resize_input : bool
-            If true, bilinearly resizes input to width and height 299 before
-            feeding input to models. As the network without fully connected
-            layers is fully convolutional, it should be able to handle inputs
-            of arbitrary size, so resizing might not be strictly needed
+            If true, bilinearly resizes input to width and height
+            299 before feeding input to models. As the network without
+            fully connected layers is fully convolutional, it should be
+            able to handle inputs of arbitrary size, so resizing might
+            not be strictly needed
         normalize_input : bool
             If true, scales the input from range (0, 1) to the range the
             pretrained Inception network expects, namely (-1, 1)
         requires_grad : bool
-            If true, parameters of the models require gradients. Possibly useful
-            for finetuning the network
+            If true, parameters of the models require gradients.
+            Possibly useful for finetuning the network
         use_fid_inception : bool
-            If true, uses the pretrained Inception models used in Tensorflow's
-            FID implementation. If false, uses the pretrained Inception models
-            available in torchvision. The FID Inception models has different
-            weights and a slightly different structure from torchvision's
-            Inception models. If you want to compute FID scores, you are
-            strongly advised to set this parameter to true to get comparable
-            results.
+            If true, uses the pretrained Inception models used in
+            Tensorflow's FID implementation. If false, uses the
+            pretrained Inception models available in torchvision.
+            The FID Inception models has different weights and a
+            slightly different structure from torchvision's
+            Inception models. If you want to compute FID scores, you
+            are strongly advised to set this parameter to true to get
+            comparable results.
         """
         super(InceptionV3, self).__init__()
 
@@ -138,8 +142,8 @@ class InceptionV3(nn.Module):
 
         Returns
         -------
-        List of torch.autograd.Variable, corresponding to the selected output
-        block, sorted ascending by index
+        List of torch.autograd.Variable, corresponding to the
+        selected output block, sorted ascending by index
         """
         outp = []
         x = inp
@@ -167,16 +171,19 @@ class InceptionV3(nn.Module):
 def fid_inception_v3():
     """Build pretrained Inception models for FID computation
 
-    The Inception models for FID computation uses a different set of weights
-    and has a slightly different structure than torchvision's Inception.
+    The Inception models for FID computation uses a different set of
+    weights and has a slightly different structure than torchvision's
+    Inception.
 
-    This method first constructs torchvision's Inception and then patches the
-    necessary parts that are different in the FID Inception models.
+    This method first constructs torchvision's Inception and then
+    patches the necessary parts that are different in the FID Inception
+    models.
     """
     import torchvision
     inception = torchvision.models.Inception3(num_classes=1008,
                                               aux_logits=False,
-                                              init_weights=False)  # reduce init time
+                                              init_weights=False)
+    # (reduce init time)
     inception.Mixed_5b = FIDInceptionA(192, pool_features=32)
     inception.Mixed_5c = FIDInceptionA(256, pool_features=64)
     inception.Mixed_5d = FIDInceptionA(288, pool_features=64)
@@ -187,7 +194,8 @@ def fid_inception_v3():
     inception.Mixed_7b = FIDInceptionE_1(1280)
     inception.Mixed_7c = FIDInceptionE_2(2048)
 
-    state_dict = safe_load_state_dict_from_url(FID_WEIGHTS_URL, progress=True, map_location='cpu')
+    state_dict = safe_load_state_dict_from_url(FID_WEIGHTS_URL, progress=True,
+                                               map_location='cpu')
     inception.load_state_dict(state_dict)
     return inception
 

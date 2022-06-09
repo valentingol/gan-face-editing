@@ -38,8 +38,8 @@ def g_path_regularize(fake_img, latents, mean_path_length, decay=0.01):
     )
     path_lengths = torch.sqrt(grad.pow(2).sum(2).mean(1))
 
-    path_mean = mean_path_length + decay * (path_lengths.mean().item() \
-        - mean_path_length)
+    path_mean = mean_path_length + decay * (path_lengths.mean().item()
+                                            - mean_path_length)
 
     path_penalty = (path_lengths - path_mean).pow(2).mean()
 

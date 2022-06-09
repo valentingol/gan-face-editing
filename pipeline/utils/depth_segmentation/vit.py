@@ -29,12 +29,11 @@ def get_attention(name):
             module.qkv(x)
             .reshape(B, N, 3, module.num_heads, C // module.num_heads)
             .permute(2, 0, 3, 1, 4)
-        )
-        q, k, v = (
+            )
+        q, k = (
             qkv[0],
             qkv[1],
-            qkv[2],
-        )  # make torchscript happy (cannot use tensor as tuple)
+            )  # make torchscript happy (cannot use tensor as tuple)
 
         attn = (q @ k.transpose(-2, -1)) * module.scale
 
@@ -46,10 +45,11 @@ def get_attention(name):
 
 def get_mean_attention_map(attn, token, shape):
     attn = attn[:, :, token, 1:]
-    attn = attn.unflatten(2, torch.Size([shape[2] // 16, shape[3] // 16])).float()
+    attn = attn.unflatten(2, torch.Size([shape[2] // 16, shape[3]
+                                         // 16])).float()
     attn = torch.nn.functional.interpolate(
         attn, size=shape[2:], mode="bicubic", align_corners=False
-    ).squeeze(0)
+        ).squeeze(0)
 
     all_attn = torch.mean(attn, 0)
 
@@ -62,7 +62,7 @@ class Slice(nn.Module):
         self.start_index = start_index
 
     def forward(self, x):
-        return x[:, self.start_index :]
+        return x[:, self.start_index:]
 
 
 class AddReadout(nn.Module):
@@ -75,7 +75,7 @@ class AddReadout(nn.Module):
             readout = (x[:, 0] + x[:, 1]) / 2
         else:
             readout = x[:, 0]
-        return x[:, self.start_index :] + readout.unsqueeze(1)
+        return x[:, self.start_index:] + readout.unsqueeze(1)
 
 
 class ProjectReadout(nn.Module):
@@ -83,11 +83,12 @@ class ProjectReadout(nn.Module):
         super(ProjectReadout, self).__init__()
         self.start_index = start_index
 
-        self.project = nn.Sequential(nn.Linear(2 * in_features, in_features), nn.GELU())
+        self.project = nn.Sequential(nn.Linear(2 * in_features, in_features),
+                                     nn.GELU())
 
     def forward(self, x):
-        readout = x[:, 0].unsqueeze(1).expand_as(x[:, self.start_index :])
-        features = torch.cat((x[:, self.start_index :], readout), -1)
+        readout = x[:, 0].unsqueeze(1).expand_as(x[:, self.start_index:])
+        features = torch.cat((x[:, self.start_index:], readout), -1)
 
         return self.project(features)
 
@@ -139,10 +140,14 @@ def forward_vit(pretrained, x):
     if layer_4.ndim == 3:
         layer_4 = unflatten(layer_4)
 
-    layer_1 = pretrained.act_postprocess1[3 : len(pretrained.act_postprocess1)](layer_1)
-    layer_2 = pretrained.act_postprocess2[3 : len(pretrained.act_postprocess2)](layer_2)
-    layer_3 = pretrained.act_postprocess3[3 : len(pretrained.act_postprocess3)](layer_3)
-    layer_4 = pretrained.act_postprocess4[3 : len(pretrained.act_postprocess4)](layer_4)
+    layer_1 = pretrained.act_postprocess1[3:len(pretrained.act_postprocess1)](
+        layer_1)
+    layer_2 = pretrained.act_postprocess2[3:len(pretrained.act_postprocess2)](
+        layer_2)
+    layer_3 = pretrained.act_postprocess3[3:len(pretrained.act_postprocess3)](
+        layer_3)
+    layer_4 = pretrained.act_postprocess4[3:len(pretrained.act_postprocess4)](
+        layer_4)
 
     return layer_1, layer_2, layer_3, layer_4
 
@@ -150,13 +155,15 @@ def forward_vit(pretrained, x):
 def _resize_pos_embed(self, posemb, gs_h, gs_w):
     posemb_tok, posemb_grid = (
         posemb[:, : self.start_index],
-        posemb[0, self.start_index :],
+        posemb[0, self.start_index:],
     )
 
     gs_old = int(math.sqrt(len(posemb_grid)))
 
-    posemb_grid = posemb_grid.reshape(1, gs_old, gs_old, -1).permute(0, 3, 1, 2)
-    posemb_grid = F.interpolate(posemb_grid, size=(gs_h, gs_w), mode="bilinear")
+    posemb_grid = posemb_grid.reshape(1, gs_old, gs_old, -1).permute(
+        0, 3, 1, 2)
+    posemb_grid = F.interpolate(posemb_grid, size=(gs_h, gs_w),
+                                mode="bilinear")
     posemb_grid = posemb_grid.permute(0, 2, 3, 1).reshape(1, gs_h * gs_w, -1)
 
     posemb = torch.cat([posemb_tok, posemb_grid], dim=1)
@@ -176,20 +183,23 @@ def forward_flex(self, x):
     if hasattr(self.patch_embed, "backbone"):
         x = self.patch_embed.backbone(x)
         if isinstance(x, (list, tuple)):
-            x = x[-1]  # last feature if backbone outputs list/tuple of features
+            # Last feature if backbone outputs list/tuple of features
+            x = x[-1]
 
     x = self.patch_embed.proj(x).flatten(2).transpose(1, 2)
 
     if getattr(self, "dist_token", None) is not None:
+        # Stole cls_tokens impl from Phil Wang, thanks
         cls_tokens = self.cls_token.expand(
             B, -1, -1
-        )  # stole cls_tokens impl from Phil Wang, thanks
+            )
         dist_token = self.dist_token.expand(B, -1, -1)
         x = torch.cat((cls_tokens, dist_token, x), dim=1)
     else:
+        # Stole cls_tokens impl from Phil Wang, thanks
         cls_tokens = self.cls_token.expand(
             B, -1, -1
-        )  # stole cls_tokens impl from Phil Wang, thanks
+            )
         x = torch.cat((cls_tokens, x), dim=1)
 
     x = x + pos_embed
@@ -210,13 +220,11 @@ def get_readout_oper(vit_features, features, use_readout, start_index=1):
         readout_oper = [AddReadout(start_index)] * len(features)
     elif use_readout == "project":
         readout_oper = [
-            ProjectReadout(vit_features, start_index) for out_feat in features
+            ProjectReadout(vit_features, start_index) for _ in features
         ]
     else:
-        assert (
-            False
-        ), "wrong operation for readout token, use_readout can be 'ignore', 'add', or 'project'"
-
+        raise ValueError("Wrong operation for readout token, use_readout can "
+                         f"be 'ignore','add', or 'project', got {use_readout}")
     return readout_oper
 
 
@@ -233,29 +241,30 @@ def _make_vit_b16_backbone(
     pretrained = nn.Module()
 
     pretrained.model = model
-    pretrained.model.blocks[hooks[0]].register_forward_hook(get_activation("1"))
-    pretrained.model.blocks[hooks[1]].register_forward_hook(get_activation("2"))
-    pretrained.model.blocks[hooks[2]].register_forward_hook(get_activation("3"))
-    pretrained.model.blocks[hooks[3]].register_forward_hook(get_activation("4"))
+    pretrained.model.blocks[hooks[0]].register_forward_hook(
+        get_activation("1"))
+    pretrained.model.blocks[hooks[1]].register_forward_hook(
+        get_activation("2"))
+    pretrained.model.blocks[hooks[2]].register_forward_hook(
+        get_activation("3"))
+    pretrained.model.blocks[hooks[3]].register_forward_hook(
+        get_activation("4"))
 
     pretrained.activations = activations
 
     if enable_attention_hooks:
         pretrained.model.blocks[hooks[0]].attn.register_forward_hook(
-            get_attention("attn_1")
-        )
+            get_attention("attn_1"))
         pretrained.model.blocks[hooks[1]].attn.register_forward_hook(
-            get_attention("attn_2")
-        )
+            get_attention("attn_2"))
         pretrained.model.blocks[hooks[2]].attn.register_forward_hook(
-            get_attention("attn_3")
-        )
+            get_attention("attn_3"))
         pretrained.model.blocks[hooks[3]].attn.register_forward_hook(
-            get_attention("attn_4")
-        )
+            get_attention("attn_4"))
         pretrained.attention = attention
 
-    readout_oper = get_readout_oper(vit_features, features, use_readout, start_index)
+    readout_oper = get_readout_oper(vit_features, features, use_readout,
+                                    start_index)
 
     # 32, 48, 136, 384
     pretrained.act_postprocess1 = nn.Sequential(
@@ -340,12 +349,14 @@ def _make_vit_b16_backbone(
     pretrained.model.start_index = start_index
     pretrained.model.patch_size = [16, 16]
 
-    # We inject this function into the VisionTransformer instances so that
-    # we can use it with interpolated position embeddings without modifying the library source.
-    pretrained.model.forward_flex = types.MethodType(forward_flex, pretrained.model)
+    # We inject this function into the VisionTransformer instances
+    # so that we can use it with interpolated position embeddings
+    # without modifying the library source.
+    pretrained.model.forward_flex = types.MethodType(forward_flex,
+                                                     pretrained.model)
     pretrained.model._resize_pos_embed = types.MethodType(
         _resize_pos_embed, pretrained.model
-    )
+        )
 
     return pretrained
 
@@ -365,32 +376,39 @@ def _make_vit_b_rn50_backbone(
 
     pretrained.model = model
 
-    if use_vit_only == True:
-        pretrained.model.blocks[hooks[0]].register_forward_hook(get_activation("1"))
-        pretrained.model.blocks[hooks[1]].register_forward_hook(get_activation("2"))
+    if use_vit_only:
+        pretrained.model.blocks[hooks[0]].register_forward_hook(
+            get_activation("1"))
+        pretrained.model.blocks[hooks[1]].register_forward_hook(
+            get_activation("2"))
     else:
         pretrained.model.patch_embed.backbone.stages[0].register_forward_hook(
-            get_activation("1")
-        )
+            get_activation("1"))
         pretrained.model.patch_embed.backbone.stages[1].register_forward_hook(
-            get_activation("2")
-        )
+            get_activation("2"))
 
-    pretrained.model.blocks[hooks[2]].register_forward_hook(get_activation("3"))
-    pretrained.model.blocks[hooks[3]].register_forward_hook(get_activation("4"))
+    pretrained.model.blocks[hooks[2]].register_forward_hook(
+        get_activation("3"))
+    pretrained.model.blocks[hooks[3]].register_forward_hook(
+        get_activation("4"))
 
     if enable_attention_hooks:
-        pretrained.model.blocks[2].attn.register_forward_hook(get_attention("attn_1"))
-        pretrained.model.blocks[5].attn.register_forward_hook(get_attention("attn_2"))
-        pretrained.model.blocks[8].attn.register_forward_hook(get_attention("attn_3"))
-        pretrained.model.blocks[11].attn.register_forward_hook(get_attention("attn_4"))
+        pretrained.model.blocks[2].attn.register_forward_hook(
+            get_attention("attn_1"))
+        pretrained.model.blocks[5].attn.register_forward_hook(
+            get_attention("attn_2"))
+        pretrained.model.blocks[8].attn.register_forward_hook(
+            get_attention("attn_3"))
+        pretrained.model.blocks[11].attn.register_forward_hook(
+            get_attention("attn_4"))
         pretrained.attention = attention
 
     pretrained.activations = activations
 
-    readout_oper = get_readout_oper(vit_features, features, use_readout, start_index)
+    readout_oper = get_readout_oper(vit_features, features, use_readout,
+                                    start_index)
 
-    if use_vit_only == True:
+    if use_vit_only:
         pretrained.act_postprocess1 = nn.Sequential(
             readout_oper[0],
             Transpose(1, 2),
@@ -480,12 +498,15 @@ def _make_vit_b_rn50_backbone(
     pretrained.model.start_index = start_index
     pretrained.model.patch_size = [16, 16]
 
-    # We inject this function into the VisionTransformer instances so that
-    # we can use it with interpolated position embeddings without modifying the library source.
-    pretrained.model.forward_flex = types.MethodType(forward_flex, pretrained.model)
+    # We inject this function into the VisionTransformer instances
+    # so that we can use it with interpolated position embeddings
+    # without modifying the library source.
+    pretrained.model.forward_flex = types.MethodType(forward_flex,
+                                                     pretrained.model)
 
-    # We inject this function into the VisionTransformer instances so that
-    # we can use it with interpolated position embeddings without modifying the library source.
+    # We inject this function into the VisionTransformer instances so
+    # that we can use it with interpolated position embeddings without
+    # modifying the library source.
     pretrained.model._resize_pos_embed = types.MethodType(
         _resize_pos_embed, pretrained.model
     )
@@ -502,7 +523,7 @@ def _make_pretrained_vitb_rn50_384(
 ):
     model = timm.create_model("vit_base_resnet50_384", pretrained=pretrained)
 
-    hooks = [0, 1, 8, 11] if hooks == None else hooks
+    hooks = [0, 1, 8, 11] if hooks is None else hooks
     return _make_vit_b_rn50_backbone(
         model,
         features=[256, 512, 768, 768],
@@ -514,12 +535,11 @@ def _make_pretrained_vitb_rn50_384(
     )
 
 
-def _make_pretrained_vitl16_384(
-    pretrained, use_readout="ignore", hooks=None, enable_attention_hooks=False
-):
+def _make_pretrained_vitl16_384(pretrained, use_readout="ignore", hooks=None,
+                                enable_attention_hooks=False):
     model = timm.create_model("vit_large_patch16_384", pretrained=pretrained)
 
-    hooks = [5, 11, 17, 23] if hooks == None else hooks
+    hooks = [5, 11, 17, 23] if hooks is None else hooks
     return _make_vit_b16_backbone(
         model,
         features=[256, 512, 1024, 1024],
@@ -527,47 +547,47 @@ def _make_pretrained_vitl16_384(
         vit_features=1024,
         use_readout=use_readout,
         enable_attention_hooks=enable_attention_hooks,
-    )
+        )
 
 
-def _make_pretrained_vitb16_384(
-    pretrained, use_readout="ignore", hooks=None, enable_attention_hooks=False
-):
+def _make_pretrained_vitb16_384(pretrained, use_readout="ignore", hooks=None,
+                                enable_attention_hooks=False):
     model = timm.create_model("vit_base_patch16_384", pretrained=pretrained)
 
-    hooks = [2, 5, 8, 11] if hooks == None else hooks
+    hooks = [2, 5, 8, 11] if hooks is None else hooks
     return _make_vit_b16_backbone(
         model,
         features=[96, 192, 384, 768],
         hooks=hooks,
         use_readout=use_readout,
         enable_attention_hooks=enable_attention_hooks,
-    )
+        )
 
 
-def _make_pretrained_deitb16_384(
-    pretrained, use_readout="ignore", hooks=None, enable_attention_hooks=False
-):
-    model = timm.create_model("vit_deit_base_patch16_384", pretrained=pretrained)
+def _make_pretrained_deitb16_384(pretrained, use_readout="ignore", hooks=None,
+                                 enable_attention_hooks=False):
+    model = timm.create_model("vit_deit_base_patch16_384",
+                              pretrained=pretrained)
 
-    hooks = [2, 5, 8, 11] if hooks == None else hooks
+    hooks = [2, 5, 8, 11] if hooks is None else hooks
     return _make_vit_b16_backbone(
         model,
         features=[96, 192, 384, 768],
         hooks=hooks,
         use_readout=use_readout,
         enable_attention_hooks=enable_attention_hooks,
-    )
+        )
 
 
-def _make_pretrained_deitb16_distil_384(
-    pretrained, use_readout="ignore", hooks=None, enable_attention_hooks=False
-):
+def _make_pretrained_deitb16_distil_384(pretrained,
+                                        use_readout="ignore",
+                                        hooks=None,
+                                        enable_attention_hooks=False):
     model = timm.create_model(
         "vit_deit_base_distilled_patch16_384", pretrained=pretrained
-    )
+        )
 
-    hooks = [2, 5, 8, 11] if hooks == None else hooks
+    hooks = [2, 5, 8, 11] if hooks is None else hooks
     return _make_vit_b16_backbone(
         model,
         features=[96, 192, 384, 768],
@@ -575,4 +595,4 @@ def _make_pretrained_deitb16_distil_384(
         use_readout=use_readout,
         start_index=2,
         enable_attention_hooks=enable_attention_hooks,
-    )
+        )

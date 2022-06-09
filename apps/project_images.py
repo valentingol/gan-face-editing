@@ -1,4 +1,5 @@
 import os
+import sys
 
 if __name__ == '__main__':
     data_dir = 'data/face_challenge'
@@ -17,8 +18,14 @@ if __name__ == '__main__':
                           f'--encoder --n_iter={n_iter} '
                           f'--enc_reg_weight={enc_reg_weight} '
                           f'--output_dir={output_dir} {img_path}')
-            except:
+            except KeyboardInterrupt as e:
+                print(e)
+                sys.exit(1)
+            except Exception as e:
+                print(f'Error occurs while project image "{img_name}"')
+                print(e)
                 fails.append(img_name)
+
     if fails != []:
         print('WARNING: failed to project: ', fails)
     else:

@@ -11,17 +11,17 @@ from pipeline.utils.depth_segmentation.vit import (
 
 
 def _make_encoder(
-    backbone,
-    features,
-    use_pretrained,
-    groups=1,
-    expand=False,
-    exportable=True,
-    hooks=None,
-    use_vit_only=False,
-    use_readout="ignore",
-    enable_attention_hooks=False,
-    ):
+        backbone,
+        features,
+        use_pretrained,
+        groups=1,
+        expand=False,
+        exportable=True,
+        hooks=None,
+        use_vit_only=False,
+        use_readout="ignore",
+        enable_attention_hooks=False,
+        ):
     if backbone == "vitl16_384":
         pretrained = _make_pretrained_vitl16_384(
             use_pretrained,
@@ -72,7 +72,7 @@ def _make_scratch(in_shape, out_shape, groups=1, expand=False):
     out_shape2 = out_shape
     out_shape3 = out_shape
     out_shape4 = out_shape
-    if expand == True:
+    if expand:
         out_shape1 = out_shape
         out_shape2 = out_shape * 2
         out_shape3 = out_shape * 4
@@ -86,7 +86,7 @@ def _make_scratch(in_shape, out_shape, groups=1, expand=False):
         padding=1,
         bias=False,
         groups=groups,
-    )
+        )
     scratch.layer2_rn = nn.Conv2d(
         in_shape[1],
         out_shape2,
@@ -95,7 +95,7 @@ def _make_scratch(in_shape, out_shape, groups=1, expand=False):
         padding=1,
         bias=False,
         groups=groups,
-    )
+        )
     scratch.layer3_rn = nn.Conv2d(
         in_shape[2],
         out_shape3,
@@ -104,7 +104,7 @@ def _make_scratch(in_shape, out_shape, groups=1, expand=False):
         padding=1,
         bias=False,
         groups=groups,
-    )
+        )
     scratch.layer4_rn = nn.Conv2d(
         in_shape[3],
         out_shape4,
@@ -113,7 +113,7 @@ def _make_scratch(in_shape, out_shape, groups=1, expand=False):
         padding=1,
         bias=False,
         groups=groups,
-    )
+        )
 
     return scratch
 
@@ -132,7 +132,8 @@ def _make_resnet_backbone(resnet):
 
 
 def _make_pretrained_resnext101_wsl(use_pretrained):
-    resnet = torch.hub.load("facebookresearch/WSL-Images", "resnext101_32x8d_wsl")
+    resnet = torch.hub.load("facebookresearch/WSL-Images",
+                            "resnext101_32x8d_wsl")
     return _make_resnet_backbone(resnet)
 
 
@@ -276,7 +277,7 @@ class ResidualConvUnit_custom(nn.Module):
             groups=self.groups,
             )
 
-        if self.bn == True:
+        if self.bn:
             self.bn1 = nn.BatchNorm2d(features)
             self.bn2 = nn.BatchNorm2d(features)
 
@@ -295,12 +296,12 @@ class ResidualConvUnit_custom(nn.Module):
 
         out = self.activation(x)
         out = self.conv1(out)
-        if self.bn == True:
+        if self.bn:
             out = self.bn1(out)
 
         out = self.activation(out)
         out = self.conv2(out)
-        if self.bn == True:
+        if self.bn:
             out = self.bn2(out)
 
         if self.groups > 1:
@@ -313,14 +314,14 @@ class FeatureFusionBlock_custom(nn.Module):
     """Feature fusion block."""
 
     def __init__(
-        self,
-        features,
-        activation,
-        deconv=False,
-        bn=False,
-        expand=False,
-        align_corners=True,
-        ):
+            self,
+            features,
+            activation,
+            deconv=False,
+            bn=False,
+            expand=False,
+            align_corners=True,
+            ):
         """Init.
 
         Args:
@@ -333,7 +334,7 @@ class FeatureFusionBlock_custom(nn.Module):
         self.groups = 1
         self.expand = expand
         out_features = features
-        if self.expand == True:
+        if self.expand:
             out_features = features // 2
         self.out_conv = nn.Conv2d(
             features,

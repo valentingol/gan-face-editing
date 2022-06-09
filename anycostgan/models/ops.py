@@ -183,7 +183,8 @@ class EqualLinear(nn.Module):
                 raise NotImplementedError
 
         else:
-            out = F.linear(x, self.weight * self.scale, bias=self.bias * self.lr_mul)
+            out = F.linear(x, self.weight * self.scale,
+                           bias=self.bias * self.lr_mul)
 
         return out
 
@@ -257,7 +258,7 @@ class ModulatedConv2d(nn.Module):
         # Demodulate weight
         if self.demodulate:
             weight = weight * torch.rsqrt(
-                weight.pow(2).sum([2, 3, 4],keepdim=True) + self.eps
+                weight.pow(2).sum([2, 3, 4], keepdim=True) + self.eps
                 )
 
         if self.upsample:

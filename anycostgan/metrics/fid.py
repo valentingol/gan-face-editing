@@ -2,8 +2,6 @@
 
 import argparse
 import pickle
-import sys
-sys.path.append('.')  # to run from the project root dir
 
 import numpy as np
 from scipy import linalg
@@ -106,7 +104,7 @@ if __name__ == '__main__':
             macs = profile_macs(generator, torch.rand(1, 1, 512).to(device))
             params = sum([p.numel() for p in generator.parameters()])
             print(f' * MACs: {macs / 1e9:.2f}G, Params: {params / 1e6:.2f}M')
-        except:
+        except ImportError:
             print(' * Profiling failed. Passed.')
 
     inception = models.get_pretrained('inception').to(device)

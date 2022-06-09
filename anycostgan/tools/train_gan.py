@@ -6,9 +6,7 @@ import math
 import os
 import pickle
 import random
-import sys
 import time
-sys.path.append('.')  # to run from the project root dir
 
 import horovod.torch as hvd
 import lpips
@@ -53,8 +51,8 @@ def train(epoch):
               disable=hvd.rank() != 0, dynamic_ncols=True) as t:
         global mean_path_length  # track across epochs
 
-        ema_decay = 0.5 ** (args.batch_size * hvd.size() \
-            / (args.half_life_kimg * 1000.))
+        ema_decay = 0.5 ** (args.batch_size * hvd.size()
+                            / (args.half_life_kimg * 1000.))
 
         # loss meters
         d_loss_meter = DistributedMeter('d_loss')
@@ -121,7 +119,8 @@ def train(epoch):
 
             # reg D
             if args.d_reg_every > 0 and global_idx % args.d_reg_every == 0:
-                reg_img = random.choice(real_img) if args.n_res > 1 else real_img
+                reg_img = random.choice(real_img) \
+                    if args.n_res > 1 else real_img
                 reg_img.requires_grad = True
 
                 if args.conditioned_d:
@@ -141,16 +140,20 @@ def train(epoch):
             requires_grad(generator, True)
             requires_grad(discriminator, False)
 
-            z = get_mixing_z(args.batch_size, args.latent_dim, args.mixing_prob, device)
+            z = get_mixing_z(args.batch_size, args.latent_dim,
+                             args.mixing_prob, device)
             # fix the randomness (potentially apply distillation)
             noises = generator.make_noise()
-            inject_index = None if z.shape[1] == 1 else random.randint(1, generator.n_style - 1)
+            inject_index = None if z.shape[1] == 1 \
+                else random.randint(1, generator.n_style - 1)
 
             if args.dynamic_channel:
-                rand_ratio = sample_random_sub_channel(generator, min_channel=args.min_channel,
-                                                       divided_by=args.divided_by,
-                                                       mode=args.dynamic_channel_mode)
-            fake_img, all_rgbs = generator(z, noise=noises, inject_index=inject_index, return_rgbs=True)
+                rand_ratio = sample_random_sub_channel(
+                    generator, min_channel=args.min_channel,
+                    divided_by=args.divided_by, mode=args.dynamic_channel_mode)
+            fake_img, all_rgbs = generator(z, noise=noises,
+                                           inject_index=inject_index,
+                                           return_rgbs=True)
             all_rgbs = all_rgbs[-args.n_res:]
             reset_generator(generator)
 
@@ -158,21 +161,27 @@ def train(epoch):
             if args.n_res > 1:
                 sampled_rgbs = random.sample(all_rgbs, args.n_sampled_res)
                 g_arch = get_g_arch(rand_ratio) if args.conditioned_d else None
-                g_loss = sum([g_nonsaturating_loss(discriminator(r, g_arch)) for r in sampled_rgbs])
+                g_loss = sum([g_nonsaturating_loss(discriminator(r, g_arch))
+                              for r in sampled_rgbs])
             else:
                 g_loss = g_nonsaturating_loss(discriminator(fake_img))
 
             # distill loss
             if teacher is not None:
                 with torch.no_grad():
-                    teacher_out, _ = teacher(z, noise=noises, inject_index=inject_index)
+                    teacher_out, _ = teacher(z, noise=noises,
+                                             inject_index=inject_index)
                 teacher_rgbs = get_teacher_multi_res(teacher_out, args.n_res)
-                distill_loss1 = sum([nn.MSELoss()(sr, tr) for sr, tr in zip(all_rgbs, teacher_rgbs)])
-                distill_loss2 = sum([percept(adaptive_downsample256(sr), adaptive_downsample256(tr)).mean()
-                                     for sr, tr in zip(all_rgbs, teacher_rgbs)])
+                distill_loss1 = sum([nn.MSELoss()(sr, tr) for sr, tr
+                                     in zip(all_rgbs, teacher_rgbs)])
+                distill_loss2 = sum([percept(adaptive_downsample256(sr),
+                                             adaptive_downsample256(tr)).mean()
+                                     for sr, tr in zip(all_rgbs,
+                                                       teacher_rgbs)])
                 distill_loss = distill_loss1 + distill_loss2
                 g_loss = g_loss + distill_loss * args.distill_loss_alpha
-                distill_loss_meter.update(distill_loss * args.distill_loss_alpha)
+                distill_loss_meter.update(distill_loss
+                                          * args.distill_loss_alpha)
 
             g_loss_meter.update(g_loss)
 
@@ -185,15 +194,16 @@ def train(epoch):
                 # Currently, we do not apply path reg after
                 # the original StyleGAN training
                 assert args.n_res == 1
-                path_batch_size = max(1,
-                                      args.batch_size // args.path_batch_shrink)
+                path_batch_size = max(
+                    1, args.batch_size // args.path_batch_shrink
+                    )
                 noise = get_mixing_z(path_batch_size, args.latent_dim,
                                      args.mixing_prob, device)
                 fake_img, latents = generator(noise, return_styles=True)
                 # moving update the mean path length
-                path_loss, mean_path_length, path_lengths = g_path_regularize(
+                path_loss, mean_path_length, _ = g_path_regularize(
                     fake_img, latents, mean_path_length
-                )
+                    )
                 generator.zero_grad()
                 weighted_path_loss = args.path_regularize * args.g_reg_every \
                     * path_loss
@@ -248,7 +258,8 @@ def train(epoch):
                     mean_style = g_ema.mean_style(10000)
                     sample, _ = g_ema(sample_z, truncation=args.vis_truncation,
                                       truncation_style=mean_style)
-                    n_trained_images = global_idx * args.batch_size * hvd.size()
+                    n_trained_images = global_idx * args.batch_size \
+                        * hvd.size()
                     grid = utils.make_grid(sample,
                                            nrow=int(args.n_vis_sample ** 0.5),
                                            normalize=True,
@@ -399,7 +410,8 @@ if __name__ == "__main__":
     parser.add_argument('--n_sampled_res', type=int, default=1,
                         help='number of resolutions to sample per iter')
     # adaptive channel training
-    parser.add_argument('--dynamic_channel', action='store_true', default=False)
+    parser.add_argument('--dynamic_channel', action='store_true',
+                        default=False)
     parser.add_argument('--dynamic_channel_mode', type=str, default='uniform')
     parser.add_argument('--sort_pretrain', action='store_true', default=False)
     parser.add_argument('--conditioned_d', action='store_true', default=False,
@@ -435,10 +447,10 @@ if __name__ == "__main__":
         from anycostgan.utils.datasets import (MultiResize,
                                                GroupRandomHorizontalFlip,
                                                GroupTransformWrapper)
-
-        transform = transforms.Compose([  # transforms that return a pyramid
+        # Transforms that return a pyramid
+        transform = transforms.Compose([
             MultiResize(args.resolution, args.n_res),
-            GroupRandomHorizontalFlip(),  # same flipping for all images
+            GroupRandomHorizontalFlip(),
             GroupTransformWrapper(transforms.ToTensor()),
             GroupTransformWrapper(transforms.Normalize((0.5, 0.5, 0.5),
                                                        (0.5, 0.5, 0.5),
@@ -449,7 +461,8 @@ if __name__ == "__main__":
             transforms.Resize(args.resolution),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5),
+                                 inplace=True),
             ])
     dataset = NativeDataset(args.data_path, transform=transform)
     sampler = torch.utils.data.distributed.DistributedSampler(
@@ -480,9 +493,11 @@ if __name__ == "__main__":
 
     # build generator
     generator = Generator(args.resolution, args.latent_dim, args.n_mlp,
-                          channel_multiplier=args.channel_multiplier).to(device)
+                          channel_multiplier=args.channel_multiplier
+                          ).to(device)
     g_ema = Generator(args.resolution, args.latent_dim, args.n_mlp,
-                      channel_multiplier=args.channel_multiplier).to(device)
+                      channel_multiplier=args.channel_multiplier
+                      ).to(device)
     g_ema.eval()
 
     if hvd.rank() == 0:  # measure flops and #param
@@ -498,7 +513,7 @@ if __name__ == "__main__":
             generator.eval()
             macs = profile_macs(generator, [torch.rand(1, 512).to(device)])
             print(' * G MACs: {:.2f}G'.format(macs / 1e9))
-        except:
+        except ImportError:
             print(' * Profiling failed. Pass.')
 
     # tune from a previous checkpoint
@@ -552,12 +567,14 @@ if __name__ == "__main__":
     inception.eval()
 
     # build optimizer
-    g_optim = optim.Adam(generator.parameters(), lr=args.lr, betas=(0., 0.99))
+    g_optim = optim.Adam(generator.parameters(), lr=args.lr,
+                         betas=(0., 0.99))
     d_optim = optim.Adam(discriminator.parameters(),
                          lr=args.lr, betas=(0., 0.99))
 
     g_optim = hvd.DistributedOptimizer(
-        g_optim, named_parameters=generator.named_parameters(prefix='generator'),
+        g_optim,
+        named_parameters=generator.named_parameters(prefix='generator'),
     )
     d_optim = hvd.DistributedOptimizer(
         d_optim, named_parameters=discriminator.named_parameters(
