@@ -297,9 +297,14 @@ class FaceEditor(QMainWindow):
                 os.path.join(DATA_DIR, fname)
                 ).convert('RGB'))
             npy_name = fname.replace('.jpg', '.npy').replace('.png', '.npy')
-            latent_code = torch.from_numpy(
-                np.load(os.path.join(PROJECTION_DIR, 'projected_latents',
-                                     npy_name)))
+            try:
+                latent_code = torch.from_numpy(
+                    np.load(os.path.join(PROJECTION_DIR, 'projected_latents',
+                                         npy_name)))
+            except FileNotFoundError:
+                raise FileNotFoundError('Please compute the projected latent '
+                                        'vector first by running `python apps/'
+                                        'project_images.py`')
             self.org_image_list.append(org_image)
             self.latent_code_list.append(latent_code.view(1, -1, 512))
 
