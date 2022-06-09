@@ -1,5 +1,6 @@
 # Face editing with Style GAN 2 and facial segmentation (Ceteris Paribus Face Challenge Intercentrales 2022)
 
+![License](https://img.shields.io/github/license/valentingol/gan-face-editing?color=brightgreen)
 ![pycodestyle](https://github.com/valentingol/gan-face-editing/actions/workflows/pycodestyle.yaml/badge.svg)
 ![flake](https://github.com/valentingol/gan-face-editing/actions/workflows/flake.yaml/badge.svg)
 
