@@ -3,7 +3,7 @@ name: Flake 8
 on:
   push:
     paths:
-      - '*.py'
+      - '**.py'
 
 jobs:
   flake8-lint:
