@@ -740,8 +740,9 @@ class LBFGS(Optimizer):
                                                  [t_new, F_new.item(), np.nan
                                                   ]]))
 
-                    # otherwise, use function values at new point, previous point,
-                    # and gradient and function at current iterate
+                    # otherwise, use function values at new point,
+                    # previous point, and gradient and function at
+                    # current iterate
                     else:
                         t = polyinterp(np.array([[0, F_k.item(), gtd.item()],
                                                  [t_new, F_new.item(), np.nan],
