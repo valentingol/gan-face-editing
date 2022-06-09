@@ -12,7 +12,8 @@ URL_TEMPLATE = 'https://hanlab.mit.edu/projects/anycost-gan/files/{}_{}.pt'
 
 def load_state_dict_from_url(url, key=None):
     if url.startswith('http'):
-        sd = safe_load_state_dict_from_url(url, map_location='cpu', progress=True)
+        sd = safe_load_state_dict_from_url(url, map_location='cpu',
+                                           progress=True)
     else:
         sd = torch.load(url, map_location='cpu')
     if key is not None:
@@ -48,7 +49,8 @@ def get_pretrained(model, config=None):
         # to keep consistent with optimization-based projection
         # the numbers in the papers are reported with encoders
         # trained with AlexNet LPIPS loss
-        if config in ['anycost-ffhq-config-f', 'anycost-ffhq-config-f-flexible',
+        if config in ['anycost-ffhq-config-f',
+                      'anycost-ffhq-config-f-flexible',
                       'stylegan2-ffhq-config-f']:
             n_style = 18
             style_dim = 512
@@ -67,7 +69,8 @@ def get_pretrained(model, config=None):
         from anycostgan.thirdparty.inception import InceptionV3
         return InceptionV3([3], normalize_input=False, resize_input=True)
     elif model == 'boundary':
-        if config in ['anycost-ffhq-config-f', 'anycost-ffhq-config-f-flexible',
+        if config in ['anycost-ffhq-config-f',
+                      'anycost-ffhq-config-f-flexible',
                       'stylegan2-ffhq-config-f']:
             return load_state_dict_from_url(url)
         else:
