@@ -1,8 +1,7 @@
 name: Flake 8
 
 on:
-  push:
-    branches: [ main ]
+  commit:
     paths:
       - '**.py'
 
