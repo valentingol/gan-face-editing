@@ -1,10 +1,13 @@
 # Face editing with Style GAN 2 and facial segmentation (Ceteris Paribus Face Challenge Intercentrales 2022)
 
+[![Release](https://img.shields.io/github/v/release/valentingol/gan-face-editing)](https://github.com/valentingol/gan-face-editing/releases)
+![PythonVersion](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9%20%7C%203.10-informational)
 [![License](https://img.shields.io/github/license/valentingol/gan-face-editing?color=brightgreen)](https://stringfixer.com/fr/MIT_license)
+
 [![Pycodestyle](https://github.com/valentingol/gan-face-editing/actions/workflows/pycodestyle.yaml/badge.svg)](https://github.com/valentingol/gan-face-editing/actions/workflows/pycodestyle.yaml)
 [![Flake8](https://github.com/valentingol/gan-face-editing/actions/workflows/flake.yaml/badge.svg)](https://github.com/valentingol/gan-face-editing/actions/workflows/flake.yaml)
 
-Repository of Inter-Centrales 2022 AI competition: Ceteris Paribus Face Challenge: [site of the competition](https://transfer-learning.org/competition.html).
+Winner team repository of Inter-Centrales 2022 AI competition: Ceteris Paribus Face Challenge: [site of the competition](https://transfer-learning.org/competition.html).
 
 This work is under the MIT license.
 
@@ -71,6 +74,8 @@ python apps/project_images.py [--projection.n_iter=<n_iter>]
 ### Editor API
 
 Optionally, can run following the script to launch the image editing API.
+
+![Alt Text](ressources/gif/editor_api.gif)
 
 ```bash
 # if you have a Nvidia GPU:
