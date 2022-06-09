@@ -6,14 +6,13 @@ import numpy as np
 from pipeline.utils.domain_mixup.dist import compute_dist
 
 
-def alpha_from_dist(dist, margin=42):
+def alpha_from_dist(dist, margin):
     return np.where(dist < margin, dist / margin, 1.0)
 
 
 def domain_mix(data_dir, input_path, output_path,
-               domains_dist_path, domains_img_path):
-
-    if len(os.listdir(domains_dist_path)) == 0:
+               domains_dist_path, domains_img_path, configs):
+    if configs['recompute_dist'] or len(os.listdir(domains_dist_path)) == 0:
         # Compute distance to domains
         compute_dist(domains_img_path, domains_dist_path)
 
@@ -39,7 +38,7 @@ def domain_mix(data_dir, input_path, output_path,
                 dist = dists[carac_name]
 
                 # Mixup
-                alpha = alpha_from_dist(dist)
+                alpha = alpha_from_dist(dist, margin=configs['margin'])
                 alpha = np.expand_dims(alpha, axis=-1)
                 new_edited_img = alpha * original_image \
                     + (1 - alpha) * edited_img
@@ -59,7 +58,6 @@ def domain_mix(data_dir, input_path, output_path,
 
 if __name__ == '__main__':
     print('Applying domain mixup...')
-    recompute_dist = False  # force recomputing distances to domains
     data_dir = 'data/face_challenge'
     input_path = 'res/run1/images_post_translation'
     output_path = 'res/run1/images_post_domain_mixup'
@@ -68,8 +66,7 @@ if __name__ == '__main__':
     # Images representing the domains (black and white)
     domains_img_path = 'postprocess/domain_mixup/images'
 
-    if recompute_dist:
-        compute_dist(domains_img_path, domains_dist_path)
+    configs = {'margin': 42, 'recompute_dist': False}
 
     domain_mix(data_dir, input_path, output_path, domains_dist_path,
-               domains_img_path)
+               domains_img_path, configs)

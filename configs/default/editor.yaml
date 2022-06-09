@@ -1,0 +1,15 @@
+--- !editor
+n_style_to_change: 12
+default_max_value: 0.6
+custom_max_value:
+  skin: 1.2
+  age: 2.0
+  sexe: 1.0
+  bangs: 1.6
+  black hair: 1.3
+  brown hair: 1
+  gray hair: 2
+  bald: 1.6
+  air line: 1.5
+  blurry: 1.2
+  eyes bags: 1

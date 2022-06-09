@@ -1,0 +1,10 @@
+save_path: null
+projection_dir: null
+result_dir: null
+
+data_dir: 'data/face_challenge'
+anycost_config_flexible: False
+
+projection_config_path: 'configs/default/projection.yaml'
+pipeline_config_path: 'configs/default/pipeline.yaml'
+editor_config_path: 'configs/default/editor.yaml'

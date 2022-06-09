@@ -12,6 +12,7 @@ def safe_load_state_dict_from_url(url, model_dir=None, map_location=None,
     # file on worker 0
     try:
         import horovod.torch as hvd
+        hvd.init()
         world_size = hvd.size()
     except ImportError:  # load horovod failed, just normal environment
         return torch.hub.load_state_dict_from_url(url, model_dir, map_location,

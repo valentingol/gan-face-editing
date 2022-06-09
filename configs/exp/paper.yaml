@@ -1,0 +1,9 @@
+save_path: 'configs/runs/run_paper'
+
+projection_dir: 'projection/run_paper'
+result_dir: 'res/run_paper'
+
+projection.n_iter: 1000
+pipeline.save_intermediate: True
+pipeline.skip_domain_mixup: False
+domain_mixup.recompute_dist: True

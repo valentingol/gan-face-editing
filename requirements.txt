@@ -5,6 +5,8 @@ numpy==1.22.3
 opencv_python==4.5.5.64
 Pillow==9.0.1
 PyQt5==5.15.6
+--extra-index-url=https://gitlab.com/api/v4/projects/26449469/packages/pypi/simple
+rr-ml-config==1.4.1
 scikit_learn==1.0.2
 scipy==1.8.0
 setuptools==60.9.3
