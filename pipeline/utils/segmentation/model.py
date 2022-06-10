@@ -1,62 +1,71 @@
 # Code from https://github.com/zllrunning/face-parsing.PyTorch
 
+""" Segmentation model utilities. """
+
 import torch
-import torch.nn as nn
+from torch import nn
 import torch.nn.functional as F
 
 from pipeline.utils.segmentation.resnet import Resnet18
 
 
 class ConvBNReLU(nn.Module):
-    def __init__(self, in_chan, out_chan, ks=3, stride=1, padding=1,
-                 *args, **kwargs):
-        super(ConvBNReLU, self).__init__()
-        self.conv = nn.Conv2d(in_chan,
-                              out_chan,
-                              kernel_size=ks,
-                              stride=stride,
-                              padding=padding,
+    """ Convolutional block with batch normalization and ReLU
+    activation. """
+    def __init__(self, in_chan, out_chan, *args, ks=3, stride=1, padding=1,
+                 **kwargs):
+        """ Initialize ConvBNReLU. """
+        super().__init__()
+        self.conv = nn.Conv2d(in_chan, out_chan, kernel_size=ks,
+                              stride=stride, padding=padding,
                               bias=False)
-        self.bn = nn.BatchNorm2d(out_chan)
+        self.batch_norm = nn.BatchNorm2d(out_chan)
         self.init_weight()
 
     def forward(self, x):
+        """ Forward pass. """
         x = self.conv(x)
-        x = F.relu(self.bn(x))
+        x = F.relu(self.batch_norm(x))
         return x
 
     def init_weight(self):
-        for ly in self.children():
-            if isinstance(ly, nn.Conv2d):
-                nn.init.kaiming_normal_(ly.weight, a=1)
-                if ly.bias is not None:
-                    nn.init.constant_(ly.bias, 0)
+        """ Initialize weights. """
+        for layer in self.children():
+            if isinstance(layer, nn.Conv2d):
+                nn.init.kaiming_normal_(layer.weight, a=1)
+                if layer.bias is not None:
+                    nn.init.constant_(layer.bias, 0)
 
 
 class BiSeNetOutput(nn.Module):
+    """ BiSeNet output layer. """
     def __init__(self, in_chan, mid_chan, n_classes, *args, **kwargs):
-        super(BiSeNetOutput, self).__init__()
+        """ Initialize BiSeNet output layer. """
+        super().__init__()
         self.conv = ConvBNReLU(in_chan, mid_chan, ks=3, stride=1, padding=1)
         self.conv_out = nn.Conv2d(mid_chan, n_classes, kernel_size=1,
                                   bias=False)
         self.init_weight()
 
     def forward(self, x):
+        """ Forward pass. """
         x = self.conv(x)
         x = self.conv_out(x)
         return x
 
     def init_weight(self):
-        for ly in self.children():
-            if isinstance(ly, nn.Conv2d):
-                nn.init.kaiming_normal_(ly.weight, a=1)
-                if ly.bias is not None:
-                    nn.init.constant_(ly.bias, 0)
+        """ Initialize weights. """
+        for layer in self.children():
+            if isinstance(layer, nn.Conv2d):
+                nn.init.kaiming_normal_(layer.weight, a=1)
+                if layer.bias is not None:
+                    nn.init.constant_(layer.bias, 0)
 
     def get_params(self):
+        """ Get parameters. """
         wd_params, nowd_params = [], []
         for _, module in self.named_modules():
-            if isinstance(module, nn.Linear) or isinstance(module, nn.Conv2d):
+            if isinstance(module, (nn.Conv2d, nn.Linear)):
                 wd_params.append(module.weight)
                 if module.bias is not None:
                     nowd_params.append(module.bias)
@@ -66,8 +75,10 @@ class BiSeNetOutput(nn.Module):
 
 
 class AttentionRefinementModule(nn.Module):
+    """ Attention refinement module. """
     def __init__(self, in_chan, out_chan, *args, **kwargs):
-        super(AttentionRefinementModule, self).__init__()
+        """ Initialize module. """
+        super().__init__()
         self.conv = ConvBNReLU(in_chan, out_chan, ks=3, stride=1, padding=1)
         self.conv_atten = nn.Conv2d(out_chan, out_chan, kernel_size=1,
                                     bias=False)
@@ -76,6 +87,7 @@ class AttentionRefinementModule(nn.Module):
         self.init_weight()
 
     def forward(self, x):
+        """ Forward pass. """
         feat = self.conv(x)
         atten = F.avg_pool2d(feat, feat.size()[2:])
         atten = self.conv_atten(atten)
@@ -85,16 +97,19 @@ class AttentionRefinementModule(nn.Module):
         return out
 
     def init_weight(self):
-        for ly in self.children():
-            if isinstance(ly, nn.Conv2d):
-                nn.init.kaiming_normal_(ly.weight, a=1)
-                if ly.bias is not None:
-                    nn.init.constant_(ly.bias, 0)
+        """ Initialize weights. """
+        for layer in self.children():
+            if isinstance(layer, nn.Conv2d):
+                nn.init.kaiming_normal_(layer.weight, a=1)
+                if layer.bias is not None:
+                    nn.init.constant_(layer.bias, 0)
 
 
 class ContextPath(nn.Module):
+    """ Context path module. """
     def __init__(self, *args, **kwargs):
-        super(ContextPath, self).__init__()
+        """ Initialize module. """
+        super().__init__()
         self.resnet = Resnet18()
         self.arm16 = AttentionRefinementModule(256, 128)
         self.arm32 = AttentionRefinementModule(512, 128)
@@ -105,38 +120,42 @@ class ContextPath(nn.Module):
         self.init_weight()
 
     def forward(self, x):
-        H0, W0 = x.size()[2:]
+        """ Forward pass. """
         feat8, feat16, feat32 = self.resnet(x)
-        H8, W8 = feat8.size()[2:]
-        H16, W16 = feat16.size()[2:]
-        H32, W32 = feat32.size()[2:]
+        height8, width8 = feat8.size()[2:]
+        height16, width16 = feat16.size()[2:]
+        height32, width32 = feat32.size()[2:]
 
         avg = F.avg_pool2d(feat32, feat32.size()[2:])
         avg = self.conv_avg(avg)
-        avg_up = F.interpolate(avg, (H32, W32), mode='nearest')
+        avg_up = F.interpolate(avg, (height32, width32), mode='nearest')
 
         feat32_arm = self.arm32(feat32)
         feat32_sum = feat32_arm + avg_up
-        feat32_up = F.interpolate(feat32_sum, (H16, W16), mode='nearest')
+        feat32_up = F.interpolate(feat32_sum, (height16, width16),
+                                  mode='nearest')
         feat32_up = self.conv_head32(feat32_up)
 
         feat16_arm = self.arm16(feat16)
         feat16_sum = feat16_arm + feat32_up
-        feat16_up = F.interpolate(feat16_sum, (H8, W8), mode='nearest')
+        feat16_up = F.interpolate(feat16_sum, (height8, width8),
+                                  mode='nearest')
         feat16_up = self.conv_head16(feat16_up)
 
         return feat8, feat16_up, feat32_up  # x8, x8, x16
 
     def init_weight(self):
-        for ly in self.children():
-            if isinstance(ly, nn.Conv2d):
-                nn.init.kaiming_normal_(ly.weight, a=1)
-                if ly.bias is not None:
-                    nn.init.constant_(ly.bias, 0)
+        """ Initialize weights. """
+        for layer in self.children():
+            if isinstance(layer, nn.Conv2d):
+                nn.init.kaiming_normal_(layer.weight, a=1)
+                if layer.bias is not None:
+                    nn.init.constant_(layer.bias, 0)
 
     def get_params(self):
+        """ Get parameters. """
         wd_params, nowd_params = [], []
-        for name, module in self.named_modules():
+        for _, module in self.named_modules():
             if isinstance(module, (nn.Linear, nn.Conv2d)):
                 wd_params.append(module.weight)
                 if module.bias is not None:
@@ -146,11 +165,13 @@ class ContextPath(nn.Module):
         return wd_params, nowd_params
 
 
-# This is not used, since I replace this with the resnet feature with
+# WARNING: This is not used, since I replace this with the resnet feature with
 # the same size
 class SpatialPath(nn.Module):
+    """ Spatial path module. """
     def __init__(self, *args, **kwargs):
-        super(SpatialPath, self).__init__()
+        """ Initialize module. """
+        super().__init__()
         self.conv1 = ConvBNReLU(3, 64, ks=7, stride=2, padding=3)
         self.conv2 = ConvBNReLU(64, 64, ks=3, stride=2, padding=1)
         self.conv3 = ConvBNReLU(64, 64, ks=3, stride=2, padding=1)
@@ -158,6 +179,7 @@ class SpatialPath(nn.Module):
         self.init_weight()
 
     def forward(self, x):
+        """ Forward pass. """
         feat = self.conv1(x)
         feat = self.conv2(feat)
         feat = self.conv3(feat)
@@ -165,16 +187,18 @@ class SpatialPath(nn.Module):
         return feat
 
     def init_weight(self):
-        for ly in self.children():
-            if isinstance(ly, nn.Conv2d):
-                nn.init.kaiming_normal_(ly.weight, a=1)
-                if ly.bias is not None:
-                    nn.init.constant_(ly.bias, 0)
+        """ Initialize weights. """
+        for layer in self.children():
+            if isinstance(layer, nn.Conv2d):
+                nn.init.kaiming_normal_(layer.weight, a=1)
+                if layer.bias is not None:
+                    nn.init.constant_(layer.bias, 0)
 
     def get_params(self):
+        """ Get parameters. """
         wd_params, nowd_params = [], []
-        for name, module in self.named_modules():
-            if isinstance(module, nn.Linear) or isinstance(module, nn.Conv2d):
+        for _, module in self.named_modules():
+            if isinstance(module, (nn.Conv2d, nn.Linear)):
                 wd_params.append(module.weight)
                 if module.bias is not None:
                     nowd_params.append(module.bias)
@@ -184,26 +208,21 @@ class SpatialPath(nn.Module):
 
 
 class FeatureFusionModule(nn.Module):
+    """ Feature fusion module. """
     def __init__(self, in_chan, out_chan, *args, **kwargs):
-        super(FeatureFusionModule, self).__init__()
+        """ Initialize module. """
+        super().__init__()
         self.convblk = ConvBNReLU(in_chan, out_chan, ks=1, stride=1, padding=0)
-        self.conv1 = nn.Conv2d(out_chan,
-                               out_chan//4,
-                               kernel_size=1,
-                               stride=1,
-                               padding=0,
-                               bias=False)
-        self.conv2 = nn.Conv2d(out_chan//4,
-                               out_chan,
-                               kernel_size=1,
-                               stride=1,
-                               padding=0,
-                               bias=False)
+        self.conv1 = nn.Conv2d(out_chan, out_chan//4, kernel_size=1,
+                               stride=1, padding=0, bias=False)
+        self.conv2 = nn.Conv2d(out_chan//4, out_chan, kernel_size=1,
+                               stride=1, padding=0, bias=False)
         self.relu = nn.ReLU(inplace=True)
         self.sigmoid = nn.Sigmoid()
         self.init_weight()
 
     def forward(self, fsp, fcp):
+        """ Forward pass. """
         fcat = torch.cat([fsp, fcp], dim=1)
         feat = self.convblk(fcat)
         atten = F.avg_pool2d(feat, feat.size()[2:])
@@ -216,16 +235,18 @@ class FeatureFusionModule(nn.Module):
         return feat_out
 
     def init_weight(self):
-        for ly in self.children():
-            if isinstance(ly, nn.Conv2d):
-                nn.init.kaiming_normal_(ly.weight, a=1)
-                if ly.bias is not None:
-                    nn.init.constant_(ly.bias, 0)
+        """ Initialize weights. """
+        for layer in self.children():
+            if isinstance(layer, nn.Conv2d):
+                nn.init.kaiming_normal_(layer.weight, a=1)
+                if layer.bias is not None:
+                    nn.init.constant_(layer.bias, 0)
 
     def get_params(self):
+        """ Get parameters. """
         wd_params, nowd_params = [], []
-        for name, module in self.named_modules():
-            if isinstance(module, nn.Linear) or isinstance(module, nn.Conv2d):
+        for _, module in self.named_modules():
+            if isinstance(module, (nn.Conv2d, nn.Linear)):
                 wd_params.append(module.weight)
                 if module.bias is not None:
                     nowd_params.append(module.bias)
@@ -235,9 +256,11 @@ class FeatureFusionModule(nn.Module):
 
 
 class BiSeNet(nn.Module):
+    """ BiSeNet model. """
     def __init__(self, n_classes, *args, **kwargs):
-        super(BiSeNet, self).__init__()
-        self.cp = ContextPath()
+        """ Initialize model. """
+        super().__init__()
+        self.context_path = ContextPath()
         # Here self.sp is deleted
         self.ffm = FeatureFusionModule(256, 256)
         self.conv_out = BiSeNetOutput(256, 256, n_classes)
@@ -246,9 +269,10 @@ class BiSeNet(nn.Module):
         self.init_weight()
 
     def forward(self, x):
-        H, W = x.size()[2:]
+        """ Forward pass. """
+        h, w = x.size()[2:]
         # Here return res3b1 feature
-        feat_res8, feat_cp8, feat_cp16 = self.cp(x)
+        feat_res8, feat_cp8, feat_cp16 = self.context_path(x)
         # Use res3b1 feature to replace spatial path feature
         feat_sp = feat_res8
         feat_fuse = self.ffm(feat_sp, feat_cp8)
@@ -257,28 +281,29 @@ class BiSeNet(nn.Module):
         feat_out16 = self.conv_out16(feat_cp8)
         feat_out32 = self.conv_out32(feat_cp16)
 
-        feat_out = F.interpolate(feat_out, (H, W), mode='bilinear',
+        feat_out = F.interpolate(feat_out, (h, w), mode='bilinear',
                                  align_corners=True)
-        feat_out16 = F.interpolate(feat_out16, (H, W), mode='bilinear',
+        feat_out16 = F.interpolate(feat_out16, (h, w), mode='bilinear',
                                    align_corners=True)
-        feat_out32 = F.interpolate(feat_out32, (H, W), mode='bilinear',
+        feat_out32 = F.interpolate(feat_out32, (h, w), mode='bilinear',
                                    align_corners=True)
         return feat_out, feat_out16, feat_out32
 
     def init_weight(self):
-        for ly in self.children():
-            if isinstance(ly, nn.Conv2d):
-                nn.init.kaiming_normal_(ly.weight, a=1)
-                if ly.bias is not None:
-                    nn.init.constant_(ly.bias, 0)
+        """ Initialize weights. """
+        for layer in self.children():
+            if isinstance(layer, nn.Conv2d):
+                nn.init.kaiming_normal_(layer.weight, a=1)
+                if layer.bias is not None:
+                    nn.init.constant_(layer.bias, 0)
 
     def get_params(self):
+        """ Get parameters. """
         wd_params, nowd_params = [], []
         lr_mul_wd_params, lr_mul_nowd_params = [], []
         for _, child in self.named_children():
             child_wd_params, child_nowd_params = child.get_params()
-            if (isinstance(child, FeatureFusionModule)
-                    or isinstance(child, BiSeNetOutput)):
+            if isinstance(child, (BiSeNetOutput, FeatureFusionModule)):
                 lr_mul_wd_params += child_wd_params
                 lr_mul_nowd_params += child_nowd_params
             else:

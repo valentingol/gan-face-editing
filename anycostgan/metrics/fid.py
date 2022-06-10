@@ -1,6 +1,9 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 
+""" Compute FID. """
+
 import argparse
+import math
 import pickle
 
 import numpy as np
@@ -12,6 +15,7 @@ import anycostgan.models as models
 
 
 def calc_fid(sample_mean, sample_cov, real_mean, real_cov, eps=1e-6):
+    """ Calculates the FID score. """
     cov_sqrt, _ = linalg.sqrtm(sample_cov @ real_cov, disp=False)
 
     if not np.isfinite(cov_sqrt).all():
@@ -38,7 +42,7 @@ def calc_fid(sample_mean, sample_cov, real_mean, real_cov, eps=1e-6):
 
 
 def extract_feature_from_samples():
-    import math
+    """ Extracts features from samples. """
     n_batch = math.ceil(args.n_sample * 1. / args.batch_size / hvd.size())
     features = None
 

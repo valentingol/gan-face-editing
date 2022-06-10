@@ -17,14 +17,17 @@ requirements:
     # download face landmark models from:
     # http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2
 """
-import os
+
 import argparse
+import os
+import sys
+
+import dlib  # pip install dlib if not found
 import numpy as np
 import PIL
 import PIL.Image
 import scipy
 import scipy.ndimage
-import dlib  # pip install dlib if not found
 
 # download models from: http://dlib.net/files/shape_predictor_68_face_
 # landmarks.dat.bz2
@@ -42,12 +45,12 @@ def get_landmark(filepath):
 
     if len(dets) == 0:
         print(' * No face detected.')
-        exit()
+        sys.exit()
 
     # my editing here
     if len(dets) > 1:
-        print(' * WARNING: {} faces detected in the image. '
-              'Only preserve the largest face.'.format(len(dets)))
+        print(f' * WARNING: {len(dets)} faces detected in the image. '
+              'Only preserve the largest face.')
         img_ws = [d.right() - d.left() for d in dets]
         largest_idx = np.argmax(img_ws)
         dets = [dets[largest_idx]]
@@ -55,25 +58,34 @@ def get_landmark(filepath):
     assert len(dets) == 1
     shape = predictor(img, dets[0])
 
-    t = list(shape.parts())
-    a = []
-    for tt in t:
-        a.append([tt.x, tt.y])
-    lm = np.array(a)
-    return lm
+    parts = list(shape.parts())
+    landmarks_list = []
+    for part in parts:
+        landmarks_list.append([part.x, part.y])
+    landmarks = np.array(landmarks_list)
+    return landmarks
 
 
 def align_face(filepath):
     """
-    :param filepath: str
-    :return: PIL Image
+    Align face function.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the image file.
+
+    Returns
+    -------
+    PIL Image:
+        Aligned face image.
     """
 
-    lm = get_landmark(filepath)
+    landmark = get_landmark(filepath)
 
-    lm_eye_left = lm[36: 42]  # left-clockwise
-    lm_eye_right = lm[42: 48]  # left-clockwise
-    lm_mouth_outer = lm[48: 60]  # left-clockwise
+    lm_eye_left = landmark[36: 42]  # left-clockwise
+    lm_eye_right = landmark[42: 48]  # left-clockwise
+    lm_mouth_outer = landmark[48: 60]  # left-clockwise
 
     # Calculate auxiliary vectors.
     eye_left = np.mean(lm_eye_left, axis=0)
@@ -82,16 +94,16 @@ def align_face(filepath):
     eye_to_eye = eye_right - eye_left
     mouth_left = lm_mouth_outer[0]
     mouth_right = lm_mouth_outer[6]
-    mouth_avg = (mouth_left + mouth_right) * 0.5
-    eye_to_mouth = mouth_avg - eye_avg
+    eye_to_mouth = (mouth_left + mouth_right) * 0.5 - eye_avg
 
     # Choose oriented crop rectangle.
     x = eye_to_eye - np.flipud(eye_to_mouth) * [-1, 1]
     x /= np.hypot(*x)
     x *= max(np.hypot(*eye_to_eye) * 2.0, np.hypot(*eye_to_mouth) * 1.8)
     y = np.flipud(x) * [-1, 1]
-    c = eye_avg + eye_to_mouth * 0.1
-    quad = np.stack([c - x - y, c - x + y, c + x + y, c + x - y])
+    center = eye_avg + eye_to_mouth * 0.1
+    quad = np.stack([center - x - y, center - x + y, center + x + y,
+                     center + x - y])
     qsize = np.hypot(*x) * 2
 
     # read image
@@ -173,5 +185,5 @@ if __name__ == '__main__':
     if args.output is None:
         n1, n2 = os.path.splitext(args.input)
         args.output = n1 + '-aligned' + n2
-    print(' * Saving the aligned image to {}'.format(args.output))
+    print(f' * Saving the aligned image to {args.output}')
     img.save(args.output)

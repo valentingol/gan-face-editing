@@ -2,15 +2,17 @@
 
 """ Get edit directions for FFHQ models """
 
+import horovod.torch as hvd
+import numpy as np
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 
-import anycostgan.models as models
-
+from anycostgan import models
+from anycostgan.thirdparty.manipulator import project_boundary, train_boundary
 
 # configurations for the job
-device = 'cuda'
+DEVICE = 'cuda'
 # specify the attributes to compute latent direction
 chosen_attr = ['Smiling', 'Young', 'Big_Nose', 'Black_Hair', 'Blond_Hair',
                'Eyeglasses', 'Mustache']
@@ -25,24 +27,24 @@ attr_list = ['5_o_Clock_Shadow', 'Arched_Eyebrows', 'Attractive',
              'Wavy_Hair', 'Wearing_Earrings', 'Wearing_Hat',
              'Wearing_Lipstick', 'Wearing_Necklace', 'Wearing_Necktie',
              'Young']
-space = 'w'  # chosen from ['z', 'w', 'w+']
-config = 'anycost-ffhq-config-f'
+SPACE = 'w'  # chosen from ['z', 'w', 'w+']
+CONFIG = 'anycost-ffhq-config-f'
 
 
 @torch.no_grad()
 def get_style_attribute_pairs():
+    """ Get style and attribute pairs. """
     # NOTE: This function is written with horovod to accelerate
     # the extraction (by n_gpu times)
-    import horovod.torch as hvd
     hvd.init()
     torch.cuda.set_device(hvd.local_rank())
     torch.manual_seed(hvd.rank() * 999 + 1)
     if hvd.rank() == 0:
         print(' * Extracting style-attribute pairs...')
     # build and load the pre-trained attribute predictor on CelebA-HQ
-    predictor = models.get_pretrained('attribute-predictor').to(device)
+    predictor = models.get_pretrained('attribute-predictor').to(DEVICE)
     # build and load the pre-trained anycost generator
-    generator = models.get_pretrained('generator', config).to(device)
+    generator = models.get_pretrained('generator', CONFIG).to(DEVICE)
 
     predictor.eval()
     generator.eval()
@@ -58,13 +60,13 @@ def get_style_attribute_pairs():
     attributes = []
 
     mean_style = generator.mean_style(100000).view(1, 1, -1)
-    assert space in ['w', 'w+', 'z']
+    assert SPACE in ['w', 'w+', 'z']
     for _ in tqdm(range(n_batch), disable=hvd.rank() != 0):
-        if space in ['w', 'z']:
-            z = torch.randn(batch_size, 1, generator.style_dim, device=device)
+        if SPACE in ['w', 'z']:
+            z = torch.randn(batch_size, 1, generator.style_dim, device=DEVICE)
         else:
             z = torch.randn(batch_size, generator.n_style, generator.style_dim,
-                            device=device)
+                            device=DEVICE)
         images, w = generator(z,
                               return_styles=True,
                               truncation=truncation_psi,
@@ -75,9 +77,9 @@ def get_style_attribute_pairs():
                                align_corners=True)
         attr = predictor(images)
         # move to cpu to save memory
-        if space == 'w+':
+        if SPACE == 'w+':
             styles.append(w.to('cpu'))
-        elif space == 'w':
+        elif SPACE == 'w':
             # Originally duplicated
             styles.append(w.mean(1, keepdim=True).to('cpu'))
         else:
@@ -91,13 +93,14 @@ def get_style_attribute_pairs():
     attributes = hvd.allgather(attributes, name='attributes')
     if hvd.rank() == 0:
         print(styles.shape, attributes.shape)
-        torch.save(attributes, 'attributes_{}.pt'.format(config))
-        torch.save(styles, 'styles_{}.pt'.format(config))
+        torch.save(attributes, f'attributes_{CONFIG}.pt')
+        torch.save(styles, f'styles_{CONFIG}.pt')
 
 
 def extract_boundaries():
-    styles = torch.load('styles_{}.pt'.format(config))
-    attributes = torch.load('attributes_{}.pt'.format(config))
+    """ Extract boundaries for the style-attribute pairs. """
+    styles = torch.load(f'styles_{CONFIG}.pt')
+    attributes = torch.load(f'attributes_{CONFIG}.pt')
     attributes = attributes.view(-1, 40, 2)
     # Probability to be positive [n, 40]
     prob = F.softmax(attributes, dim=-1)[:, :, 1]
@@ -106,27 +109,25 @@ def extract_boundaries():
     for idx, attr in tqdm(enumerate(attr_list), total=len(attr_list)):
         this_prob = prob[:, idx]
 
-        from anycostgan.thirdparty.manipulator import train_boundary
         boundary = train_boundary(latent_codes=styles.squeeze().cpu().numpy(),
                                   scores=this_prob.view(-1, 1).cpu().numpy(),
                                   chosen_num_or_ratio=0.02,
                                   split_ratio=0.7,
                                   )
-        key_name = '{:02d}'.format(idx) + '_' + attr
+        key_name = f'{idx:02d}' + '_' + attr
         boundaries[key_name] = boundary
 
     boundaries = {k: torch.tensor(v) for k, v in boundaries.items()}
-    torch.save(boundaries, 'boundaries_{}.pt'.format(config))
+    torch.save(boundaries, f'boundaries_{CONFIG}.pt')
 
 
 # experimental; not yet used in the demo
 # do not observe significant improvement right now
 def project_boundaries():  # only project the ones used for demo
-    from anycostgan.thirdparty.manipulator import project_boundary
-    import numpy as np
-    boundaries = torch.load('boundaries_{}.pt'.format(config))
+    """ Project boundaries to the latent space and save them. """
+    boundaries = torch.load(f'boundaries_{CONFIG}.pt')
     chosen_idx = [attr_list.index(attr) for attr in chosen_attr]
-    sorted_keys = ['{:02d}'.format(idx) + '_' + attr_list[idx]
+    sorted_keys = [f'{idx:02d}' + '_' + attr_list[idx]
                    for idx in chosen_idx]
     all_boundaries = np.concatenate([boundaries[k].cpu().numpy()
                                      for k in sorted_keys])  # n, 512
@@ -141,9 +142,8 @@ def project_boundaries():  # only project the ones used for demo
         projected_boundaries.append(project_boundary(
             all_boundaries[i_b][None], all_boundaries[idx1][None],
             all_boundaries[idx2][None]))
-    boundaries = {k: v for k, v in zip(sorted_keys,
-                                       torch.tensor(projected_boundaries))}
-    torch.save(boundaries, 'boundary_projected_{}.pt'.format(config))
+    boundaries = dict(zip(sorted_keys, torch.tensor(projected_boundaries)))
+    torch.save(boundaries, f'boundary_projected_{CONFIG}.pt')
 
 
 if __name__ == '__main__':

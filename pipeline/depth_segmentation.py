@@ -1,3 +1,6 @@
+
+""" Apply depth segmentation mixup. """
+
 import os
 import os.path as osp
 
@@ -6,12 +9,11 @@ from cv2 import cvtColor
 import numpy as np
 from PIL import Image
 from scipy.ndimage import distance_transform_edt as dist_edt
+from sklearn.cluster import KMeans
 import torch
-import torchvision.transforms as transforms
+from torchvision import transforms
 
 from pipeline.utils.depth_segmentation.model import DPTDepthModel
-
-from sklearn.cluster import KMeans
 
 
 def depth_estimation_mix(data_dir, input_path, output_path, model_path,
@@ -20,6 +22,19 @@ def depth_estimation_mix(data_dir, input_path, output_path, model_path,
     Performs background correction of original
     images with using depth estimation model and saves
     the result in output_path.
+
+    Parameters
+    ----------
+    data_dir : str
+        Path to the directory with original images
+    input_path : str
+        Path to the directory with input (edited) images
+    output_path : str
+        Path to the output directory
+    model_path : str
+        Path to the depth estimation model
+    configs : dict or GlobalConfig
+        Configurations for the depth estimation mixup.
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if not os.path.exists(output_path):
@@ -31,7 +46,7 @@ def depth_estimation_mix(data_dir, input_path, output_path, model_path,
         backbone="vitl16_384",
         non_negative=True,
         enable_attention_hooks=False,
-    )
+        )
 
     net.to(device)
     net.eval()
@@ -108,14 +123,15 @@ def get_foreground(depth):
 
     Returns
     -------
-    np.array, shape (n_foreground_pixels, 1):
-        Values of foreground pixels
+    np.array:
+        Values of foreground pixels.
+        shape=(n_foreground_pixels, 1)
     """
-    Z = depth.flatten().reshape(-1, 1)
-    km = KMeans(n_clusters=2, random_state=0).fit(Z)
-    label = km.labels_.reshape(-1, 1)
+    depths = depth.flatten().reshape(-1, 1)
+    kmeans = KMeans(n_clusters=2, random_state=0).fit(depths)
+    label = kmeans.labels_.reshape(-1, 1)
 
-    return Z[label.flatten() == 0]
+    return depths[label.flatten() == 0]
 
 
 def get_foreground_mask(depth):
@@ -129,7 +145,7 @@ def get_foreground_mask(depth):
     Returns
     -------
     mask : np.array
-        foreground mask array of shape depth.shape
+        Foreground mask array of shape depth.shape
     """
     # Get foreground pixels values
     ground = get_foreground(depth)
@@ -229,18 +245,18 @@ def depth_estimation(image, net, device):
 if __name__ == "__main__":
     print('Applying depth estimation mixup...')
     # Path to the original images
-    data_dir = 'data/face-challenge'
+    DATA_DIR = 'data/face-challenge'
     # Path to the edited images
-    input_path = 'res/run1/images_post_segmentation'
+    INPUT_PATH = 'res/run1/images_post_segmentation'
     # Path to the segmented edited images
-    output_path = 'res/run1/images_post_depth_segmentation'
+    OUTPUT_PATH = 'res/run1/images_post_depth_segmentation'
     # Path to the model
-    model_path = ('postprocess/depth_segmentation/model/'
+    MODEL_PATH = ('postprocess/depth_segmentation/model/'
                   'dpt_large-midas-2f21e586.pt')
-    configs = {
+    CONFIGS = {
         'foreground_coef': 8.0,
         }
 
-    depth_estimation_mix(data_dir=data_dir, input_path=input_path,
-                         output_path=output_path, model_path=model_path,
-                         configs=configs)
+    depth_estimation_mix(data_dir=DATA_DIR, input_path=INPUT_PATH,
+                         output_path=OUTPUT_PATH, model_path=MODEL_PATH,
+                         configs=CONFIGS)

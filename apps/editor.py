@@ -1,5 +1,8 @@
 # Code adapted from https://github.com/mit-han-lab/anycost-gan
 
+""" Launch editor API. """
+
+
 from functools import partial
 import os
 import sys
@@ -14,21 +17,24 @@ from PyQt5.QtCore import (QObject, QRunnable, QSize, Qt, QThreadPool,
                           pyqtSignal, pyqtSlot)
 import torch
 
-import anycostgan.models as models
+from anycostgan import models
 from anycostgan.models.dynamic_channel import (set_uniform_channel_ratio,
                                                reset_generator)
 from pipeline.utils.global_config import GlobalConfig
 
 
 class WorkerSignals(QObject):
+    """ WorkerSignals class. """
     finished = pyqtSignal()
     error = pyqtSignal(tuple)
     result = pyqtSignal(object)
 
 
 class Worker(QRunnable):
+    """ Worker class. """
     def __init__(self, fn, *args, **kwargs):
-        super(Worker, self).__init__()
+        """ Initialize Worker class. """
+        super().__init__()
         # Store constructor arguments (re-used for processing)
         self.fn = fn
         self.args = args
@@ -37,17 +43,25 @@ class Worker(QRunnable):
 
     @pyqtSlot()
     def run(self):
-        t1 = time.time()
+        """ Run worker. """
+        time_1 = time.time()
         ret = self.fn(*self.args, **self.kwargs)
-        t2 = time.time()
-        self.signals.result.emit((ret, t2 - t1))
+        time_2 = time.time()
+        self.signals.result.emit((ret, time_2 - time_1))
 
 
 class FaceEditor(QMainWindow):
+    """ FaceEditor App. """
     def __init__(self, anycost_config, default_max_value, custom_max_value):
+        """ Initialize FaceEditor class. """
         super().__init__()
         self.anycost_config = anycost_config
+        # Set up the initial display
+        self.sample_idx = 0
+        self.org_latent_code = self.latent_code_list[self.sample_idx]
         # Load assets
+        self.anycost_channel = 1.0
+        self.anycost_resolution = 1024
         self.load_assets(default_max_value, custom_max_value)
         # Title
         self.setWindowTitle('Face Editing with Anycost GAN')
@@ -86,7 +100,7 @@ class FaceEditor(QMainWindow):
         drop_list_label.setGeometry(100, 470, 200, 30)
 
         # Build editing sliders
-        self.attr_sliders = dict()
+        self.attr_sliders = {}
         for i_slider, key in enumerate(self.direction_dict.keys()):
             if i_slider < 18:
                 tick_label = QLabel(self)
@@ -214,9 +228,7 @@ class FaceEditor(QMainWindow):
         self.show()
 
     def load_assets(self, default_max_value, custom_max_values):
-        self.anycost_channel = 1.0
-        self.anycost_resolution = 1024
-
+        """ Load assets from the configs """
         # Build the generator
         self.generator = models.get_pretrained('generator',
                                                self.anycost_config).to('cpu')
@@ -224,21 +236,19 @@ class FaceEditor(QMainWindow):
         self.mean_latent = self.generator.mean_style(10000)
 
         # Select only a subset of the directions to use
-        '''
-        possible keys:
-        ['00_5_o_Clock_Shadow', '01_Arched_Eyebrows', '02_Attractive',
-         '03_Bags_Under_Eyes', '04_Bald', '05_Bangs', '06_Big_Lips',
-         '07_Big_Nose', '08_Black_Hair', '09_Blond_Hair', '10_Blurry',
-         '11_Brown_Hair', '12_Bushy_Eyebrows', '13_Chubby', '14_Double_Chin',
-         '15_Eyeglasses', '16_Goatee', '17_Gray_Hair', '18_Heavy_Makeup',
-         '19_High_Cheekbones', '20_Male', '21_Mouth_Slightly_Open',
-         '22_Mustache', '23_Narrow_Eyes', '24_No_Beard', '25_Oval_Face',
-         '26_Pale_Skin', '27_Pointy_Nose', '28_Receding_Hairline',
-         '29_Rosy_Cheeks', '30_Sideburns', '31_Smiling', '32_Straight_Hair',
-         '33_Wavy_Hair', '34_Wearing_Earrings', '35_Wearing_Hat',
-         '36_Wearing_Lipstick', '37_Wearing_Necklace',
-         '38_Wearing_Necktie', '39_Young']
-        '''
+        # possible keys:
+        # ['00_5_o_Clock_Shadow', '01_Arched_Eyebrows', '02_Attractive',
+        #  '03_Bags_Under_Eyes', '04_Bald', '05_Bangs', '06_Big_Lips',
+        #  '07_Big_Nose', '08_Black_Hair', '09_Blond_Hair', '10_Blurry',
+        #  '11_Brown_Hair', '12_Bushy_Eyebrows', '13_Chubby', '14_Double_Chin',
+        #  '15_Eyeglasses', '16_Goatee', '17_Gray_Hair', '18_Heavy_Makeup',
+        #  '19_High_Cheekbones', '20_Male', '21_Mouth_Slightly_Open',
+        #  '22_Mustache', '23_Narrow_Eyes', '24_No_Beard', '25_Oval_Face',
+        #  '26_Pale_Skin', '27_Pointy_Nose', '28_Receding_Hairline',
+        #  '29_Rosy_Cheeks', '30_Sideburns', '31_Smiling', '32_Straight_Hair',
+        #  '33_Wavy_Hair', '34_Wearing_Earrings', '35_Wearing_Hat',
+        #  '36_Wearing_Lipstick', '37_Wearing_Necklace',
+        #  '38_Wearing_Necktie', '39_Young']
 
         direction_map = {
             'skin': '26_Pale_Skin',
@@ -256,7 +266,6 @@ class FaceEditor(QMainWindow):
             'curly hair': '33_Wavy_Hair',
             'eyes bags': '03_Bags_Under_Eyes',
             'narrow eyes': '23_Narrow_Eyes',
-            'pointy nose': '27_Pointy_Nose',
             'lips size': '06_Big_Lips',
             'nose_size': '07_Big_Nose',
             'chubby': '13_Chubby',
@@ -281,9 +290,9 @@ class FaceEditor(QMainWindow):
         self.max_values = max_values
 
         boundaries = models.get_pretrained('boundary', self.anycost_config)
-        self.direction_dict = dict()
-        for k, v in direction_map.items():
-            self.direction_dict[k] = boundaries[v].view(1, 1, -1)
+        self.direction_dict = {}
+        for key, value in direction_map.items():
+            self.direction_dict[key] = boundaries[value].view(1, 1, -1)
 
         # 3. Prepare the latent code and original images
         file_names = sorted(os.listdir(DATA_DIR))
@@ -301,16 +310,13 @@ class FaceEditor(QMainWindow):
                 latent_code = torch.from_numpy(
                     np.load(os.path.join(PROJECTION_DIR, 'projected_latents',
                                          npy_name)))
-            except FileNotFoundError:
-                raise FileNotFoundError('Please compute the projected latent '
-                                        'vector first by running `python apps/'
-                                        'project_images.py`')
+            except FileNotFoundError as exc:
+                raise FileNotFoundError(
+                    'Please compute the projected latent vector first by '
+                    'running `python apps/project_images.py`') from exc
+
             self.org_image_list.append(org_image)
             self.latent_code_list.append(latent_code.view(1, -1, 512))
-
-        # Set up the initial display
-        self.sample_idx = 0
-        self.org_latent_code = self.latent_code_list[self.sample_idx]
 
         # Input kwargs for the generator
         self.input_kwargs = {'styles': self.org_latent_code, 'noise': None,
@@ -319,6 +325,7 @@ class FaceEditor(QMainWindow):
 
     @staticmethod
     def np2pixmap(np_arr):
+        """ Convert a numpy array to a QPixmap. """
         height, width, _ = np_arr.shape
         q_image = QImage(np_arr.data, width, height, 3 * width,
                          QImage.Format_RGB888)
@@ -326,12 +333,14 @@ class FaceEditor(QMainWindow):
 
     @staticmethod
     def set_img_location(img_op, x, y, w, h):
+        """ Set the location of an image. """
         img_op.setScaledContents(True)
         img_op.setFixedSize(w, h)  # w, h
         img_op.move(x, y)  # x, y
 
     @staticmethod
     def set_text_format(text_op, align='center', font_size=18):
+        """ Set the format of a text. """
         if align == 'center':
             align = Qt.AlignCenter
         elif align == 'left':
@@ -344,6 +353,7 @@ class FaceEditor(QMainWindow):
         text_op.setFont(QFont('Arial', font_size))
 
     def select_image(self, idx):
+        """ Select an image to display. """
         self.sample_idx = idx
         self.org_latent_code = self.latent_code_list[self.sample_idx]
         pixmap = self.np2pixmap(self.org_image_list[self.sample_idx])
@@ -354,6 +364,7 @@ class FaceEditor(QMainWindow):
         self.reset_sliders()
 
     def reset_sliders(self):
+        """ Reset the sliders to the original values. """
         for slider in self.attr_sliders.values():
             slider.setValue(0)
         self.edited_image_label.setText('projected')
@@ -361,7 +372,9 @@ class FaceEditor(QMainWindow):
         self.time_label.setText('')
 
     def generate_image(self, pixmap=True):
+        """ Generate an image. """
         def image_to_np(x):
+            """ Convert a torch tensor to a numpy array. """
             assert x.shape[0] == 1
             x = x.squeeze(0).permute(1, 2, 0)
             x = (x + 1) * 0.5  # 0-1
@@ -374,15 +387,16 @@ class FaceEditor(QMainWindow):
             out = np.ascontiguousarray(out)
             if pixmap:
                 return self.np2pixmap(out)
-            else:
-                return out
+            return out
 
     def set_sliders_status(self, active):
+        """ Set the status of the sliders. """
         for slider in self.attr_sliders.values():
             slider.setEnabled(active)
 
     def slider_update(self, force_full_g=True, save_trans=False,
                       save_img=False):
+        """ Update the sliders. """
         self.set_sliders_status(False)
         self.statusBar().showMessage('Running...')
         self.time_label.setText('')
@@ -433,23 +447,26 @@ class FaceEditor(QMainWindow):
         self.thread_pool.start(worker)
 
     def after_slider_update(self, ret):
+        """ Update the class after the sliders are updated. """
         edited, used_time = ret
         self.edited_image.setPixmap(edited)
 
         reset_generator(self.generator)
         self.edited_image_label.setText('edited')
-        self.statusBar().showMessage('Done in {:.2f}s'.format(used_time))
-        self.time_label.setText('{:.2f}s'.format(used_time))
+        self.statusBar().showMessage(f'Done in {used_time:.2f}s')
+        self.time_label.setText(f'{used_time:.2f}s')
         self.set_sliders_status(True)
         self.loading_label.setVisible(False)
 
     def model_update(self):
+        """ Update the model. """
         channel_slider_num = self.channel_slider.value()
         resolution_slider_num = self.resolution_slider.value()
         self.anycost_channel = [0.25, 0.5, 0.75, 1.0][channel_slider_num]
         self.anycost_resolution = [128, 256, 512, 1024][resolution_slider_num]
 
     def reset_clicked(self):
+        """ Reset button. """
         self.reset_sliders()
         self.edited_image.setPixmap(self.projected_image)
 

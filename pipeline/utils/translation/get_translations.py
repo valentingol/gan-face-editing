@@ -1,3 +1,6 @@
+
+""" Get the translation to apply to the images. """
+
 import os
 
 import numpy as np
@@ -5,6 +8,7 @@ import torch
 
 
 def browse_translation_dir(translation_dir, caracs):
+    """ Browse the translation directory and get the translations. """
     translations = {}
     translations_default = {}
 
@@ -84,9 +88,10 @@ def get_translations(translation_dir, carac_list, use_precomputed):
         (key: 'identifier', value: translation).
     """
     if carac_list is not None:
-        sk, a, se, _, _,  b, hc, d, hs = carac_list
-        caracs = {'Sk': sk, 'A': a, 'Se': se, 'B': b, 'Hc': hc, 'D': d,
-                  'Hs': hs}
+        (skin, age, sex, _, _,  bang, haircolor, doublechin,
+         hairstyle) = carac_list
+        caracs = {'Sk': skin, 'A': age, 'Se': sex, 'B': bang, 'Hc': haircolor,
+                  'D': doublechin, 'Hs': hairstyle}
     else:
         caracs = None
 
@@ -111,7 +116,7 @@ def get_translations(translation_dir, carac_list, use_precomputed):
 
     if caracs is not None:
         # Replace 'Hc_4' by 'bald':
-        if hc != 4:
+        if haircolor != 4:
             translation_bald = translations.pop('Hc_4')
             translations['bald'] = translation_bald
 

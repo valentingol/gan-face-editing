@@ -1,9 +1,13 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 
+""" Utility functions for training the GAN. """
+
+import random
+
+import numpy as np
 import torch
 import torch.nn.functional as F
-import random
-import numpy as np
+
 from models.dynamic_channel import CHANNEL_CONFIGS, sample_random_sub_channel
 
 __all__ = ['requires_grad', 'accumulate', 'get_mixing_z', 'get_g_arch',
@@ -13,45 +17,50 @@ __all__ = ['requires_grad', 'accumulate', 'get_mixing_z', 'get_g_arch',
 
 
 def requires_grad(model, flag=True):
-    for p in model.parameters():
-        p.requires_grad = flag
+    """ Make all parameters of the model require gradients according
+    to flag. """
+    for param in model.parameters():
+        param.requires_grad = flag
 
 
 def accumulate(model1, model2, decay=0.999):
-    par1 = dict(model1.named_parameters())
-    par2 = dict(model2.named_parameters())
+    """ Smooth mixup of two models parameters. """
+    params1 = dict(model1.named_parameters())
+    params2 = dict(model2.named_parameters())
 
-    for k in par1.keys():
-        par1[k].data.mul_(decay).add_((1 - decay) * par2[k].data)
+    for k, param1 in params1.keys():
+        param1.data.mul_(decay).add_((1 - decay) * params2[k].data)
 
 
 def get_mixing_z(batch_size, latent_dim, prob, device):
+    """ Get a random batch of noise vectors. """
     if prob > 0 and random.random() < prob:
         return torch.randn(batch_size, 2, latent_dim, device=device)
 
-    else:
-        return torch.randn(batch_size, 1, latent_dim, device=device)
+    return torch.randn(batch_size, 1, latent_dim, device=device)
 
 
 def get_g_arch(ratios, device='cuda'):
+    """ Get the architecture of the generator. """
     out = []
-    for r in ratios:
+    for ratio in ratios:
         one_hot = [0] * len(CHANNEL_CONFIGS)
-        one_hot[CHANNEL_CONFIGS.index(r)] = 1
+        one_hot[CHANNEL_CONFIGS.index(ratio)] = 1
         out += one_hot
     return torch.from_numpy(np.array(out)).float().to(device)
 
 
 def adaptive_downsample256(img):
+    """ Adaptive downsample to 256x256. """
     img = img.clamp(-1, 1)
     if img.shape[-1] > 256:
         return F.interpolate(img, size=(256, 256), mode='bilinear',
                              align_corners=True)
-    else:
-        return img
+    return img
 
 
 def get_teacher_multi_res(teacher_out, n_res):
+    """ Get the teacher for multi-resolution. """
     teacher_rgbs = [teacher_out]
     cur_res = teacher_out.shape[-1] // 2
     for _ in range(n_res - 1):
@@ -65,6 +74,7 @@ def get_teacher_multi_res(teacher_out, n_res):
 
 def get_random_g_arch(generator, min_channel, divided_by, dynamic_channel_mode,
                       seed=None):
+    """ Get a random architecture for the generator. """
     rand_ratio = sample_random_sub_channel(
         generator,
         min_channel=min_channel,
@@ -77,30 +87,31 @@ def get_random_g_arch(generator, min_channel, divided_by, dynamic_channel_mode,
 
 
 def partially_load_d_for_multi_res(d, sd, n_res=4):
+    """ Load the iscriminator for multi-resolution. """
     new_sd = {}
-    for k, v in sd.items():
-        if k.startswith('convs.') and not k.startswith('convs.0.'):
-            k_sp = k.split('.')
+    for key, value in sd.items():
+        if key.startswith('convs.') and not key.startswith('convs.0.'):
+            k_sp = key.split('.')
             k_sp[0] = 'blocks'
             k_sp[1] = str(int(k_sp[1]) - 1)
-            new_sd['.'.join(k_sp)] = v
+            new_sd['.'.join(k_sp)] = value
         else:
-            new_sd[k] = v
+            new_sd[key] = value
     for i_res in range(1, n_res):  # just retain the weights
-        new_sd['convs.{}.0.weight'.format(i_res)] = d.state_dict(
-            )['convs.{}.0.weight'.format(i_res)]
-        new_sd['convs.{}.1.bias'.format(i_res)] = d.state_dict(
-            )['convs.{}.1.bias'.format(i_res)]
+        new_sd[f'convs.{i_res}.0.weight'] = d.state_dict(
+            )[f'convs.{i_res}.0.weight']
+        new_sd[f'convs.{i_res}.1.bias'] = d.state_dict(
+            )[f'convs.{i_res}.1.bias']
     d.load_state_dict(new_sd)
 
 
 def partially_load_d_for_ada_ch(d, sd):
-    # handling the new modulation FC
+    """ Handling the new modulation FC. """
     blocks_with_mapping = []
-    for k, v in d.state_dict().items():
-        if '_mapping.' in k:
-            sd[k] = v
-            blocks_with_mapping.append('.'.join(k.split('.')[:2]))
+    for key, value in d.state_dict().items():
+        if '_mapping.' in key:
+            sd[key] = value
+            blocks_with_mapping.append('.'.join(key.split('.')[:2]))
     blocks_with_mapping = list(set(blocks_with_mapping))
     for blk in blocks_with_mapping:
         sd[blk + '.conv1.2.bias'] = sd.pop(blk + '.conv1.1.bias')

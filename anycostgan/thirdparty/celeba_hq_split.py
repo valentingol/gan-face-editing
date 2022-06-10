@@ -1,5 +1,8 @@
+""" Celeba HQ dataset split utility. """
+
 
 def get_celeba_hq_split():
+    """ Get the split of the Celeba HQ dataset. """
     train_idx = []
     test_idx = []
     val_idx = []

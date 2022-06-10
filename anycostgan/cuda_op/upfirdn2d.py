@@ -1,5 +1,7 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 
+""" Native CUDA implementation of the UpFirDn2d function. """
+
 import os
 
 import torch
@@ -18,9 +20,11 @@ upfirdn2d_op = load(
 
 
 class UpFirDn2dBackward(Function):
+    """Backward version of UpFirDn2d."""
     @staticmethod
     def forward(ctx, grad_output, kernel, grad_kernel, up, down, pad, g_pad,
                 in_size, out_size):
+        """Forward pass UpFirDn2dBackward."""
 
         up_x, up_y = up
         down_x, down_y = down
@@ -62,6 +66,7 @@ class UpFirDn2dBackward(Function):
 
     @staticmethod
     def backward(ctx, gradgrad_input):
+        """Backward pass UpFirDn2dBackward."""
         kernel, = ctx.saved_tensors
 
         gradgrad_input = gradgrad_input.reshape(-1, ctx.in_size[2],
@@ -87,14 +92,16 @@ class UpFirDn2dBackward(Function):
 
 
 class UpFirDn2d(Function):
+    """UpFirDn2d."""
     @staticmethod
     def forward(ctx, input, kernel, up, down, pad):
+        """Forward pass UpFirDn2d."""
         up_x, up_y = up
         down_x, down_y = down
         pad_x0, pad_x1, pad_y0, pad_y1 = pad
 
         kernel_h, kernel_w = kernel.shape
-        batch, channel, in_h, in_w = input.shape
+        _, channel, in_h, in_w = input.shape
         ctx.in_size = input.shape
 
         input = input.reshape(-1, in_h, in_w, 1)
@@ -127,6 +134,7 @@ class UpFirDn2d(Function):
 
     @staticmethod
     def backward(ctx, grad_output):
+        """Backward pass UpFirDn2d."""
         kernel, grad_kernel = ctx.saved_tensors
 
         grad_input = UpFirDn2dBackward.apply(
@@ -145,8 +153,9 @@ class UpFirDn2d(Function):
 
 
 def upfirdn2d(input, kernel, up=1, down=1, pad=(0, 0)):
+    """UpFirDn2d."""
     if input.device.type == "cpu":
-        from cuda_op.op_native import upfirdn2d_native
+        from anycostgan.cuda_op.op_native import upfirdn2d_native
         out = upfirdn2d_native(
             input, kernel, up, up, down, down, pad[0], pad[1], pad[0], pad[1]
         )

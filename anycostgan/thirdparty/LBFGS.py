@@ -1,7 +1,9 @@
-import torch
-import numpy as np
-from functools import reduce
+""" L-BFGS functions. """
 from copy import deepcopy
+from functools import reduce
+
+import numpy as np
+import torch
 from torch.optim import Optimizer
 
 # %% Helper Functions for L-BFGS
@@ -11,9 +13,14 @@ def is_legal(v):
     """
     Checks that tensor is not NaN or Inf.
 
-    Inputs:
-        v (tensor): tensor to be checked
-
+    Parameters
+    ----------
+    v : tensor
+        Tensor to be checked
+    Returns
+    -------
+    legal : bool
+        True if tensor is legal, False otherwise.
     """
     legal = not torch.isnan(v).any() and not torch.isinf(v)
 
@@ -55,7 +62,6 @@ def polyinterp(points, x_min_bound=None, x_max_bound=None, plot=False):
     Note
     ----
         Set f or g to np.nan if they are unknown
-
     """
     no_points = points.shape[0]
     order = np.sum(1 - np.isnan(points[:, 1:3]).astype('int')) - 1
@@ -64,9 +70,9 @@ def polyinterp(points, x_min_bound=None, x_max_bound=None, plot=False):
     x_max = np.max(points[:, 0])
 
     # compute bounds of interpolation area
-    if (x_min_bound is None):
+    if x_min_bound is None:
         x_min_bound = x_min
-    if (x_max_bound is None):
+    if x_max_bound is None:
         x_max_bound = x_max
 
     # explicit formula for quadratic interpolation
@@ -232,14 +238,15 @@ class LBFGS(Optimizer):
 
     def __init__(self, params, lr=1, history_size=10, line_search='Wolfe',
                  dtype=torch.float, debug=False):
+        """ Initialize LBFGS optimizer. """
 
-        # ensure inputs are valid
-        if not 0.0 <= lr:
-            raise ValueError("Invalid learning rate: {}".format(lr))
-        if not 0 <= history_size:
-            raise ValueError("Invalid history size: {}".format(history_size))
+        # Ensure inputs are valid
+        if lr < 0.0:
+            raise ValueError(f"Invalid learning rate: {lr}")
+        if history_size < 0:
+            raise ValueError(f"Invalid history size: {history_size}")
         if line_search not in ['Armijo', 'Wolfe', 'None']:
-            raise ValueError("Invalid line search: {}".format(line_search))
+            raise ValueError(f"Invalid line search: {line_search}")
 
         defaults = dict(lr=lr, history_size=history_size,
                         line_search=line_search,
@@ -264,12 +271,14 @@ class LBFGS(Optimizer):
         state['old_stps'] = []
 
     def _numel(self):
+        """ Count number of elements in parameters. """
         if self._numel_cache is None:
             self._numel_cache = reduce(lambda total, p: total + p.numel(),
                                        self._params, 0)
         return self._numel_cache
 
     def _gather_flat_grad(self):
+        """ Gather flattened gradient. """
         views = []
         for p in self._params:
             if p.grad is None:
@@ -282,6 +291,7 @@ class LBFGS(Optimizer):
         return torch.cat(views, 0)
 
     def _add_update(self, step_size, update):
+        """ Apply an update to the parameters. """
         offset = 0
         for p in self._params:
             numel = p.numel()
@@ -292,12 +302,14 @@ class LBFGS(Optimizer):
         assert offset == self._numel()
 
     def _copy_params(self):
+        """ Copy the parameters. """
         current_params = []
         for param in self._params:
             current_params.append(deepcopy(param.data))
         return current_params
 
     def _load_params(self, current_params):
+        """ Load the parameters. """
         i = 0
         for param in self._params:
             param.data[:] = current_params[i]
@@ -307,13 +319,14 @@ class LBFGS(Optimizer):
         """
         Switches line search option.
 
-        Inputs:
-            line_search (str): designates line search to use
-                Options:
-                    'None': uses steplength designated in algorithm
-                    'Armijo': uses Armijo backtracking line search
-                    'Wolfe': uses Armijo-Wolfe bracketing line search
-
+        Parameters
+        ----------
+        line_search : str
+            Designates line search to use
+            Options:
+                'None': uses steplength designated in algorithm
+                'Armijo': uses Armijo backtracking line search
+                'Wolfe': uses Armijo-Wolfe bracketing line search
         """
 
         group = self.param_groups[0]
@@ -325,7 +338,8 @@ class LBFGS(Optimizer):
         """
         Performs two-loop recursion on given vector to obtain Hv.
 
-        Inputs:
+        Parameters
+        ----------
             vec (tensor): 1-D tensor to apply two-loop recursion to
 
         Output:
@@ -386,8 +400,8 @@ class LBFGS(Optimizer):
         assert len(self.param_groups) == 1
 
         # load parameters
-        if (eps <= 0):
-            raise (ValueError('Invalid eps; must be positive.'))
+        if eps <= 0:
+            raise ValueError('Invalid eps; must be positive.')
 
         group = self.param_groups[0]
         history_size = group['history_size']
@@ -455,7 +469,7 @@ class LBFGS(Optimizer):
 
         return
 
-    def _step(self, p_k, g_Ok, g_Sk=None, options={}):
+    def _step(self, p_k, g_Ok, g_Sk=None, options=None):
         """
         Performs a single optimization step.
 
@@ -470,7 +484,7 @@ class LBFGS(Optimizer):
             1-D tensor of flattened gradient over full sample S_k used
             for curvature pair damping or rejection criterion. If None,
             will use g_Ok. By default None
-        options : dict
+        options : dict, optional
             Options for performing line search.
 
             Options for Armijo backtracking line search:
@@ -564,8 +578,10 @@ class LBFGS(Optimizer):
             setting, one should try increasing the maximum number of
             line search steps max_ls.
         """
-
         assert len(self.param_groups) == 1
+
+        if options is None:
+            options = {}
 
         # load parameter options
         group = self.param_groups[0]
@@ -603,59 +619,59 @@ class LBFGS(Optimizer):
             g_Sk = g_Ok.clone()
 
         # perform Armijo backtracking line search
-        if (line_search == 'Armijo'):
+        if line_search == 'Armijo':
 
             # load options
-            if (options):
-                if ('closure' not in options.keys()):
-                    raise (ValueError('closure option not specified.'))
+            if options:
+                if 'closure' not in options.keys():
+                    raise ValueError('closure option not specified.')
                 else:
                     closure = options['closure']
 
-                if ('gtd' not in options.keys()):
+                if 'gtd' not in options.keys():
                     gtd = g_Ok.dot(d)
                 else:
                     gtd = options['gtd']
 
-                if ('current_loss' not in options.keys()):
+                if 'current_loss' not in options.keys():
                     F_k = closure()
                     closure_eval += 1
                 else:
                     F_k = options['current_loss']
 
-                if ('eta' not in options.keys()):
+                if 'eta' not in options.keys():
                     eta = 2
-                elif (options['eta'] <= 0):
-                    raise (ValueError('Invalid eta; must be positive.'))
+                elif options['eta'] <= 0:
+                    raise ValueError('Invalid eta; must be positive.')
                 else:
                     eta = options['eta']
 
-                if ('c1' not in options.keys()):
+                if 'c1' not in options.keys():
                     c1 = 1e-4
-                elif (options['c1'] >= 1 or options['c1'] <= 0):
-                    raise (ValueError('Invalid c1; must be strictly between '
-                                      '0 and 1.'))
+                elif options['c1'] >= 1 or options['c1'] <= 0:
+                    raise ValueError('Invalid c1; must be strictly between '
+                                     '0 and 1.')
                 else:
                     c1 = options['c1']
 
-                if ('max_ls' not in options.keys()):
+                if 'max_ls' not in options.keys():
                     max_ls = 10
-                elif (options['max_ls'] <= 0):
-                    raise (ValueError('Invalid max_ls; must be positive.'))
+                elif options['max_ls'] <= 0:
+                    raise ValueError('Invalid max_ls; must be positive.')
                 else:
                     max_ls = options['max_ls']
 
-                if ('interpolate' not in options.keys()):
+                if 'interpolate' not in options.keys():
                     interpolate = True
                 else:
                     interpolate = options['interpolate']
 
-                if ('inplace' not in options.keys()):
+                if 'inplace' not in options.keys():
                     inplace = True
                 else:
                     inplace = options['inplace']
 
-                if ('ls_debug' not in options.keys()):
+                if 'ls_debug' not in options.keys():
                     ls_debug = False
                 else:
                     ls_debug = options['ls_debug']
@@ -665,8 +681,8 @@ class LBFGS(Optimizer):
                                   'evaluating function.'))
 
             # initialize values
-            if (interpolate):
-                if (torch.cuda.is_available()):
+            if interpolate:
+                if torch.cuda.is_available():
                     F_prev = torch.tensor(np.nan, dtype=dtype).cuda()
                 else:
                     F_prev = torch.tensor(np.nan, dtype=dtype)
@@ -700,16 +716,16 @@ class LBFGS(Optimizer):
             closure_eval += 1
 
             # print info if debugging
-            if (ls_debug):
-                print('LS Step: %d  t: %.8e  F(x+td): %.8e  F-c1*t*g*d: %.8e '
-                      'F(x): %.8e' % (ls_step, t, F_new, F_k + c1 * t * gtd,
-                                      F_k))
+            if ls_debug:
+                print(f'LS Step: {ls_step}  t: {t:.8e}  F(x+td): {F_new:.8e} '
+                      f' F-c1*t*g*d: {F_k + c1 * t * gtd:.8e} '
+                      'F(x): {F_k:.8e}')
 
             # check Armijo condition
             while F_new > F_k + c1 * t * gtd or not is_legal(F_new):
 
                 # check if maximum number of iterations reached
-                if (ls_step >= max_ls):
+                if ls_step >= max_ls:
                     if inplace:
                         self._add_update(-t, d)
                     else:
@@ -721,61 +737,58 @@ class LBFGS(Optimizer):
                     fail = True
                     break
 
+                # store current steplength
+                t_new = t
+
+                # compute new steplength
+
+                # if first step or not interpolating, then multiply
+                # by factor
+                if ls_step == 0 or not interpolate or not is_legal(F_new):
+                    t = t / eta
+
+                # if second step, use function value at new point
+                # along with gradient and function at current
+                # iterate
+                elif ls_step == 1 or not is_legal(F_prev):
+                    t = polyinterp(np.array([[0, F_k.item(), gtd.item()],
+                                             [t_new, F_new.item(), np.nan]]))
+
+                # otherwise, use function values at new point,
+                # previous point, and gradient and function at
+                # current iterate
                 else:
-                    # store current steplength
-                    t_new = t
+                    t = polyinterp(np.array([[0, F_k.item(), gtd.item()],
+                                             [t_new, F_new.item(), np.nan],
+                                             [t_prev, F_prev.item(), np.nan]]))
 
-                    # compute new steplength
+                # if values are too extreme, adjust t
+                if interpolate:
+                    if t < 1e-3 * t_new:
+                        t = 1e-3 * t_new
+                    elif t > 0.6 * t_new:
+                        t = 0.6 * t_new
 
-                    # if first step or not interpolating, then multiply
-                    # by factor
-                    if ls_step == 0 or not interpolate or not is_legal(F_new):
-                        t = t / eta
+                    # store old point
+                    F_prev = F_new
+                    t_prev = t_new
 
-                    # if second step, use function value at new point
-                    # along with gradient and function at current
-                    # iterate
-                    elif (ls_step == 1 or not is_legal(F_prev)):
-                        t = polyinterp(np.array([[0, F_k.item(), gtd.item()],
-                                                 [t_new, F_new.item(), np.nan
-                                                  ]]))
+                # update iterate and reevaluate
+                if inplace:
+                    self._add_update(t - t_new, d)
+                else:
+                    self._load_params(current_params)
+                    self._add_update(t, d)
 
-                    # otherwise, use function values at new point,
-                    # previous point, and gradient and function at
-                    # current iterate
-                    else:
-                        t = polyinterp(np.array([[0, F_k.item(), gtd.item()],
-                                                 [t_new, F_new.item(), np.nan],
-                                                 [t_prev, F_prev.item(), np.nan
-                                                  ]]))
+                F_new = closure()
+                closure_eval += 1
+                ls_step += 1  # iterate
 
-                    # if values are too extreme, adjust t
-                    if (interpolate):
-                        if (t < 1e-3 * t_new):
-                            t = 1e-3 * t_new
-                        elif (t > 0.6 * t_new):
-                            t = 0.6 * t_new
-
-                        # store old point
-                        F_prev = F_new
-                        t_prev = t_new
-
-                    # update iterate and reevaluate
-                    if inplace:
-                        self._add_update(t - t_new, d)
-                    else:
-                        self._load_params(current_params)
-                        self._add_update(t, d)
-
-                    F_new = closure()
-                    closure_eval += 1
-                    ls_step += 1  # iterate
-
-                    # print info if debugging
-                    if (ls_debug):
-                        print('LS Step: %d  t: %.8e  F(x+td):   %.8e  '
-                              'F-c1*t*g*d: %.8e  F(x): %.8e'
-                              % (ls_step, t, F_new, F_k + c1 * t * gtd, F_k))
+                # print info if debugging
+                if ls_debug:
+                    print(f'LS Step: {ls_step}  t: {t:.8e}  F(x+td):  '
+                          f'{F_new:.8e}  F-c1*t*g*d: '
+                          f'{F_k + c1 * t * gtd:.8e}  F(x): {F_k:.8e}')
 
             # store Bs
             if Bs is None:
@@ -799,77 +812,76 @@ class LBFGS(Optimizer):
             return F_new, t, ls_step, closure_eval, desc_dir, fail
 
         # perform weak Wolfe line search
-        elif (line_search == 'Wolfe'):
+        elif line_search == 'Wolfe':
 
             # load options
-            if (options):
-                if ('closure' not in options.keys()):
-                    raise (ValueError('closure option not specified.'))
-                else:
-                    closure = options['closure']
+            if options:
+                if 'closure' not in options.keys():
+                    raise ValueError('closure option not specified.')
+                closure = options['closure']
 
-                if ('current_loss' not in options.keys()):
+                if 'current_loss' not in options.keys():
                     F_k = closure()
                     closure_eval += 1
                 else:
                     F_k = options['current_loss']
 
-                if ('gtd' not in options.keys()):
+                if 'gtd' not in options.keys():
                     gtd = g_Ok.dot(d)
                 else:
                     gtd = options['gtd']
 
-                if ('eta' not in options.keys()):
+                if 'eta' not in options.keys():
                     eta = 2
-                elif (options['eta'] <= 1):
-                    raise (ValueError('Invalid eta; must be greater than 1.'))
+                elif options['eta'] <= 1:
+                    raise ValueError('Invalid eta; must be greater than 1.')
                 else:
                     eta = options['eta']
 
-                if ('c1' not in options.keys()):
+                if 'c1' not in options.keys():
                     c1 = 1e-4
-                elif (options['c1'] >= 1 or options['c1'] <= 0):
-                    raise (ValueError('Invalid c1; must be strictly between '
-                                      '0 and 1.'))
+                elif options['c1'] >= 1 or options['c1'] <= 0:
+                    raise ValueError('Invalid c1; must be strictly between '
+                                     '0 and 1.')
                 else:
                     c1 = options['c1']
 
-                if ('c2' not in options.keys()):
+                if 'c2' not in options.keys():
                     c2 = 0.9
-                elif (options['c2'] >= 1 or options['c2'] <= 0):
-                    raise (ValueError('Invalid c2; must be strictly between '
-                                      '0 and 1.'))
-                elif (options['c2'] <= c1):
-                    raise (ValueError('Invalid c2; must be strictly larger '
-                                      'than c1.'))
+                elif options['c2'] >= 1 or options['c2'] <= 0:
+                    raise ValueError('Invalid c2; must be strictly between '
+                                     '0 and 1.')
+                elif options['c2'] <= c1:
+                    raise ValueError('Invalid c2; must be strictly larger '
+                                     'than c1.')
                 else:
                     c2 = options['c2']
 
-                if ('max_ls' not in options.keys()):
+                if 'max_ls' not in options.keys():
                     max_ls = 10
-                elif (options['max_ls'] <= 0):
-                    raise (ValueError('Invalid max_ls; must be positive.'))
+                elif options['max_ls'] <= 0:
+                    raise ValueError('Invalid max_ls; must be positive.')
                 else:
                     max_ls = options['max_ls']
 
-                if ('interpolate' not in options.keys()):
+                if 'interpolate' not in options.keys():
                     interpolate = True
                 else:
                     interpolate = options['interpolate']
 
-                if ('inplace' not in options.keys()):
+                if 'inplace' not in options.keys():
                     inplace = True
                 else:
                     inplace = options['inplace']
 
-                if ('ls_debug' not in options.keys()):
+                if 'ls_debug' not in options.keys():
                     ls_debug = False
                 else:
                     ls_debug = options['ls_debug']
 
             else:
-                raise (ValueError('Options are not specified; need closure '
-                                  'evaluating function.'))
+                raise ValueError('Options are not specified; need closure '
+                                 'evaluating function.')
 
             # initialize counters
             ls_step = 0
@@ -882,11 +894,11 @@ class LBFGS(Optimizer):
             fail = False
 
             # initialize values for line search
-            if (interpolate):
+            if interpolate:
                 F_a = F_k
                 g_a = gtd
 
-                if (torch.cuda.is_available()):
+                if torch.cuda.is_available():
                     F_b = torch.tensor(np.nan, dtype=dtype).cuda()
                     g_b = torch.tensor(np.nan, dtype=dtype).cuda()
                 else:
@@ -922,7 +934,7 @@ class LBFGS(Optimizer):
 
                 # check if maximum number of line search steps have
                 # been reached
-                if (ls_step >= max_ls):
+                if ls_step >= max_ls:
                     if inplace:
                         self._add_update(-t, d)
                     else:
@@ -938,23 +950,23 @@ class LBFGS(Optimizer):
                     break
 
                 # print info if debugging
-                if (ls_debug):
-                    print('LS Step: %d  t: %.8e  alpha: %.8e  beta: %.8e'
-                          % (ls_step, t, alpha, beta))
-                    print('Armijo:  F(x+td): %.8e  F-c1*t*g*d: %.8e  '
-                          'F(x): %.8e' % (F_new, F_k + c1 * t * gtd, F_k))
+                if ls_debug:
+                    print(f'LS Step: {ls_step}  t: {t:.8e}  '
+                          f'alpha: {alpha:.8e}  beta: {beta:.8e}')
+                    print(f'Armijo:  F(x+td): {F_new:.8e}  F-c1*t*g*d: '
+                          f'{F_k + c1 * t * gtd:.8e} F(x): {F_k:.8e}')
 
                 # check Armijo condition
-                if (F_new > F_k + c1 * t * gtd):
+                if F_new > F_k + c1 * t * gtd:
 
                     # set upper bound
                     beta = t
                     t_prev = t
 
                     # update interpolation quantities
-                    if (interpolate):
+                    if interpolate:
                         F_b = F_new
-                        if (torch.cuda.is_available()):
+                        if torch.cuda.is_available():
                             g_b = torch.tensor(np.nan, dtype=dtype).cuda()
                         else:
                             g_b = torch.tensor(np.nan, dtype=dtype)
@@ -968,19 +980,19 @@ class LBFGS(Optimizer):
                     gtd_new = g_new.dot(d)
 
                     # print info if debugging
-                    if (ls_debug):
+                    if ls_debug:
                         print('Wolfe: g(x+td)*d: %.8e  c2*g*d: %.8e  gtd: %.8e'
                               % (gtd_new, c2 * gtd, gtd))
 
                     # check curvature condition
-                    if (gtd_new < c2 * gtd):
+                    if gtd_new < c2 * gtd:
 
                         # set lower bound
                         alpha = t
                         t_prev = t
 
                         # update interpolation quantities
-                        if (interpolate):
+                        if interpolate:
                             F_a = F_new
                             g_a = gtd_new
 
@@ -991,8 +1003,8 @@ class LBFGS(Optimizer):
 
                 # if first step or not interpolating, then bisect or
                 # multiply by factor
-                if (not interpolate or not is_legal(F_b)):
-                    if (beta == float('Inf')):
+                if not interpolate or not is_legal(F_b):
+                    if beta == float('Inf'):
                         t = eta * t
                     else:
                         t = (alpha + beta) / 2.0
@@ -1003,19 +1015,19 @@ class LBFGS(Optimizer):
                                              [beta, F_b.item(), g_b.item()]]))
 
                     # if values are too extreme, adjust t
-                    if (beta == float('Inf')):
-                        if (t > 2 * eta * t_prev):
+                    if beta == float('Inf'):
+                        if t > 2 * eta * t_prev:
                             t = 2 * eta * t_prev
-                        elif (t < eta * t_prev):
+                        elif t < eta * t_prev:
                             t = eta * t_prev
                     else:
-                        if (t < alpha + 0.2 * (beta - alpha)):
+                        if t < alpha + 0.2 * (beta - alpha):
                             t = alpha + 0.2 * (beta - alpha)
-                        elif (t > (beta - alpha) / 2.0):
+                        elif t > (beta - alpha) / 2.0:
                             t = (beta - alpha) / 2.0
 
                     # if we obtain nonsensical value from interpolation
-                    if (t <= 0):
+                    if t <= 0:
                         t = (beta - alpha) / 2.0
 
                 # update parameters
@@ -1071,7 +1083,8 @@ class LBFGS(Optimizer):
 
             return t
 
-    def step(self, p_k, g_Ok, g_Sk=None, options={}):
+    def step(self, p_k, g_Ok, g_Sk=None, options=None):
+        """ Performs a single optimization step. """
         return self._step(p_k, g_Ok, g_Sk, options)
 
 
@@ -1114,16 +1127,16 @@ class FullBatchLBFGS(LBFGS):
 
     def __init__(self, params, lr=1, history_size=10, line_search='Wolfe',
                  dtype=torch.float, debug=False):
-        super(FullBatchLBFGS, self).__init__(params, lr, history_size,
-                                             line_search, dtype, debug)
+        """ Initializes FullBatchLBFGS. """
+        super().__init__(params, lr, history_size, line_search, dtype, debug)
 
-    def step(self, options={}):
+    def step(self, options=None):
         """
         Performs a single optimization step.
 
         Parameters
         ----------
-        options : dict
+        options : dict, optional
             Options for performing line search
 
             General Options:
@@ -1225,14 +1238,15 @@ class FullBatchLBFGS(LBFGS):
             setting, one should try increasing the maximum number of
             line search steps max_ls.
         """
-
+        if options is None:
+            options = {}
         # load options for damping and eps
-        if ('damping' not in options.keys()):
+        if 'damping' not in options.keys():
             damping = False
         else:
             damping = options['damping']
 
-        if ('eps' not in options.keys()):
+        if 'eps' not in options.keys():
             eps = 1e-2
         else:
             eps = options['eps']
@@ -1242,11 +1256,11 @@ class FullBatchLBFGS(LBFGS):
 
         # update curvature if after 1st iteration
         state = self.state['global_state']
-        if (state['n_iter'] > 0):
+        if state['n_iter'] > 0:
             self.curvature_update(grad, eps, damping)
 
         # compute search direction
-        p = self.two_loop_recursion(-grad)
+        p_k = self.two_loop_recursion(-grad)
 
         # take step
-        return self._step(p, grad, options=options)
+        return self._step(p_k, grad, options=options)

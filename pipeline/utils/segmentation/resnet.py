@@ -1,13 +1,15 @@
 # Code from https://github.com/zllrunning/face-parsing.PyTorch
 
+""" ResNet blocks and functions. """
+
 import torch
-import torch.nn as nn
+from torch import nn
 import torch.nn.functional as F
 import torch.utils.model_zoo as modelzoo
 
 # from modules.bn import InPlaceABNSync as BatchNorm2d
 
-resnet18_url = 'https://download.pytorch.org/models/resnet18-5c106cde.pth'
+RESNET18_URL = 'https://download.pytorch.org/models/resnet18-5c106cde.pth'
 
 
 def conv3x3(in_planes, out_planes, stride=1):
@@ -17,8 +19,10 @@ def conv3x3(in_planes, out_planes, stride=1):
 
 
 class BasicBlock(nn.Module):
+    """ ResNet BasicBlock. """
     def __init__(self, in_chan, out_chan, stride=1):
-        super(BasicBlock, self).__init__()
+        """ Initialize block. """
+        super().__init__()
         self.conv1 = conv3x3(in_chan, out_chan, stride)
         self.bn1 = nn.BatchNorm2d(out_chan)
         self.conv2 = conv3x3(out_chan, out_chan)
@@ -33,6 +37,7 @@ class BasicBlock(nn.Module):
                 )
 
     def forward(self, x):
+        """ Forward pass. """
         residual = self.conv1(x)
         residual = F.relu(self.bn1(residual))
         residual = self.conv2(residual)
@@ -48,6 +53,7 @@ class BasicBlock(nn.Module):
 
 
 def create_layer_basic(in_chan, out_chan, bnum, stride=1):
+    """ Create a basic block layer. """
     layers = [BasicBlock(in_chan, out_chan, stride=stride)]
     for _ in range(bnum-1):
         layers.append(BasicBlock(out_chan, out_chan, stride=1))
@@ -55,8 +61,10 @@ def create_layer_basic(in_chan, out_chan, bnum, stride=1):
 
 
 class Resnet18(nn.Module):
+    """ ResNet18 module. """
     def __init__(self):
-        super(Resnet18, self).__init__()
+        """ Initialize module. """
+        super().__init__()
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
                                bias=False)
         self.bn1 = nn.BatchNorm2d(64)
@@ -68,6 +76,7 @@ class Resnet18(nn.Module):
         self.init_weight()
 
     def forward(self, x):
+        """ Forward pass. """
         x = self.conv1(x)
         x = F.relu(self.bn1(x))
         x = self.maxpool(x)
@@ -79,15 +88,17 @@ class Resnet18(nn.Module):
         return feat8, feat16, feat32
 
     def init_weight(self):
-        state_dict = modelzoo.load_url(resnet18_url)
+        """ Initialize weights. """
+        state_dict = modelzoo.load_url(RESNET18_URL)
         self_state_dict = self.state_dict()
-        for k, v in state_dict.items():
-            if 'fc' in k:
+        for key, value in state_dict.items():
+            if 'fc' in key:
                 continue
-            self_state_dict.update({k: v})
+            self_state_dict.update({key: value})
         self.load_state_dict(self_state_dict)
 
     def get_params(self):
+        """ Get parameters. """
         wd_params, nowd_params = [], []
         for _, module in self.named_modules():
             if isinstance(module, (nn.Linear, nn.Conv2d)):

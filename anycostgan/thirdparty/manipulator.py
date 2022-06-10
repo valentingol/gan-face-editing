@@ -139,8 +139,8 @@ def train_boundary(latent_codes,
               f'{correct_num} / {val_num * 2} = '
               f'{correct_num / (val_num * 2):.6f}')
 
-    a = classifier.coef_.reshape(1, latent_space_dim).astype(np.float32)
-    return a / np.linalg.norm(a)
+    val = classifier.coef_.reshape(1, latent_space_dim).astype(np.float32)
+    return val / np.linalg.norm(val)
 
 
 def project_boundary(primal, *args):

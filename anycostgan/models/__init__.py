@@ -1,9 +1,13 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 
+""" Get models. """
+
 import torch
 from torchvision import models
 
 from anycostgan.models.anycost_gan import Generator
+from anycostgan.models.encoder import ResNet50Encoder
+from anycostgan.thirdparty.inception import InceptionV3
 from anycostgan.utils.torch_utils import safe_load_state_dict_from_url
 
 
@@ -11,17 +15,19 @@ URL_TEMPLATE = 'https://hanlab.mit.edu/projects/anycost-gan/files/{}_{}.pt'
 
 
 def load_state_dict_from_url(url, key=None):
+    """ Load state dict from url. """
     if url.startswith('http'):
-        sd = safe_load_state_dict_from_url(url, map_location='cpu',
-                                           progress=True)
+        state_dict = safe_load_state_dict_from_url(url, map_location='cpu',
+                                                   progress=True)
     else:
-        sd = torch.load(url, map_location='cpu')
+        state_dict = torch.load(url, map_location='cpu')
     if key is not None:
-        return sd[key]
-    return sd
+        return state_dict[key]
+    return state_dict
 
 
 def get_pretrained(model, config=None):
+    """ Get pretrained model. """
     if model in ['attribute-predictor', 'inception']:
         assert config is None
         # Not used for inception
@@ -40,11 +46,12 @@ def get_pretrained(model, config=None):
             resolution = 512
             channel_multiplier = 2
         else:
-            raise NotImplementedError
+            raise NotImplementedError(f'Unknown config: {config}')
         model = Generator(resolution, channel_multiplier=channel_multiplier)
         model.load_state_dict(load_state_dict_from_url(url, 'g_ema'))
         return model
-    elif model == 'encoder':
+
+    if model == 'encoder':
         # NOTICE: the encoders are trained with VGG LPIPS loss
         # to keep consistent with optimization-based projection
         # the numbers in the papers are reported with encoders
@@ -55,25 +62,26 @@ def get_pretrained(model, config=None):
             n_style = 18
             style_dim = 512
         else:
-            raise NotImplementedError
-        from anycostgan.models.encoder import ResNet50Encoder
+            raise NotImplementedError(f'Unknown config: {config}')
+
         model = ResNet50Encoder(n_style=n_style, style_dim=style_dim)
         model.load_state_dict(load_state_dict_from_url(url, 'state_dict'))
         return model
-    elif model == 'attribute-predictor':  # attribute predictor is general
+
+    if model == 'attribute-predictor':  # attribute predictor is general
         predictor = models.resnet50()
         predictor.fc = torch.nn.Linear(predictor.fc.in_features, 40 * 2)
         predictor.load_state_dict(load_state_dict_from_url(url, 'state_dict'))
         return predictor
-    elif model == 'inception':  # inception models
-        from anycostgan.thirdparty.inception import InceptionV3
+
+    if model == 'inception':  # inception models
         return InceptionV3([3], normalize_input=False, resize_input=True)
-    elif model == 'boundary':
+
+    if model == 'boundary':
         if config in ['anycost-ffhq-config-f',
                       'anycost-ffhq-config-f-flexible',
                       'stylegan2-ffhq-config-f']:
             return load_state_dict_from_url(url)
-        else:
-            raise NotImplementedError
-    else:
-        raise NotImplementedError
+        raise NotImplementedError(f'Unknown config: {config}')
+
+    raise NotImplementedError(f'Unknown model: {model}')

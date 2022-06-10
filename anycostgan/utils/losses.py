@@ -1,5 +1,7 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 
+""" Loss functions for the GAN. """
+
 import math
 
 import torch
@@ -8,6 +10,7 @@ import torch.nn.functional as F
 
 
 def d_logistic_loss(real_pred, fake_pred):
+    """ Logistic loss for the discriminator. """
     real_loss = F.softplus(-real_pred)
     fake_loss = F.softplus(fake_pred)
 
@@ -15,6 +18,7 @@ def d_logistic_loss(real_pred, fake_pred):
 
 
 def d_r1_loss(real_pred, real_img):
+    """ Grad penalty for the discriminator. """
     grad_real, = autograd.grad(
         outputs=real_pred.sum(), inputs=real_img, create_graph=True
     )
@@ -24,12 +28,14 @@ def d_r1_loss(real_pred, real_img):
 
 
 def g_nonsaturating_loss(fake_pred):
+    """ Nonsaturating loss for the generator. """
     loss = F.softplus(-fake_pred).mean()
 
     return loss
 
 
 def g_path_regularize(fake_img, latents, mean_path_length, decay=0.01):
+    """ Path regularization loss for the generator. """
     noise = torch.randn_like(fake_img) / math.sqrt(
         fake_img.shape[2] * fake_img.shape[3]
     )

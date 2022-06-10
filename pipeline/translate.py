@@ -1,3 +1,6 @@
+
+""" Translation functions. """
+
 import os
 
 import torch
@@ -9,7 +12,9 @@ from pipeline.utils.translation.get_translations import get_translations
 
 
 def generate_image(generator, **input_kwargs):
+    """ Generate an image from the latent code. """
     def image_to_np(x):
+        """ Convert an torch tensor to numpy array. """
         assert x.shape[0] == 1
         x = x.squeeze(0).permute(1, 2, 0)
         x = (x + 1) * 0.5  # 0-1
@@ -24,6 +29,20 @@ def generate_image(generator, **input_kwargs):
 
 
 def apply_translations(projection_dir, output_path, anycost_config, configs):
+    """
+    Translate the images latent codes using the translations vectors.
+
+    Parameters
+    ----------
+    projection_dir : str
+        Path to the directory with the latent codes
+    output_path : str
+        Path to the output directory
+    anycost_config : str
+        Configuration name of AnyCostGAN
+    configs : dict or GlobalConfig
+        Configurations for the translation
+    """
     use_caracs_in_img = configs['use_caracs_in_img']
     use_precomputed = configs['use_precomputed']
 
@@ -41,14 +60,14 @@ def apply_translations(projection_dir, output_path, anycost_config, configs):
         if use_caracs_in_img:
             try:
                 carac_list = list(map(int, basename.split('_')))
-            except ValueError:
+            except ValueError as exc:
                 raise ValueError(
                     'When "use_caracs_in_img" is set to True, the name of '
                     'images should be like: "%d_%d_%d_%d_%d_%d_%d_%d_%d.png/'
-                    '.jpg" where "%d" are integer cararacteristics '
-                    '(see https://transfer-learning.org/rules for details).'
-                    'Otherwise you can set "use_caracs_in_img" to '
-                    'False to get all translation for all images.')
+                    '.jpg" where "%d" are integer cararacteristics (see '
+                    'https://transfer-learning.org/rules for details).'
+                    'Otherwise you can set "use_caracs_in_img" to False to '
+                    'get all translation for all images.') from exc
         else:
             carac_list = None
         # Get intial projected latent code
@@ -78,14 +97,14 @@ def apply_translations(projection_dir, output_path, anycost_config, configs):
 
 
 if __name__ == '__main__':
-    projection_dir = 'projection/run1'
-    output_path = 'res/run1/images_post_translation'
-    flexible_config = False
+    PROJECTION_DIR = 'projection/run1'
+    OUTPUT_PATH = 'res/run1/images_post_translation'
+    FLEXIBLE_CONFIG = False
 
-    anycost_config = 'anycost-ffhq-config-f-flexible' if flexible_config \
+    ANYCOST_CONFIG = 'anycost-ffhq-config-f-flexible' if FLEXIBLE_CONFIG \
         else 'anycost-ffhq-config-f'
     print('Applying translations in latent space...')
 
-    configs = {'use_caracs_in_img': True, 'use_precomputed': True}
+    CONFIGS = {'use_caracs_in_img': True, 'use_precomputed': True}
 
-    apply_translations(projection_dir, output_path, anycost_config, configs)
+    apply_translations(PROJECTION_DIR, OUTPUT_PATH, ANYCOST_CONFIG, CONFIGS)

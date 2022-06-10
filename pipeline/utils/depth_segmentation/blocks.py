@@ -1,7 +1,9 @@
 # Code from https://github.com/isl-org/DPT
 
+""" Blocks and modules for the ViT model. """
+
 import torch
-import torch.nn as nn
+from torch import nn
 
 from pipeline.utils.depth_segmentation.vit import (
     _make_pretrained_vitb_rn50_384,
@@ -147,7 +149,7 @@ class Interpolate(nn.Module):
             scale_factor (float): scaling
             mode (str): interpolation mode
         """
-        super(Interpolate, self).__init__()
+        super().__init__()
 
         self.interp = nn.functional.interpolate
         self.scale_factor = scale_factor
@@ -219,10 +221,10 @@ class FeatureFusionBlock(nn.Module):
         Args:
             features (int): number of features
         """
-        super(FeatureFusionBlock, self).__init__()
+        super().__init__()
 
-        self.resConfUnit1 = ResidualConvUnit(features)
-        self.resConfUnit2 = ResidualConvUnit(features)
+        self.res_conf_unit1 = ResidualConvUnit(features)
+        self.res_conf_unit2 = ResidualConvUnit(features)
 
     def forward(self, *xs):
         """Forward pass.
@@ -233,9 +235,9 @@ class FeatureFusionBlock(nn.Module):
         output = xs[0]
 
         if len(xs) == 2:
-            output += self.resConfUnit1(xs[1])
+            output += self.res_conf_unit1(xs[1])
 
-        output = self.resConfUnit2(output)
+        output = self.res_conf_unit2(output)
         output = nn.functional.interpolate(
             output, scale_factor=2, mode="bilinear", align_corners=True
             )
@@ -253,7 +255,7 @@ class ResidualConvUnit_custom(nn.Module):
         """
         super().__init__()
 
-        self.bn = bn
+        self.batch_norm = bn
 
         self.groups = 1
 
@@ -277,7 +279,7 @@ class ResidualConvUnit_custom(nn.Module):
             groups=self.groups,
             )
 
-        if self.bn:
+        if self.batch_norm:
             self.bn1 = nn.BatchNorm2d(features)
             self.bn2 = nn.BatchNorm2d(features)
 
@@ -327,7 +329,7 @@ class FeatureFusionBlock_custom(nn.Module):
         Args:
             features (int): number of features
         """
-        super(FeatureFusionBlock_custom, self).__init__()
+        super().__init__()
 
         self.deconv = deconv
         self.align_corners = align_corners
@@ -345,8 +347,8 @@ class FeatureFusionBlock_custom(nn.Module):
             bias=True,
             groups=1,
             )
-        self.resConfUnit1 = ResidualConvUnit_custom(features, activation, bn)
-        self.resConfUnit2 = ResidualConvUnit_custom(features, activation, bn)
+        self.res_conf_unit1 = ResidualConvUnit_custom(features, activation, bn)
+        self.res_conf_unit2 = ResidualConvUnit_custom(features, activation, bn)
         self.skip_add = nn.quantized.FloatFunctional()
 
     def forward(self, *xs):
@@ -358,11 +360,11 @@ class FeatureFusionBlock_custom(nn.Module):
         output = xs[0]
 
         if len(xs) == 2:
-            res = self.resConfUnit1(xs[1])
+            res = self.res_conf_unit1(xs[1])
             output = self.skip_add.add(output, res)
             # output += res
 
-        output = self.resConfUnit2(output)
+        output = self.res_conf_unit2(output)
         output = nn.functional.interpolate(
             output, scale_factor=2, mode="bilinear",
             align_corners=self.align_corners

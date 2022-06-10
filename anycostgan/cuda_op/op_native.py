@@ -1,23 +1,24 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 
+""" Native PyTorch versions of the custom operations """
+
 import torch
 from torch import nn
 from torch.nn import functional as F
 
 from torch.nn.functional import leaky_relu
 
-###############################################################################
-#            Native PyTorch versions of the custom operations                 #
-###############################################################################
-
 
 def fused_leaky_relu(input_, bias, negative_slope=0.2, scale=2 ** 0.5):
+    """ Fused LeakyReLU activation function."""
     return scale * leaky_relu(input_ + bias[:input_.shape[1]], negative_slope,
                               inplace=True)
 
 
 class FusedLeakyReLU(nn.Module):
+    """ Fused Leaky ReLU module."""
     def __init__(self, channel, negative_slope=0.2, scale=2 ** 0.5):
+        """Initialize FusedLeakyReLU module."""
         super().__init__()
 
         self.bias = nn.Parameter(torch.zeros(channel))
@@ -25,12 +26,14 @@ class FusedLeakyReLU(nn.Module):
         self.scale = scale
 
     def forward(self, x):
+        """Forward pass of FusedLeakyReLU module."""
         return self.scale * leaky_relu(x + self.bias.reshape((1, -1, 1, 1))
                                        [:, :x.shape[1]],
                                        self.negative_slope, inplace=True)
 
 
 def upfirdn2d(input, kernel, up=1, down=1, pad=(0, 0)):
+    """Upsample and FIRDN (Fractional Interpolated Directed Neighbor)"""
     out = upfirdn2d_native(input, kernel, up, up, down, down, pad[0], pad[1],
                            pad[0], pad[1])
     return out
@@ -38,7 +41,8 @@ def upfirdn2d(input, kernel, up=1, down=1, pad=(0, 0)):
 
 def upfirdn2d_native(input, kernel, up_x, up_y, down_x, down_y, pad_x0, pad_x1,
                      pad_y0, pad_y1):
-    _, ch, in_h, in_w = input.shape
+    """Upsample and FIRDN (Fractional Interpolated Directed Neighbor)"""
+    _, ch, _, _ = input.shape
     kernel_h, kernel_w = kernel.shape
 
     assert up_y == up_x and up_y in [1, 2]

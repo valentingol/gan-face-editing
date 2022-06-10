@@ -1,14 +1,16 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 
+""" Evaluate the encoder. """
+
 import argparse
 
 import lpips
 import torch
-import torch.nn as nn
+from torch import nn
 from torchvision import transforms
 from tqdm import tqdm
 
-import anycostgan.models as models
+from anycostgan import models
 from anycostgan.models.dynamic_channel import (set_uniform_channel_ratio,
                                                remove_sub_channel_config)
 from anycostgan.utils.datasets import NativeDataset
@@ -17,6 +19,7 @@ from anycostgan.thirdparty.celeba_hq_split import get_celeba_hq_split
 
 
 def validate():
+    """ Perform a validation loop to evaluate the encoder. """
     generator.eval()
     encoder.eval()
 
@@ -28,7 +31,7 @@ def validate():
     consist_lpips_loss_meter = AverageMeter()
     consis_mse_loss_meter = AverageMeter()
 
-    with tqdm(total=len(test_loader), desc='Testing') as t:
+    with tqdm(total=len(test_loader), desc='Testing') as tqdm_bar:
         with torch.no_grad():
             for real_img in test_loader:
                 real_img = real_img.to(device)
@@ -41,7 +44,7 @@ def validate():
                                           input_is_style=True)
                 fake_image = adaptive_resize(fake_image.clamp(-1, 1), 256)
 
-                lpips_loss = lpips_func(fake_image, real_img).mean()
+                lpips_loss = LPIPS_FUNC(fake_image, real_img).mean()
                 mse_loss = nn.MSELoss()(fake_image, real_img)
 
                 lpips_loss_meter.update(lpips_loss.item(), real_img.shape[0])
@@ -59,14 +62,14 @@ def validate():
                             fake_sub_image.clamp(-1, 1), 256
                             )
                         remove_sub_channel_config(generator)
-                        consist_lpips_loss_meter.update(lpips_func(
+                        consist_lpips_loss_meter.update(LPIPS_FUNC(
                             fake_sub_image, fake_image).mean().item(),
                             real_img.shape[0])
                         consis_mse_loss_meter.update(nn.MSELoss()(
                             fake_sub_image, fake_image
                             ).item(), real_img.shape[0])
 
-                        sub_lpips_loss_meter.update(lpips_func(
+                        sub_lpips_loss_meter.update(LPIPS_FUNC(
                             fake_sub_image, real_img
                             ).mean().item(), real_img.shape[0])
                         sub_mse_loss_meter.update(nn.MSELoss()(
@@ -82,8 +85,8 @@ def validate():
                     'consist-mse': consis_mse_loss_meter.avg
                 }
 
-                t.set_postfix(info2display)
-                t.update(1)
+                tqdm_bar.set_postfix(info2display)
+                tqdm_bar.update(1)
 
 
 if __name__ == "__main__":
@@ -132,7 +135,7 @@ if __name__ == "__main__":
                                               pin_memory=True)
 
     # build lpips loss
-    lpips_func = lpips.LPIPS(net=args.lpips_net, verbose=False).to(device)
-    lpips_func.eval()
+    LPIPS_FUNC = lpips.LPIPS(net=args.lpips_net, verbose=False).to(device)
+    LPIPS_FUNC.eval()
 
     validate()
