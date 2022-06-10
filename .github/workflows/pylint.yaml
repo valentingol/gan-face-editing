@@ -5,7 +5,8 @@ name: Pylint
 on: [push]
 
 jobs:
-  pylint:
+  build:
+
     runs-on: ubuntu-latest
 
     steps:
@@ -25,8 +26,19 @@ jobs:
     - name: Create badge for pylint
       run: |
         score=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint.txt)
+        color=$(python .badge/pylint_get_color.py --score=$score)
         echo "Pylint score was $score"
-        anybadge --value=$score --file=.pylint/badge.svg -o --label=pylint 2=red 4=orange 7=yellow 9=green
-      artifacts:
-        paths:
-          - .pylint/
+        echo "PYLINT_COLOR=$color
+        echo "PYLINT_COLOR=$color" >> $GITHUB_ENV
+        echo "PYLINT_SCORE=$score/10.00"
+        echo "PYLINT_SCORE=$score/10.00" >> $GITHUB_ENV
+    - name: Create Pylint Badge
+      uses: schneegans/dynamic-badges-action@v1.1.0
+      with:
+        auth: ${{ secrets.GIST_SECRET }}
+        gistID: c60e6ce49447254be085193c99b8425b
+        filename: pylint_badge.json
+        label: pylint
+        message: ${{ env.PYLINT_SCORE }}
+        color: ${{ env.PYLINT_COLOR }}
+        style: flat
