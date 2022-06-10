@@ -67,7 +67,6 @@ class DPT(BaseModel):
         """ Forward pass. """
         if self.channels_last:
             x.contiguous(memory_format=torch.channels_last)
-
         layer_1, layer_2, layer_3, layer_4 = forward_vit(self.pretrained, x)
 
         layer_1_rn = self.scratch.layer1_rn(layer_1)
@@ -120,4 +119,5 @@ class DPTDepthModel(DPT):
             depth = self.scale * inv_depth + self.shift
             depth[depth < 1e-8] = 1e-8
             depth = 1.0 / depth
+            return depth
         return inv_depth

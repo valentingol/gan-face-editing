@@ -19,13 +19,13 @@ class ConvBNReLU(nn.Module):
         self.conv = nn.Conv2d(in_chan, out_chan, kernel_size=ks,
                               stride=stride, padding=padding,
                               bias=False)
-        self.batch_norm = nn.BatchNorm2d(out_chan)
+        self.bn = nn.BatchNorm2d(out_chan)
         self.init_weight()
 
     def forward(self, x):
         """ Forward pass. """
         x = self.conv(x)
-        x = F.relu(self.batch_norm(x))
+        x = F.relu(self.bn(x))
         return x
 
     def init_weight(self):
@@ -260,7 +260,7 @@ class BiSeNet(nn.Module):
     def __init__(self, n_classes, *args, **kwargs):
         """ Initialize model. """
         super().__init__()
-        self.context_path = ContextPath()
+        self.cp = ContextPath()
         # Here self.sp is deleted
         self.ffm = FeatureFusionModule(256, 256)
         self.conv_out = BiSeNetOutput(256, 256, n_classes)
@@ -272,7 +272,7 @@ class BiSeNet(nn.Module):
         """ Forward pass. """
         h, w = x.size()[2:]
         # Here return res3b1 feature
-        feat_res8, feat_cp8, feat_cp16 = self.context_path(x)
+        feat_res8, feat_cp8, feat_cp16 = self.cp(x)
         # Use res3b1 feature to replace spatial path feature
         feat_sp = feat_res8
         feat_fuse = self.ffm(feat_sp, feat_cp8)
