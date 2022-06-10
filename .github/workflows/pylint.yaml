@@ -23,6 +23,8 @@ jobs:
     - name: Analysing the code with pylint
       run: |
         pylint --rcfile=.pylintrc --disable=import-error --output-format=text $(git ls-files '*.py') | tee pylint.txt
+    - name: Create badge for pylint
+      run: |
         score=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint.txt)
         echo "Pylint score was $score"
         anybadge --value=$score --file=.badge/pylint.svg -o --label=pylint 2=red 4=orange 7=yellow 9=green
