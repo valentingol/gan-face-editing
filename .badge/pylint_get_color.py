@@ -2,7 +2,8 @@ import sys
 
 
 if __name__ == '__main__':
-    score = float(sys.argv[1])
+    arg = sys.argv[1]
+    score = float(arg.split('=')[1])
     if score < 2:
         print('#a30000')
     elif score < 4:
