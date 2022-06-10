@@ -37,7 +37,7 @@ jobs:
       with:
         auth: ${{ secrets.GIST_SECRET }}
         gistID: c60e6ce49447254be085193c99b8425b
-        filename: pylint_badge.json
+        filename: gan_face_editing_pylint_badge.json
         label: Pylint
         message: ${{ env.PYLINT_SCORE }}
         color: ${{ env.PYLINT_COLOR }}
