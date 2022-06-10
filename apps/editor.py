@@ -56,9 +56,6 @@ class FaceEditor(QMainWindow):
         """ Initialize FaceEditor class. """
         super().__init__()
         self.anycost_config = anycost_config
-        # Set up the initial display
-        self.sample_idx = 0
-        self.org_latent_code = self.latent_code_list[self.sample_idx]
         # Load assets
         self.anycost_channel = 1.0
         self.anycost_resolution = 1024
@@ -317,7 +314,9 @@ class FaceEditor(QMainWindow):
 
             self.org_image_list.append(org_image)
             self.latent_code_list.append(latent_code.view(1, -1, 512))
-
+        # Set up the initial display
+        self.sample_idx = 0
+        self.org_latent_code = self.latent_code_list[self.sample_idx]
         # Input kwargs for the generator
         self.input_kwargs = {'styles': self.org_latent_code, 'noise': None,
                              'randomize_noise': False,
