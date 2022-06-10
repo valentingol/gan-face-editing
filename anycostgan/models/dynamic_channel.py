@@ -1,5 +1,7 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 
+""" Dynamic channel utility functions. """
+
 import math
 import random
 import torch
@@ -11,6 +13,7 @@ CHANNEL_CONFIGS = [0.25, 0.5, 0.75, 1.0]
 
 
 def get_full_channel_configs(model):
+    """ Get the full channel configuration of the model. """
     full_channels = []
     for m in model.modules():
         if isinstance(m, ConstantInput):
@@ -23,6 +26,7 @@ def get_full_channel_configs(model):
 
 
 def set_sub_channel_config(model, sub_channels):
+    """ Set the sub channel configuration of the model. """
     ptr = 0
     for m in model.modules():
         if isinstance(m, ConstantInput):
@@ -37,6 +41,7 @@ def set_sub_channel_config(model, sub_channels):
 
 
 def set_uniform_channel_ratio(model, ratio):
+    """ Set the channel ratio of the model. """
     full_channels = get_full_channel_configs(model)
     resolution = model.resolution
     org_channel_mult = full_channels[-1] * 1. / G_CHANNEL_CONFIG[resolution]
@@ -55,18 +60,21 @@ def set_uniform_channel_ratio(model, ratio):
 
 
 def remove_sub_channel_config(model):
+    """ Remove the sub channel configuration of the model. """
     for m in model.modules():
         if hasattr(m, 'first_k_oup'):
             del m.first_k_oup
 
 
 def reset_generator(model):
+    """ Reset the generator. """
     remove_sub_channel_config(model)
     if hasattr(model, 'target_res'):
         del model.target_res
 
 
 def get_current_channel_config(model):
+    """ Get the current channel configuration of the model. """
     ch = []
     for m in model.modules():
         if hasattr(m, 'first_k_oup'):
@@ -75,6 +83,7 @@ def get_current_channel_config(model):
 
 
 def _get_offical_sub_channel_config(ratio, org_channel_mult):
+    """ Get the sub channel configuration of the model. """
     channel_max = 512
     # NOTE: in Python 3.6 onwards,
     # the order of dictionary insertion is preserved
@@ -89,7 +98,8 @@ def _get_offical_sub_channel_config(ratio, org_channel_mult):
 
 def get_random_channel_config(full_channels, org_channel_mult,
                               min_channel=8, divided_by=1):
-    # use the official config as the smallest number here
+    """ Get the random channel configuration of the model. """
+    # Use the official config as the smallest number here
     # (so that we can better compare the computation)
     bottom_line = _get_offical_sub_channel_config(CHANNEL_CONFIGS[0],
                                                   org_channel_mult)
@@ -112,6 +122,7 @@ def get_random_channel_config(full_channels, org_channel_mult,
 
 def sample_random_sub_channel(model, min_channel=8, divided_by=1, seed=None,
                               mode='uniform', set_channels=True):
+    """ Sample the random sub channel configuration of the model. """
     if seed is not None:  # whether to sync between workers
         random.seed(seed)
 
@@ -159,6 +170,7 @@ def sample_random_sub_channel(model, min_channel=8, divided_by=1, seed=None,
 
 
 def sort_channel(g):
+    """ Sort the channel configuration of the model. """
     def _get_sorted_input_idx(style_conv, sample_latents):
         from anycostgan.models.ops import StyledConv, ToRGB
         assert isinstance(style_conv, (StyledConv, ToRGB)), type(style_conv)
@@ -172,6 +184,7 @@ def sort_channel(g):
         return torch.sort(importance, dim=0, descending=True)[1]
 
     def _reorg_input_channel(style_conv, idx):
+        """ Reorganize the input channel of the style conv. """
         assert idx.numel() == style_conv.conv.weight.data.shape[2]
         style_conv.conv.weight.data = torch.index_select(
             style_conv.conv.weight.data, 2, idx
@@ -183,6 +196,7 @@ def sort_channel(g):
         style_conv.conv.modulation.bias.data = style_conv_bias_idx
 
     def _reorg_output_channel(style_conv, idx):
+        """ Reorganize the output channel of the style conv. """
         assert idx.numel() == style_conv.conv.weight.data.shape[1]
         style_conv.conv.weight.data = torch.index_select(
             style_conv.conv.weight.data, 1, idx

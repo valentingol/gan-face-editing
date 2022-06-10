@@ -1,3 +1,6 @@
+
+""" Run translation and postprocessing pipeline. """
+
 import os
 from os.path import join
 
@@ -9,6 +12,7 @@ from pipeline.depth_segmentation import depth_estimation_mix
 
 
 def get_config_pipeline(config):
+    """Get the configs for the pipeline."""
     save_intermediate = config.pipeline.save_intermediate
     skip_domain_mixup = config.pipeline.skip_domain_mixup
 
@@ -77,6 +81,7 @@ def check_environment():
 
 
 def run(config):
+    """Run the translation and postprocessing pipeline."""
     config_pipeline = get_config_pipeline(config)
     skip_domain_mixup = config.pipeline.skip_domain_mixup
     data_dir = config_pipeline['data_dir']

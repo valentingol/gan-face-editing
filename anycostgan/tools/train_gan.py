@@ -1,5 +1,7 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 
+""" Train AnycostGAN. """
+
 import argparse
 import json
 import math
@@ -13,14 +15,14 @@ import lpips
 import numpy as np
 import torch
 from torch import optim
-import torch.backends.cudnn as cudnn
-import torch.nn as nn
+from torch.backends import cudnn
+from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms, utils
 from tqdm import tqdm
 
 from anycostgan.metrics.fid import calc_fid
-import anycostgan.models as models
+from anycostgan import models
 from anycostgan.models.anycost_gan import (Discriminator,
                                            DiscriminatorMultiRes,
                                            Generator)
@@ -39,22 +41,23 @@ from anycostgan.utils.train_utils import (
     )
 
 
-device = 'cuda'
-log_dir = 'log'
-checkpoint_dir = 'checkpoint'
+DEVICE = 'cuda'
+LOG_DIR = 'log'
+CHECKPOINT_DIR = 'checkpoint'
 
 best_fid = 1e9
 
 
 def train(epoch):
+    """ Train for one epoch. """
     generator.train()
     discriminator.train()
     g_ema.eval()
     sampler.set_epoch(epoch)
 
     with tqdm(total=len(data_loader),
-              desc='Epoch #{}'.format(epoch + 1),
-              disable=hvd.rank() != 0, dynamic_ncols=True) as t:
+              desc=f'Epoch #{epoch + 1}',
+              disable=hvd.rank() != 0, dynamic_ncols=True) as tqdm_bar:
         global mean_path_length  # track across epochs
 
         ema_decay = 0.5 ** (args.batch_size * hvd.size()
@@ -73,16 +76,16 @@ def train(epoch):
             global_idx = batch_idx + epoch * len(data_loader) + 1
             if args.n_res > 1:
                 # A stack of images
-                real_img = [ri.to(device) for ri in real_img]
+                real_img = [ri.to(DEVICE) for ri in real_img]
             else:
-                real_img = real_img.to(device)
+                real_img = real_img.to(DEVICE)
 
             # 1. train D
             requires_grad(generator, False)
             requires_grad(discriminator, True)
 
             z = get_mixing_z(args.batch_size, args.latent_dim,
-                             args.mixing_prob, device)
+                             args.mixing_prob, DEVICE)
             with torch.no_grad():
                 if args.dynamic_channel:
                     rand_ratio = sample_random_sub_channel(
@@ -104,10 +107,10 @@ def train(epoch):
                     generator, args.min_channel, args.divided_by,
                     args.dynamic_channel_mode
                     ) if args.conditioned_d else None
-                for ri, fi in zip(real_img, all_rgbs):
-                    if ri.shape[-1] in sampled_res:
-                        real_pred = discriminator(ri, rand_g_arch)
-                        fake_pred = discriminator(fi, g_arch)
+                for real, fake in zip(real_img, all_rgbs):
+                    if real.shape[-1] in sampled_res:
+                        real_pred = discriminator(real, rand_g_arch)
+                        fake_pred = discriminator(fake, g_arch)
                         d_loss += d_logistic_loss(real_pred, fake_pred)
             else:
                 assert not args.conditioned_d  # not implemented yet
@@ -147,7 +150,7 @@ def train(epoch):
             requires_grad(discriminator, False)
 
             z = get_mixing_z(args.batch_size, args.latent_dim,
-                             args.mixing_prob, device)
+                             args.mixing_prob, DEVICE)
             # fix the randomness (potentially apply distillation)
             noises = generator.make_noise()
             inject_index = None if z.shape[1] == 1 \
@@ -204,7 +207,7 @@ def train(epoch):
                     1, args.batch_size // args.path_batch_shrink
                     )
                 noise = get_mixing_z(path_batch_size, args.latent_dim,
-                                     args.mixing_prob, device)
+                                     args.mixing_prob, DEVICE)
                 fake_img, latents = generator(noise, return_styles=True)
                 # moving update the mean path length
                 path_loss, mean_path_length, _ = g_path_regularize(
@@ -239,8 +242,8 @@ def train(epoch):
                 info2display['path'] = path_loss_meter.avg.item()
                 info2display['path-len'] = mean_path_length
 
-            t.set_postfix(info2display)
-            t.update(1)
+            tqdm_bar.set_postfix(info2display)
+            tqdm_bar.update(1)
 
             if hvd.rank() == 0 and global_idx % args.log_every == 0:
                 n_trained_images = global_idx * args.batch_size * hvd.size()
@@ -302,10 +305,10 @@ def validate(epoch):
             "best_fid": best_fid,
             "mean_path_length": mean_path_length,
         }
-        torch.save(state_dict, os.path.join(checkpoint_dir, args.job,
+        torch.save(state_dict, os.path.join(CHECKPOINT_DIR, args.job,
                                             'ckpt.pt'))
         if best_fid == fid:
-            torch.save(state_dict, os.path.join(checkpoint_dir, args.job,
+            torch.save(state_dict, os.path.join(CHECKPOINT_DIR, args.job,
                                                 'ckpt-best.pt'))
 
 
@@ -326,7 +329,7 @@ def measure_fid():
     # Collect features
     with torch.no_grad():
         for _ in tqdm(range(n_batch), desc='FID', disable=hvd.rank() != 0):
-            z = torch.randn(args.fid_batch_size, 1, 512, device=device)
+            z = torch.randn(args.fid_batch_size, 1, 512, device=DEVICE)
             _, all_rgbs = g_ema(z, return_rgbs=True)
             for i_res in range(n_res_to_eval):
                 img = all_rgbs[-i_res - 1]
@@ -438,14 +441,14 @@ if __name__ == "__main__":
     if hvd.rank() == 0:
         print(' * JOB:', args.job)
     # make log dirs
-    os.makedirs(log_dir, exist_ok=True)
-    os.makedirs(checkpoint_dir, exist_ok=True)
-    os.makedirs(os.path.join(checkpoint_dir, args.job), exist_ok=True)
-    log_writer = SummaryWriter(os.path.join(log_dir, args.job)) \
+    os.makedirs(LOG_DIR, exist_ok=True)
+    os.makedirs(CHECKPOINT_DIR, exist_ok=True)
+    os.makedirs(os.path.join(CHECKPOINT_DIR, args.job), exist_ok=True)
+    log_writer = SummaryWriter(os.path.join(LOG_DIR, args.job)) \
         if hvd.rank() == 0 else None
 
     if hvd.rank() == 0:  # save args
-        with open(os.path.join(log_dir, args.job, 'args.txt'), 'w') as f:
+        with open(os.path.join(LOG_DIR, args.job, 'args.txt'), 'w') as f:
             json.dump(args.__dict__, f, indent=4)
 
     # build dataset
@@ -487,23 +490,23 @@ if __name__ == "__main__":
             channel_multiplier=args.channel_multiplier,
             n_res=args.n_res,
             modulate=args.conditioned_d
-        ).to(device)
+            ).to(DEVICE)
         all_resolutions = [args.resolution // (2 ** i)
                            for i in range(args.n_res)]
     else:
         assert not args.conditioned_d  # not supported in this mode
         discriminator = Discriminator(
             args.resolution, channel_multiplier=args.channel_multiplier
-            ).to(device)
+            ).to(DEVICE)
         all_resolutions = [args.resolution]
 
     # build generator
     generator = Generator(args.resolution, args.latent_dim, args.n_mlp,
                           channel_multiplier=args.channel_multiplier
-                          ).to(device)
+                          ).to(DEVICE)
     g_ema = Generator(args.resolution, args.latent_dim, args.n_mlp,
                       channel_multiplier=args.channel_multiplier
-                      ).to(device)
+                      ).to(DEVICE)
     g_ema.eval()
 
     if hvd.rank() == 0:  # measure flops and #param
@@ -517,7 +520,7 @@ if __name__ == "__main__":
             from torchprofile import profile_macs
 
             generator.eval()
-            macs = profile_macs(generator, [torch.rand(1, 512).to(device)])
+            macs = profile_macs(generator, [torch.rand(1, 512).to(DEVICE)])
             print(' * G MACs: {:.2f}G'.format(macs / 1e9))
         except ImportError:
             print(' * Profiling failed. Pass.')
@@ -559,17 +562,17 @@ if __name__ == "__main__":
             print(' * Building teacher models...')
         teacher = Generator(args.resolution, args.latent_dim, args.n_mlp,
                             channel_multiplier=args.t_channel_multiplier
-                            ).to(device)
+                            ).to(DEVICE)
         teacher_sd = torch.load(args.teacher_ckpt, map_location='cpu')
         teacher.load_state_dict(teacher_sd['g_ema'])
         teacher.eval()
         # perceptual loss
-        percept = lpips.LPIPS(net='vgg', verbose=False).to(device)
+        percept = lpips.LPIPS(net='vgg', verbose=False).to(DEVICE)
     else:
         teacher = None
 
     # build inception model for FID computing
-    inception = models.get_pretrained('inception').to(device)
+    inception = models.get_pretrained('inception').to(DEVICE)
     inception.eval()
 
     # build optimizer
@@ -591,7 +594,7 @@ if __name__ == "__main__":
     resume_from_epoch = 0
     mean_path_length = 0.  # track mean path len globally
     if args.resume:
-        ckpt_path = os.path.join(checkpoint_dir, args.job, 'ckpt.pt')
+        ckpt_path = os.path.join(CHECKPOINT_DIR, args.job, 'ckpt.pt')
         if os.path.exists(ckpt_path):
             if hvd.rank() == 0:
                 print(" * Resuming from:", ckpt_path)
@@ -620,7 +623,7 @@ if __name__ == "__main__":
     # draw a sample z for visualization
     torch.manual_seed(2020)
     sample_z = torch.randn(args.n_vis_sample, 1,
-                           args.latent_dim).float().to(device)
+                           args.latent_dim).float().to(DEVICE)
 
     for i_epoch in range(resume_from_epoch, args.epochs):
         train(i_epoch)

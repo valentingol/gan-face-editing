@@ -1,5 +1,7 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 
+""" Compute perceptual path lenght. """
+
 import argparse
 import math
 
@@ -13,10 +15,12 @@ import anycostgan.models as models
 
 
 def normalize(x):
+    """ Normalization function. """
     return x / torch.sqrt(x.pow(2).sum(-1, keepdim=True))
 
 
 def slerp(a, b, t):
+    """ Spherical linear interpolation. """
     a = normalize(a)
     b = normalize(b)
     d = (a * b).sum(-1, keepdim=True)
@@ -28,11 +32,13 @@ def slerp(a, b, t):
 
 
 def lerp(a, b, t):
+    """ Linear interpolation. """
     return a + (b - a) * t
 
 
 def compute_ppl(g, n_sample, batch_size, space='w', sampling='end',
                 eps=1e-4, crop=False):
+    """ Compute perceptual path length. """
     percept = lpips.LPIPS(net='vgg', verbose=False).to(device)
 
     distances = []

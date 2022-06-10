@@ -1,5 +1,7 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 
+""" Anycost GAN Generator and Discriminator. """
+
 import math
 import random
 
@@ -26,17 +28,12 @@ D_CHANNEL_CONFIG = G_CHANNEL_CONFIG
 
 
 class Generator(nn.Module):
-    def __init__(
-            self,
-            resolution,
-            style_dim=512,
-            n_mlp=8,
-            channel_multiplier=2,
-            channel_max=512,
-            blur_kernel=(1, 3, 3, 1),
-            lr_mlp=0.01,  # reducing the learning rate of the style network
-            act_func='lrelu',
-    ):
+    """ Anycost GAN Generator. """
+    def __init__(self, resolution, style_dim=512, n_mlp=8,
+                 channel_multiplier=2, channel_max=512,
+                 blur_kernel=(1, 3, 3, 1), lr_mlp=0.01,
+                 act_func='lrelu'):
+        """ Initialize the generator. """
         super().__init__()
         self.resolution = resolution
         self.style_dim = style_dim  # usually 512
@@ -83,6 +80,7 @@ class Generator(nn.Module):
                                         torch.randn(*shape))
 
     def make_noise(self):
+        """ Make input noise for the generator. """
         device = self.style[-1].weight.device
 
         noises = [torch.randn(1, 1, 2 ** 2, 2 ** 2, device=device)]
@@ -92,42 +90,58 @@ class Generator(nn.Module):
         return noises
 
     def mean_style(self, n_sample):
+        """ Get the mean style of the generator. """
         z = torch.randn(n_sample, self.style_dim,
                         device=self.style[-1].weight.device)
         w = self.style(z).mean(0, keepdim=True)
         return w
 
     def get_style(self, z):
+        """ Get the style of noise z. """
         z_shape = z.shape
         return self.style(z.view(-1, z.shape[-1])).view(z_shape)
 
-    def forward(
-            self,
-            styles,
-            return_styles=False,
-            inject_index=None,
-            truncation=1,
-            truncation_style=None,
-            input_is_style=False,
-            noise=None,
-            randomize_noise=True,
-            return_rgbs=False,
-            target_res=None,
-    ):
+    def forward(self, styles, return_styles=False, inject_index=None,
+                truncation=1.0, truncation_style=None, input_is_style=False,
+                noise=None, randomize_noise=True, return_rgbs=False,
+                target_res=None):
         """
-        :param styles: the input z or w, depending on input_is_style arg
-        :param return_styles: whether to return w (used for training)
-        :param inject_index: manually assign injection index
-        :param truncation: whether to apply style truncation.
-               default: no truncate
-        :param truncation_style: the mean style used for truncation
-        :param input_is_style: whether the input is style (w) or z
-        :param noise: manually assign noise tensor per layer
-        :param randomize_noise: whether to randomly draw the noise or
-               use the fixed noise
-        :param return_rgbs: whether to return all the lower resolution outputs
-        :param target_res: assign target resolution; rarely used here
-        :return: output image, _
+        Generate images.
+
+        Parameters
+        ----------
+        styles : torch.Tensor
+            The input z or w, depending on input_is_style arg
+        return_styles : bool, optional
+            Whether to return w (used for training). By default False.
+        inject_index: int, optional
+            Manually assign injection index. By default None.
+        truncation : float
+            Whether to apply style truncation (ratio). By default 1.0
+            (no truncate).
+        truncation_style : torch.Tensor, optional
+            The mean style used for truncation. By default None.
+        input_is_style : bool, optional
+            Whether the input is style (w) or z. By default False.
+        noise : torch.Tensor, optional
+            Manually assign noise tensor per layer. By default None.
+        randomize_noise : bool, optional
+            Whether to randomly draw the noise or use the fixed noise.
+            By default True.
+        return_rgbs : bool, optional
+            Whether to return all the lower resolution outputs.
+            By default False.
+        target_res : Any, optional
+            Assign target resolution; rarely used here. By default None.
+
+        Returns
+        -------
+        output image : torch.Tensor
+            The output image.
+
+        optional outputs : torch.Tensor or None
+            Styles or RGB or None depending on return_styles and
+            return_rgbs.
         """
         # 1. get the style code (i.e., w+)
         assert len(styles.shape) == 3  # n, n_lat, lat_dim
@@ -192,8 +206,10 @@ class Generator(nn.Module):
 
 
 class Discriminator(nn.Module):
+    """ Anycost GAN discriminator. """
     def __init__(self, resolution, channel_multiplier=2, channel_max=512,
                  blur_kernel=(1, 3, 3, 1), act_func='lrelu'):
+        """ Initialize the discriminator. """
         super().__init__()
 
         channels = {
@@ -237,6 +253,7 @@ class Discriminator(nn.Module):
         )
 
     def forward(self, x):
+        """ Forward pass. """
         out = self.convs(x)
 
         batch, channel, height, width = out.shape
@@ -259,9 +276,11 @@ class Discriminator(nn.Module):
 
 
 class DiscriminatorMultiRes(nn.Module):
+    """ Anycost GAN discriminator with multi resolution. """
     def __init__(self, resolution, channel_multiplier=2, channel_max=512,
                  blur_kernel=(1, 3, 3, 1), act_func='lrelu',
                  n_res=1, modulate=False):
+        """ Initialize the discriminator. """
         super().__init__()
 
         channels = {k: min(channel_max, int(v * channel_multiplier))
@@ -304,6 +323,7 @@ class DiscriminatorMultiRes(nn.Module):
         )
 
     def forward(self, x, g_arch=None):
+        """ Forward pass. """
         res = x.shape[-1]
         idx = self.res2idx[res]
         out = self.convs[idx](x)
@@ -319,6 +339,7 @@ class DiscriminatorMultiRes(nn.Module):
 
     @staticmethod
     def minibatch_discrimination(x, stddev_group, stddev_feat):
+        """ Minibatch discrimination. """
         out = x
         batch, channel, height, width = out.shape
         group = min(batch, stddev_group)

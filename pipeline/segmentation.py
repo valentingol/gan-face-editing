@@ -1,5 +1,7 @@
 # Code adapted from https://github.com/zllrunning/face-parsing.PyTorch
 
+""" Segmentation mixup using BiSeNet. """
+
 import os
 import os.path as osp
 
@@ -9,16 +11,42 @@ import numpy as np
 from PIL import Image
 from scipy.ndimage import distance_transform_edt as dist_edt
 import torch
-import torchvision.transforms as transforms
+from torchvision import transforms
 
 from pipeline.utils.segmentation.model import BiSeNet
 
 
-def alpha_from_dist(dist, margin=21):
+def alpha_from_dist(dist, margin):
+    """
+    Compute alpha from distance matrix.
+
+    Parameters
+    ----------
+    dist : numpy.ndarray
+        Distance 2D matrix.
+    margin : float
+        Margin for the alpha computation (smoothness).
+    """
     return np.where(dist < margin, dist / margin, 1.0)
 
 
 def segmentation_mix(data_dir, input_path, output_path, model_path, configs):
+    """
+    Apply segmentation mixup.
+
+    Parameters
+    ----------
+    data_dir : str
+        Path to the directory with original images
+    input_path : str
+        Path to the directory with input (edited) images
+    output_path : str
+        Path to the output directory
+    model_path : str
+        Path to the BiSeNet model weights.
+    configs : dict or GlobalConfig
+        Configurations for the domain mixup.
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -84,9 +112,8 @@ def segmentation_mix(data_dir, input_path, output_path, model_path, configs):
                 # Get binary mask relevant for the current caracteristic
                 seg_org_carac = process_segmentation(seg_org, carac_name)
                 # Merge the images continuously
-                img_final = merge_by_segmentation(img_org, seg_org_carac,
-                                                  image, seg_carac,
-                                                  margin=configs['margin'])
+                img_final = merge_images(img_org, seg_org_carac, image,
+                                         seg_carac, margin=configs['margin'])
                 # Add Foreground of the original image
                 img_final = add_foreground(img_final, img_org, seg_org,
                                            margin=configs['foreground_margin'])
@@ -98,6 +125,7 @@ def segmentation_mix(data_dir, input_path, output_path, model_path, configs):
 
 
 def add_foreground(img, img_org, seg_org, margin):
+    """ Add foreground to the image. """
     foreground = np.where(seg_org == 5, 1, 0)
     dist = dist_edt(foreground)
     alpha = alpha_from_dist(dist, margin=margin)[..., None]
@@ -107,7 +135,8 @@ def add_foreground(img, img_org, seg_org, margin):
     return img
 
 
-def merge_by_segmentation(img_org, seg_org, img, seg, margin):
+def merge_images(img_org, seg_org, img, seg, margin):
+    """ Merge the images. """
     seg_both = seg_org * seg
     dist = dist_edt(seg_both)
     alpha = alpha_from_dist(dist, margin=margin)[..., None]
@@ -144,16 +173,16 @@ def process_segmentation(seg, carac_name):
     """
     if carac_name in {'Sk', 'A', 'Se', 'Ch'}:
         return np.where(seg != 0, 0, 1)
-    elif carac_name in {'B', 'Hc', 'Hs'}:
+    if carac_name in {'B', 'Hc', 'Hs'}:
         return np.where(seg == 4, 0, 1)
-    elif carac_name in {'Pn', 'Bn'}:
+    if carac_name in {'Pn', 'Bn'}:
         return np.where(seg == 2, 0, 1)
-    elif carac_name == 'N':
+    if carac_name == 'N':
         eyes = np.where(seg == 1, 1, 0).astype(np.uint8)
         kernel = np.ones((5, 5), 'uint8')
         eyes = cv2.dilate(eyes, kernel=kernel, iterations=1)
         return np.where(eyes == 1, 0, 1)
-    elif carac_name == 'Be':
+    if carac_name == 'Be':
         eyes = np.where(seg == 1, 1, 0).astype(np.uint8)
         kernel = np.ones((5, 5), 'uint8')
         eyes = cv2.dilate(eyes, kernel=kernel, iterations=4)
@@ -162,16 +191,16 @@ def process_segmentation(seg, carac_name):
         rest = np.zeros((30, 512))
         under_eyes = np.concatenate((rest, under_eyes), axis=0)
         return np.where(under_eyes == 1, 0, 1)
-    elif carac_name == 'Bp':
+    if carac_name == 'Bp':
         return np.where(seg == 3, 0, 1)
-    else:
-        return None
+    return None
 
 
 def segmentation(images, net, device):
-    """
+    """ Apply segmentation on the images and change the labels.
+
     Classes Legend:
-    ##### From Model #######
+    ##### Original (from model) #######
     ----- Background ------
     0: background
 
@@ -238,16 +267,16 @@ def segmentation(images, net, device):
 if __name__ == "__main__":
     print('Applying segmentation mixup...')
     # Path to the original images
-    data_dir = 'data/face_challenge'
+    DATA_DIR = 'data/face_challenge'
     # Path to the edited images
-    input_path = 'res/run1/images_post_domain_mixup'
+    INPUT_PATH = 'res/run1/images_post_domain_mixup'
     # Path to the segmented edited images
-    output_path = 'res/run1/images_post_segmentation'
+    OUTPUT_PATH = 'res/run1/images_post_segmentation'
     # Path to the model
-    model_path = 'postprocess/segmentation/model/79999_iter.pth'
+    MODEL_PATH = 'postprocess/segmentation/model/79999_iter.pth'
 
-    configs = {'margin': 21, 'foreground_margin': 6}
+    CONFIGS = {'margin': 21, 'foreground_margin': 6}
 
-    segmentation_mix(data_dir=data_dir, input_path=input_path,
-                     output_path=output_path, model_path=model_path,
-                     configs=configs)
+    segmentation_mix(data_dir=DATA_DIR, input_path=INPUT_PATH,
+                     output_path=OUTPUT_PATH, model_path=MODEL_PATH,
+                     configs=CONFIGS)

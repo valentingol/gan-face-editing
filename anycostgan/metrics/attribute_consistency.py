@@ -1,5 +1,7 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 
+""" Compute attribute consistency. """
+
 import argparse
 import math
 
@@ -7,12 +9,13 @@ import horovod.torch as hvd
 import torch
 from tqdm import tqdm
 
-import anycostgan.models as models
+from anycostgan import models
 from anycostgan.utils.torch_utils import adaptive_resize
 
 
 def compute_attribute_consistency(g, sub_g, n_sample, batch_size):
-    attr_pred = models.get_pretrained('attribute-predictor').to(device)
+    """ Compute attribute consistency. """
+    attr_pred = models.get_pretrained('attribute-predictor').to(DEVICE)
     attr_pred.eval()
 
     n_batch = math.ceil(n_sample * 1. / batch_size / hvd.size())
@@ -23,7 +26,7 @@ def compute_attribute_consistency(g, sub_g, n_sample, batch_size):
         for _ in tqdm(range(n_batch), disable=hvd.rank() != 0):
             noise = g.make_noise()
 
-            latent = torch.randn(args.batch_size, 1, 512, device=device)
+            latent = torch.randn(args.batch_size, 1, 512, device=DEVICE)
             kwargs = {'styles': latent, 'truncation': 0.5,
                       'truncation_style': mean_style, 'noise': noise}
             img = g(**kwargs)[0].clamp(min=-1., max=1.)
@@ -43,7 +46,7 @@ def compute_attribute_consistency(g, sub_g, n_sample, batch_size):
 
 
 if __name__ == "__main__":
-    device = "cuda"
+    DEVICE = "cuda"
 
     parser = argparse.ArgumentParser(
         description="Computing attribute consistency between generators"
@@ -76,13 +79,13 @@ if __name__ == "__main__":
 
     generator = models.get_pretrained(
         'generator', args.config
-        ).to(device).eval()
+        ).to(DEVICE).eval()
 
     sub_generator = models.get_pretrained(
         'generator', args.config
-        ).to(device).eval()
+        ).to(DEVICE).eval()
     if args.channel_ratio:
-        from models.dynamic_channel import set_uniform_channel_ratio
+        from anycostgan.models.dynamic_channel import set_uniform_channel_ratio
         set_uniform_channel_ratio(sub_generator, args.channel_ratio)
 
     if args.target_res is not None:

@@ -1,3 +1,6 @@
+
+""" Compute distances to domains. """
+
 import os
 
 import cv2
@@ -6,6 +9,12 @@ from scipy.ndimage import distance_transform_edt as dist_edt
 
 
 def compute_dist(domains_img_path, domains_dist_path):
+    """ Compute distances to domains. """
+    if not os.path.exists(domains_img_path):
+        raise ValueError('Path to the directory with images of domains '
+                         f'does not exist: {domains_img_path}')
+    if not os.path.exists(domains_dist_path):
+        os.makedirs(domains_dist_path)
     for domain_name in os.listdir(domains_img_path):
         if domain_name.endswith('.png') or domain_name.endswith('.jpg'):
             domain_img = cv2.imread(os.path.join(domains_img_path,
@@ -25,6 +34,6 @@ def compute_dist(domains_img_path, domains_dist_path):
 
 if __name__ == '__main__':
     # domains img: black and white image (domain is black pixels)
-    domains_img_path = 'postprocess/domain_mixup/images'
-    domains_dist_path = 'postprocess/domain_mixup/distances'
-    compute_dist(domains_img_path, domains_dist_path)
+    IMG_PATH = 'postprocess/domain_mixup/images'
+    DIST_PATH = 'postprocess/domain_mixup/distances'
+    compute_dist(IMG_PATH, DIST_PATH)

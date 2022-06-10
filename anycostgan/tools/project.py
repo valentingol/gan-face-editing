@@ -1,5 +1,7 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 
+""" Project image in the latent space. """
+
 import argparse
 import json
 import os
@@ -9,12 +11,12 @@ import lpips
 import numpy as np
 from PIL import Image
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.nn import functional as F
 from torchvision import transforms
 from tqdm import tqdm
 
-import anycostgan.models as models
+from anycostgan import models
 from anycostgan.models.dynamic_channel import (CHANNEL_CONFIGS,
                                                set_uniform_channel_ratio,
                                                reset_generator,
@@ -27,6 +29,7 @@ torch.backends.cudnn.benchmark = False
 
 
 def make_image(tensor):
+    """ Convert a tensor to a numpy uint8 image. """
     return (
         tensor.detach()
         .clamp_(min=-1, max=1)
@@ -41,6 +44,7 @@ def make_image(tensor):
 
 
 def extract_left_eye(img):
+    """ Extract the left eye from an image. """
     if img.shape[-1] != 1024:
         img = F.interpolate(img, size=1024, mode='bilinear',
                             align_corners=True)
@@ -48,6 +52,7 @@ def extract_left_eye(img):
 
 
 def extract_right_eye(img):
+    """ Extract the right eye from an image. """
     if img.shape[-1] != 1024:
         img = F.interpolate(img, size=1024, mode='bilinear',
                             align_corners=True)
@@ -55,6 +60,7 @@ def extract_right_eye(img):
 
 
 def compute_loss_sum(x, y, w):
+    """ Compute the sum of all losses. """
     # WARNING: here we return the sum of losses for each sample,
     # so that the lr is not related to batch size
 
@@ -87,6 +93,7 @@ def compute_loss_sum(x, y, w):
 
 
 def process_generator():
+    """ Process the generator. """
     if args.optimize_sub_g:
         if evolve_cfgs is not None:
             # The generator is trained with elastic channels and
@@ -94,7 +101,7 @@ def process_generator():
 
             # Randomly pick an evolution config
             if random.random() < 0.5:
-                rand_cfg = random.sample(list(evolve_cfgs.keys()))
+                rand_cfg = random.sample(list(evolve_cfgs.keys()), 1)
                 set_sub_channel_config(generator, rand_cfg['channels'])
                 generator.target_res = rand_cfg['res']
             else:
@@ -108,6 +115,7 @@ def process_generator():
 
 
 def project_images(images, save_intermediate=False):
+    """ Project images in the latent space. """
     with torch.no_grad():
         if encoder is not None:
             styles = encoder(adaptive_resize(images, 256))

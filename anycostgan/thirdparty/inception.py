@@ -1,5 +1,7 @@
 # Code from https://github.com/mseitzer/pytorch-fid
 
+""" Inception model. """
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -227,12 +229,14 @@ class FIDInceptionA(models.inception.InceptionA):
 
 
 class FIDInceptionC(models.inception.InceptionC):
-    """InceptionC block patched for FID computation"""
+    """ InceptionC block patched for FID computation. """
 
     def __init__(self, in_channels, channels_7x7):
+        """ Initialize the block. """
         super(FIDInceptionC, self).__init__(in_channels, channels_7x7)
 
     def forward(self, x):
+        """ Forward pass. """
         branch1x1 = self.branch1x1(x)
 
         branch7x7 = self.branch7x7_1(x)
@@ -259,9 +263,11 @@ class FIDInceptionE_1(models.inception.InceptionE):
     """First InceptionE block patched for FID computation"""
 
     def __init__(self, in_channels):
+        """ Initialize the block. """
         super(FIDInceptionE_1, self).__init__(in_channels)
 
     def forward(self, x):
+        """ Forward pass. """
         branch1x1 = self.branch1x1(x)
 
         branch3x3 = self.branch3x3_1(x)
@@ -293,9 +299,11 @@ class FIDInceptionE_2(models.inception.InceptionE):
     """Second InceptionE block patched for FID computation"""
 
     def __init__(self, in_channels):
+        """ Initialize the block. """
         super(FIDInceptionE_2, self).__init__(in_channels)
 
     def forward(self, x):
+        """ Forward pass. """
         branch1x1 = self.branch1x1(x)
 
         branch3x3 = self.branch3x3_1(x)
