@@ -223,8 +223,8 @@ class FeatureFusionBlock(nn.Module):
         """
         super().__init__()
 
-        self.res_conf_unit1 = ResidualConvUnit(features)
-        self.res_conf_unit2 = ResidualConvUnit(features)
+        self.resConfUnit1 = ResidualConvUnit(features)
+        self.resConfUnit2 = ResidualConvUnit(features)
 
     def forward(self, *xs):
         """Forward pass.
@@ -235,9 +235,9 @@ class FeatureFusionBlock(nn.Module):
         output = xs[0]
 
         if len(xs) == 2:
-            output += self.res_conf_unit1(xs[1])
+            output += self.resConfUnit1(xs[1])
 
-        output = self.res_conf_unit2(output)
+        output = self.resConfUnit2(output)
         output = nn.functional.interpolate(
             output, scale_factor=2, mode="bilinear", align_corners=True
             )
@@ -259,25 +259,13 @@ class ResidualConvUnit_custom(nn.Module):
 
         self.groups = 1
 
-        self.conv1 = nn.Conv2d(
-            features,
-            features,
-            kernel_size=3,
-            stride=1,
-            padding=1,
-            bias=not self.bn,
-            groups=self.groups,
-            )
+        self.conv1 = nn.Conv2d(features, features, kernel_size=3,
+                               stride=1, padding=1, bias=not self.batch_norm,
+                               groups=self.groups)
 
-        self.conv2 = nn.Conv2d(
-            features,
-            features,
-            kernel_size=3,
-            stride=1,
-            padding=1,
-            bias=not self.bn,
-            groups=self.groups,
-            )
+        self.conv2 = nn.Conv2d(features, features, kernel_size=3,
+                               stride=1, padding=1, bias=not self.batch_norm,
+                               groups=self.groups)
 
         if self.batch_norm:
             self.bn1 = nn.BatchNorm2d(features)
@@ -298,12 +286,12 @@ class ResidualConvUnit_custom(nn.Module):
 
         out = self.activation(x)
         out = self.conv1(out)
-        if self.bn:
+        if self.batch_norm:
             out = self.bn1(out)
 
         out = self.activation(out)
         out = self.conv2(out)
-        if self.bn:
+        if self.batch_norm:
             out = self.bn2(out)
 
         if self.groups > 1:
@@ -347,8 +335,8 @@ class FeatureFusionBlock_custom(nn.Module):
             bias=True,
             groups=1,
             )
-        self.res_conf_unit1 = ResidualConvUnit_custom(features, activation, bn)
-        self.res_conf_unit2 = ResidualConvUnit_custom(features, activation, bn)
+        self.resConfUnit1 = ResidualConvUnit_custom(features, activation, bn)
+        self.resConfUnit2 = ResidualConvUnit_custom(features, activation, bn)
         self.skip_add = nn.quantized.FloatFunctional()
 
     def forward(self, *xs):
@@ -360,11 +348,11 @@ class FeatureFusionBlock_custom(nn.Module):
         output = xs[0]
 
         if len(xs) == 2:
-            res = self.res_conf_unit1(xs[1])
+            res = self.resConfUnit1(xs[1])
             output = self.skip_add.add(output, res)
             # output += res
 
-        output = self.res_conf_unit2(output)
+        output = self.resConfUnit2(output)
         output = nn.functional.interpolate(
             output, scale_factor=2, mode="bilinear",
             align_corners=self.align_corners
