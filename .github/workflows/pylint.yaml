@@ -5,8 +5,7 @@ name: Pylint
 on: [push]
 
 jobs:
-  build:
-
+  pylint:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,10 +26,7 @@ jobs:
       run: |
         score=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint.txt)
         echo "Pylint score was $score"
-        anybadge --value=$score --file=.badge/pylint.svg -o --label=pylint 2=red 4=orange 7=yellow 9=green
-    - name: Upload artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: pylint_badge
-        path: .badge/pylint.svg
-        retention-days: 10000
+        anybadge --value=$score --file=.pylint/badge.svg -o --label=pylint 2=red 4=orange 7=yellow 9=green
+      artifacts:
+        paths:
+          - .pylint/
