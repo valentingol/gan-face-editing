@@ -32,5 +32,5 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: pylint_badge
-        path: .badge/pylint2.svg
+        path: .badge/pylint.svg
         retention-days: 10000
