@@ -6,7 +6,7 @@
 
 [![Pycodestyle](https://github.com/valentingol/gan-face-editing/actions/workflows/pycodestyle.yaml/badge.svg)](https://github.com/valentingol/gan-face-editing/actions/workflows/pycodestyle.yaml)
 [![Flake8](https://github.com/valentingol/gan-face-editing/actions/workflows/flake.yaml/badge.svg)](https://github.com/valentingol/gan-face-editing/actions/workflows/flake.yaml)
-[![PyLint](https://github.com/valentingol/gan-face-editing/actions/workflows/pylint.yaml/badge.svg)](https://github.com/valentingol/gan-face-editing/actions/workflows/pylint.yaml)
+[![PyLint](https://github.com/valentingol/gan-face-editing/.badge/pylint.svg)](https://github.com/valentingol/gan-face-editing/actions/workflows/pylint.yaml)
 
 Winner team repository of Inter-Centrales 2022 AI competition: Ceteris Paribus Face Challenge: [site of the competition](https://transfer-learning.org/competition.html).
 
