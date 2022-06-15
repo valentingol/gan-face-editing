@@ -1,6 +1,5 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
-
-""" Evaluate the encoder. """
+"""Evaluate the encoder."""
 
 import argparse
 
@@ -19,7 +18,7 @@ from anycostgan.thirdparty.celeba_hq_split import get_celeba_hq_split
 
 
 def validate():
-    """ Perform a validation loop to evaluate the encoder. """
+    """Perform a validation loop to evaluate the encoder."""
     generator.eval()
     encoder.eval()
 

@@ -1,6 +1,6 @@
 # Code from https://github.com/isl-org/DPT
+"""ViT model."""
 
-""" ViT model. """
 import math
 import types
 
@@ -24,9 +24,9 @@ attention = {}
 
 
 def get_attention(name):
-    """ Get attention function by name. """
+    """Get attention function by name."""
     def hook(module, input_, output):
-        """ Hook for attention. """
+        """Perform hook for attention."""
         x = input_[0]
         batch, num, channels = x.shape
         qkv = (module.qkv(x).reshape(batch, num, 3, module.num_heads,
@@ -44,7 +44,7 @@ def get_attention(name):
 
 
 def get_mean_attention_map(attn, token, shape):
-    """ Get mean attention map. """
+    """Get mean attention map."""
     attn = attn[:, :, token, 1:]
     attn = attn.unflatten(2, torch.Size([shape[2] // 16, shape[3]
                                          // 16])).float()
@@ -58,26 +58,28 @@ def get_mean_attention_map(attn, token, shape):
 
 
 class Slice(nn.Module):
-    """ Slice module. """
+    """Slice module."""
+
     def __init__(self, start_index=1):
-        """ Initialize module. """
+        """Initialize module."""
         super().__init__()
         self.start_index = start_index
 
     def forward(self, x):
-        """ Forward pass. """
+        """Forward pass."""
         return x[:, self.start_index:]
 
 
 class AddReadout(nn.Module):
-    """ Add readout module. """
+    """Add readout module."""
+
     def __init__(self, start_index=1):
-        """ Initialize module. """
+        """Initialize module."""
         super().__init__()
         self.start_index = start_index
 
     def forward(self, x):
-        """ Forward pass. """
+        """Forward pass."""
         if self.start_index == 2:
             readout = (x[:, 0] + x[:, 1]) / 2
         else:
@@ -86,9 +88,10 @@ class AddReadout(nn.Module):
 
 
 class ProjectReadout(nn.Module):
-    """ Project readout module. """
+    """Project readout module."""
+
     def __init__(self, in_features, start_index=1):
-        """ Initialize module. """
+        """Initialize module."""
         super().__init__()
         self.start_index = start_index
 
@@ -96,7 +99,7 @@ class ProjectReadout(nn.Module):
                                      nn.GELU())
 
     def forward(self, x):
-        """ Forward pass. """
+        """Forward pass."""
         readout = x[:, 0].unsqueeze(1).expand_as(x[:, self.start_index:])
         features = torch.cat((x[:, self.start_index:], readout), -1)
 
@@ -104,21 +107,22 @@ class ProjectReadout(nn.Module):
 
 
 class Transpose(nn.Module):
-    """ Transpose module. """
+    """Transpose module."""
+
     def __init__(self, dim0, dim1):
-        """ Initialize module. """
+        """Initialize module."""
         super().__init__()
         self.dim0 = dim0
         self.dim1 = dim1
 
     def forward(self, x):
-        """ Forward pass. """
+        """Forward pass."""
         x = x.transpose(self.dim0, self.dim1)
         return x
 
 
 def forward_vit(pretrained, x):
-    """ Forward pass of ViT. """
+    """Forward pass of ViT."""
     _, _, h, w = x.shape
 
     pretrained.model.forward_flex(x)
@@ -136,14 +140,12 @@ def forward_vit(pretrained, x):
     unflatten = nn.Sequential(
         nn.Unflatten(
             2,
-            torch.Size(
-                [
+            torch.Size([
                     h // pretrained.model.patch_size[1],
                     w // pretrained.model.patch_size[0],
-                ]
-            ),
+                    ]),
+            )
         )
-    )
 
     if layer_1.ndim == 3:
         layer_1 = unflatten(layer_1)
@@ -167,7 +169,7 @@ def forward_vit(pretrained, x):
 
 
 def _resize_pos_embed(self, posemb, gs_h, gs_w):
-    """ Resize positional embedding. """
+    """Resize positional embedding."""
     posemb_tok, posemb_grid = (
         posemb[:, : self.start_index],
         posemb[0, self.start_index:],
@@ -187,7 +189,7 @@ def _resize_pos_embed(self, posemb, gs_h, gs_w):
 
 
 def forward_flex(self, x):
-    """ Forward pass of Flex. """
+    """Forward pass of Flex."""
     _, _, h, w = x.shape
 
     pos_embed = self._resize_pos_embed(
@@ -226,7 +228,7 @@ def forward_flex(self, x):
 
 
 def get_readout_oper(vit_features, features, use_readout, start_index=1):
-    """ Get readout operator. """
+    """Get readout operator."""
     if use_readout == "ignore":
         readout_oper = [Slice(start_index)] * len(features)
     elif use_readout == "add":
@@ -245,7 +247,7 @@ def _make_vit_b16_backbone(model, features=(96, 192, 384, 768),
                            size=(384, 384), hooks=(2, 5, 8, 11),
                            vit_features=768, use_readout="ignore",
                            start_index=1, enable_attention_hooks=False):
-    """ Make backbone for ViT-B16. """
+    """Make backbone for ViT-B16."""
     pretrained = nn.Module()
 
     pretrained.model = model
@@ -374,7 +376,7 @@ def _make_vit_b_rn50_backbone(model, features=(256, 512, 768, 768),
                               vit_features=768, use_vit_only=False,
                               use_readout="ignore", start_index=1,
                               enable_attention_hooks=False):
-    """ Make backbone for ViT-B-RN50. """
+    """Make backbone for ViT-B-RN50."""
     pretrained = nn.Module()
     pretrained.model = model
 
@@ -519,7 +521,7 @@ def _make_vit_b_rn50_backbone(model, features=(256, 512, 768, 768),
 def _make_pretrained_vitb_rn50_384(pretrained, use_readout="ignore",
                                    hooks=None, use_vit_only=False,
                                    enable_attention_hooks=False):
-    """ Make backbone for ViT-B-ResNet50. """
+    """Make backbone for ViT-B-ResNet50."""
     model = timm.create_model("vit_base_resnet50_384", pretrained=pretrained)
 
     hooks = [0, 1, 8, 11] if hooks is None else hooks
@@ -536,7 +538,7 @@ def _make_pretrained_vitb_rn50_384(pretrained, use_readout="ignore",
 
 def _make_pretrained_vitl16_384(pretrained, use_readout="ignore", hooks=None,
                                 enable_attention_hooks=False):
-    """ Make backbone for ViT-L16. """
+    """Make backbone for ViT-L16."""
     model = timm.create_model("vit_large_patch16_384", pretrained=pretrained)
 
     hooks = [5, 11, 17, 23] if hooks is None else hooks
@@ -552,7 +554,7 @@ def _make_pretrained_vitl16_384(pretrained, use_readout="ignore", hooks=None,
 
 def _make_pretrained_vitb16_384(pretrained, use_readout="ignore", hooks=None,
                                 enable_attention_hooks=False):
-    """ Make backbone for ViT-B16. """
+    """Make backbone for ViT-B16."""
     model = timm.create_model("vit_base_patch16_384", pretrained=pretrained)
 
     hooks = [2, 5, 8, 11] if hooks is None else hooks
@@ -567,7 +569,7 @@ def _make_pretrained_vitb16_384(pretrained, use_readout="ignore", hooks=None,
 
 def _make_pretrained_deitb16_384(pretrained, use_readout="ignore", hooks=None,
                                  enable_attention_hooks=False):
-    """ Make backbone for DeiT-B16. """
+    """Make backbone for DeiT-B16."""
     model = timm.create_model("vit_deit_base_patch16_384",
                               pretrained=pretrained)
 
@@ -585,7 +587,7 @@ def _make_pretrained_deitb16_distil_384(pretrained,
                                         use_readout="ignore",
                                         hooks=None,
                                         enable_attention_hooks=False):
-    """ Make backbone for DeiT-B16. """
+    """Make backbone for DeiT-B16."""
     model = timm.create_model(
         "vit_deit_base_distilled_patch16_384", pretrained=pretrained
         )

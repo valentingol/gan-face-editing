@@ -1,13 +1,14 @@
-""" Celeba HQ dataset split utility. """
+"""Celeba HQ dataset split utility."""
 
 
 def get_celeba_hq_split():
-    """ Get the split of the Celeba HQ dataset. """
+    """Get the split of the Celeba HQ dataset."""
     train_idx = []
     test_idx = []
     val_idx = []
 
-    with open('thirdparty/CelebA-HQ-to-CelebA-mapping.txt') as f:
+    with open('thirdparty/CelebA-HQ-to-CelebA-mapping.txt',
+              encoding='utf-8') as f:
         lines = f.readlines()
     celeba_ids = [int(line.strip().split()[1]) for line in lines]
 

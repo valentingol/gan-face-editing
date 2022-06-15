@@ -1,12 +1,11 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
-
-""" Utility modules and blocks for Anycost GAN. """
+"""Utility modules and blocks for Anycost GAN."""
 
 import math
 import os
 
 import torch
-import torch.nn as nn
+from torch import nn
 import torch.nn.functional as F
 
 
@@ -26,45 +25,42 @@ __all__ = ['PixelNorm', 'EqualConv2d', 'EqualLinear', 'ModulatedConv2d',
 
 
 class PixelNorm(nn.Module):
-    """ Pixelwise normalization. """
-    def __init__(self):
-        """ Initialize the module. """
-        super().__init__()
+    """Pixelwise normalization."""
 
     def forward(self, x):
-        """ Forward pass. """
+        """Forward pass."""
         return x * torch.rsqrt(torch.mean(x ** 2, dim=1, keepdim=True) + 1e-8)
 
 
 class ConstantInput(nn.Module):
-    """ Constant input. """
+    """Constant input."""
+
     def __init__(self, channel, size=4):
-        """ Initialize the module. """
+        """Initialize the module."""
         super().__init__()
         self.input = nn.Parameter(torch.randn(1, channel, size, size))
 
     def forward(self, batch):
-        """ Forward pass. """
+        """Forward pass."""
         out = self.input.repeat(batch, 1, 1, 1)
 
         if hasattr(self, 'first_k_oup') and self.first_k_oup is not None:
             # Support dynamic channel
             assert self.first_k_oup <= out.shape[1]
             return out[:, :self.first_k_oup]
-        else:
-            return out
+        return out
 
 
 class NoiseInjection(nn.Module):
-    """ Add noise to the input. """
-    def __init__(self):
-        """ Initialize the module. """
-        super().__init__()
+    """Add noise to the input."""
 
+    def __init__(self):
+        """Initialize the module."""
+        super().__init__()
         self.weight = nn.Parameter(torch.zeros(1))
 
     def forward(self, image, noise=None):
-        """ Forward pass. """
+        """Forward pass."""
         if noise is None:
             batch, _, height, width = image.shape
             noise = image.new_empty(batch, 1, height, width).normal_()
@@ -73,7 +69,7 @@ class NoiseInjection(nn.Module):
 
 
 def make_kernel(k):
-    """ Create a 2D kernel. """
+    """Create a 2D kernel."""
     k = torch.tensor(k, dtype=torch.float32)
 
     if k.ndim == 1:
@@ -85,33 +81,35 @@ def make_kernel(k):
 
 
 class Upsample(nn.Module):
-    """ Upsample the 2D input image with upfirdn2d. """
+    """Upsample the 2D input image with upfirdn2d."""
+
     def __init__(self, kernel, factor=2):
-        """ Initialize the module. """
+        """Initialize the module."""
         super().__init__()
 
         self.factor = factor
         kernel = make_kernel(kernel) * (factor ** 2)
         self.register_buffer('kernel', kernel)
 
-        p = kernel.shape[0] - factor
+        pad = kernel.shape[0] - factor
 
-        pad0 = (p + 1) // 2 + factor - 1
-        pad1 = p // 2
+        pad0 = (pad + 1) // 2 + factor - 1
+        pad1 = pad // 2
 
         self.pad = (pad0, pad1)
 
     def forward(self, x):
-        """ Forward pass. """
+        """Forward pass."""
         out = upfirdn2d(x, self.kernel, up=self.factor, down=1, pad=self.pad)
 
         return out
 
 
 class Blur(nn.Module):
-    """ Blur the 2D input image with upfirdn2d. """
+    """Blur the 2D input image with upfirdn2d."""
+
     def __init__(self, kernel, pad, upsample_factor=1):
-        """ Initialize the module. """
+        """Initialize the module."""
         super().__init__()
 
         kernel = make_kernel(kernel)
@@ -124,17 +122,18 @@ class Blur(nn.Module):
         self.pad = pad
 
     def forward(self, x):
-        """ Forward pass. """
+        """Forward pass."""
         out = upfirdn2d(x, self.kernel, pad=self.pad)
 
         return out
 
 
 class EqualConv2d(nn.Module):
-    """ Equalized convolutional layer. """
+    """Equalized convolutional layer."""
+
     def __init__(self, in_channel, out_channel, kernel_size, stride=1,
                  padding=0, bias=True):
-        """ Initialize the module. """
+        """Initialize the module."""
         super().__init__()
 
         self.weight = nn.Parameter(torch.randn(out_channel, in_channel,
@@ -150,7 +149,7 @@ class EqualConv2d(nn.Module):
             self.bias = None
 
     def forward(self, x):
-        """ Forward pass. """
+        """Forward pass."""
         in_channel = x.shape[1]
         weight = self.weight
 
@@ -170,7 +169,7 @@ class EqualConv2d(nn.Module):
         return out
 
     def __repr__(self):
-        """ Representation. """
+        """Representation."""
         return (
             f'{self.__class__.__name__}({self.weight.shape[1]}, '
             f'{self.weight.shape[0]}, {self.weight.shape[2]}, '
@@ -179,10 +178,11 @@ class EqualConv2d(nn.Module):
 
 
 class EqualLinear(nn.Module):
-    """ Equalized linear layer. """
+    """Equalized linear layer."""
+
     def __init__(self, in_dim, out_dim, bias=True, bias_init=0, lr_mul=1.0,
                  activation=None):
-        """ Initialize the module. """
+        """Initialize the module."""
         super().__init__()
 
         self.weight = nn.Parameter(torch.randn(out_dim, in_dim).div_(lr_mul))
@@ -199,7 +199,7 @@ class EqualLinear(nn.Module):
         self.lr_mul = lr_mul
 
     def forward(self, x):
-        """ Forward pass. """
+        """Forward pass."""
         if self.activation:
             out = F.linear(x, self.weight * self.scale)
             if self.activation == 'lrelu':
@@ -214,13 +214,14 @@ class EqualLinear(nn.Module):
         return out
 
     def __repr__(self):
-        """ Representation. """
+        """Representation."""
         return (f'{self.__class__.__name__}({self.weight.shape[1]}, '
                 f'{self.weight.shape[0]})')
 
 
 class ModulatedConv2d(nn.Module):
-    """ Modulated convolutional layer. """
+    """Modulated convolutional layer."""
+
     def __init__(
             self,
             in_channel,
@@ -232,6 +233,7 @@ class ModulatedConv2d(nn.Module):
             downsample=False,
             blur_kernel=(1, 3, 3, 1),
             ):
+        """Initialize the module."""
         super().__init__()
 
         self.eps = 1e-8
@@ -247,9 +249,9 @@ class ModulatedConv2d(nn.Module):
 
         if upsample:
             factor = 2
-            p = (len(blur_kernel) - factor) - (kernel_size - 1)
+            pad = (len(blur_kernel) - factor) - (kernel_size - 1)
             self.blur = Blur(blur_kernel,
-                             pad=((p + 1) // 2 + factor - 1, p // 2 + 1),
+                             pad=((pad + 1) // 2 + factor - 1, pad // 2 + 1),
                              upsample_factor=factor)
 
         self.scale = 1 / math.sqrt(in_channel * kernel_size ** 2)
@@ -259,7 +261,7 @@ class ModulatedConv2d(nn.Module):
                                                kernel_size))
 
     def __repr__(self):
-        """ Representation. """
+        """Representation."""
         return (
             f'{self.__class__.__name__}({self.in_channel}, {self.out_channel},'
             f' {self.kernel_size}, upsample={self.upsample}, '
@@ -267,7 +269,7 @@ class ModulatedConv2d(nn.Module):
             )
 
     def forward(self, x, style):
-        """ Forward pass. """
+        """Forward pass."""
         batch, in_channel, height, width = x.shape
 
         style = self.modulation(style)
@@ -312,11 +314,12 @@ class ModulatedConv2d(nn.Module):
 
 
 class StyledConv(nn.Module):
-    """ Styled convolutional layer. """
+    """Styled convolutional layer."""
+
     def __init__(self, in_channel, out_channel, kernel_size, style_dim,
                  upsample=False, blur_kernel=(1, 3, 3, 1), demodulate=True,
                  activation='lrelu'):
-        """ Initialize the module. """
+        """Initialize the module."""
         super().__init__()
 
         self.conv = ModulatedConv2d(
@@ -327,7 +330,7 @@ class StyledConv(nn.Module):
             upsample=upsample,
             blur_kernel=blur_kernel,
             demodulate=demodulate,
-        )
+            )
 
         self.noise = NoiseInjection()
         if activation == 'lrelu':
@@ -336,7 +339,7 @@ class StyledConv(nn.Module):
             raise NotImplementedError
 
     def forward(self, x, style, noise=None):
-        """ Forward pass. """
+        """Forward pass."""
         out = self.conv(x, style)
         out = self.noise(out, noise=noise)
         out = self.activate(out)
@@ -345,10 +348,11 @@ class StyledConv(nn.Module):
 
 
 class ToRGB(nn.Module):
-    """ Convert to RGB convolution. """
+    """Convert to RGB convolution."""
+
     def __init__(self, in_channel, style_dim, upsample=True,
                  blur_kernel=(1, 3, 3, 1)):
-        """ Initialize the module. """
+        """Initialize the module."""
         super().__init__()
 
         if upsample:
@@ -359,7 +363,7 @@ class ToRGB(nn.Module):
         self.bias = nn.Parameter(torch.zeros(1, 3, 1, 1))
 
     def forward(self, x, style, skip=None):
-        """ Forward pass. """
+        """Forward pass."""
         out = self.conv(x, style)
         out = out + self.bias
 
@@ -372,15 +376,16 @@ class ToRGB(nn.Module):
 
 
 class AdaptiveModulate(nn.Module):
-    """ Adaptive modulation. """
+    """Adaptive modulation."""
+
     def __init__(self, num_features, g_arch_len):
-        """ Initialize the module. """
-        super(AdaptiveModulate, self).__init__()
+        """Initialize the module."""
+        super().__init__()
         self.weight_mapping = nn.Linear(g_arch_len, num_features)
         self.bias_mapping = nn.Linear(g_arch_len, num_features)
 
     def forward(self, x, g_arch):
-        """ Forward pass. """
+        """Forward pass."""
         assert x.dim() == 4
         # Add 1 to make a smooth start
         weight = self.weight_mapping(g_arch.view(1, -1)).view(-1) + 1.0
@@ -389,18 +394,19 @@ class AdaptiveModulate(nn.Module):
 
 
 class ConvLayer(nn.Sequential):
-    """ Convolutional block with blur. """
+    """Convolutional block with blur."""
+
     def __init__(self, in_channel, out_channel, kernel_size, downsample=False,
                  blur_kernel=(1, 3, 3, 1), bias=True, activate='lrelu',
                  modulate=False, g_arch_len=18 * 4):
-        """ Initialize the module. """
+        """Initialize the module."""
         layers = []
 
         if downsample:
             factor = 2
-            p = (len(blur_kernel) - factor) + (kernel_size - 1)
-            pad0 = (p + 1) // 2
-            pad1 = p // 2
+            pad = (len(blur_kernel) - factor) + (kernel_size - 1)
+            pad0 = (pad + 1) // 2
+            pad1 = pad // 2
 
             layers.append(Blur(blur_kernel, pad=(pad0, pad1)))
 
@@ -434,7 +440,7 @@ class ConvLayer(nn.Sequential):
         super().__init__(*layers)
 
     def forward(self, x, g_arch=None):
-        """ Forward pass. """
+        """Forward pass."""
         for module in self:
             if isinstance(module, AdaptiveModulate):
                 x = module(x, g_arch)
@@ -444,10 +450,11 @@ class ConvLayer(nn.Sequential):
 
 
 class ResBlock(nn.Module):
-    """ Residual block. """
+    """Residual block."""
+
     def __init__(self, in_channel, out_channel, blur_kernel=(1, 3, 3, 1),
                  act_func='lrelu', modulate=False, g_arch_len=18 * 4):
-        """ Initialize the module. """
+        """Initialize the module."""
         super().__init__()
         self.out_channel = out_channel
         self.conv1 = ConvLayer(in_channel, in_channel, 3, activate=act_func,
@@ -461,7 +468,7 @@ class ResBlock(nn.Module):
                               modulate=modulate, g_arch_len=g_arch_len)
 
     def forward(self, x, g_arch=None):
-        """ Forward pass. """
+        """Forward pass."""
         out = self.conv1(x, g_arch)
         out = self.conv2(out, g_arch)
 

@@ -1,12 +1,11 @@
-
-""" Manage badge color. """
+"""Manage badge color."""
 
 from colorsys import hsv_to_rgb
 import sys
 
 
 def score_to_rgb_color(score, score_min, score_max):
-    """ Convert score to rgb color. """
+    """Convert score to rgb color."""
     norm_score = max(0, (score - score_min) / (score_max - score_min))
     hsv = (1/3 * norm_score, 1, 1)
     rgb = hsv_to_rgb(*hsv)

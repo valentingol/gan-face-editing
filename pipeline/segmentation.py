@@ -1,6 +1,5 @@
 # Code adapted from https://github.com/zllrunning/face-parsing.PyTorch
-
-""" Segmentation mixup using BiSeNet. """
+"""Segmentation mixup using BiSeNet."""
 
 import os
 import os.path as osp
@@ -17,8 +16,7 @@ from pipeline.utils.segmentation.model import BiSeNet
 
 
 def alpha_from_dist(dist, margin):
-    """
-    Compute alpha from distance matrix.
+    """Compute alpha from distance matrix.
 
     Parameters
     ----------
@@ -31,8 +29,7 @@ def alpha_from_dist(dist, margin):
 
 
 def segmentation_mix(data_dir, input_path, output_path, model_path, configs):
-    """
-    Apply segmentation mixup.
+    """Apply segmentation mixup.
 
     Parameters
     ----------
@@ -61,7 +58,7 @@ def segmentation_mix(data_dir, input_path, output_path, model_path, configs):
     to_tensor = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-    ])
+        ])
     with torch.no_grad():
         # Original images
         seg_original, original_imgs = {}, {}
@@ -125,7 +122,7 @@ def segmentation_mix(data_dir, input_path, output_path, model_path, configs):
 
 
 def add_foreground(img, img_org, seg_org, margin):
-    """ Add foreground to the image. """
+    """Add foreground to the image."""
     foreground = np.where(seg_org == 5, 1, 0)
     dist = dist_edt(foreground)
     alpha = alpha_from_dist(dist, margin=margin)[..., None]
@@ -136,7 +133,7 @@ def add_foreground(img, img_org, seg_org, margin):
 
 
 def merge_images(img_org, seg_org, img, seg, margin):
-    """ Merge the images. """
+    """Merge the images."""
     seg_both = seg_org * seg
     dist = dist_edt(seg_both)
     alpha = alpha_from_dist(dist, margin=margin)[..., None]
@@ -145,10 +142,10 @@ def merge_images(img_org, seg_org, img, seg, margin):
 
 
 def process_segmentation(seg, carac_name):
-    """ Return a relevant segmentation depending on the current caracteristic.
+    """Return segmentation depending on the current caracteristic.
 
     Prameters
-    ----------
+    ---------
     seg: np.ndarray
         Segmentation of the image (labels 0: background, 1: eyes,
         2: nose, 3: mouth, 4: hair, 5: hat, 6: other)
@@ -156,7 +153,7 @@ def process_segmentation(seg, carac_name):
         Ident of the caracteristic ('Sk', 'A', 'Se', 'bald', ...)
 
     Returns
-    --------
+    -------
     seg: np.ndarray, optional
         New segmentation with 1 = pixel to keep in the original image
         and 0 = pixel to change with edited image. Return None if the
@@ -197,7 +194,7 @@ def process_segmentation(seg, carac_name):
 
 
 def segmentation(images, net, device):
-    """ Apply segmentation on the images and change the labels.
+    """Apply segmentation on the images with interesting labels.
 
     Classes Legend:
     ##### Original (from model) #######

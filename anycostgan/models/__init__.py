@@ -1,6 +1,5 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
-
-""" Get models. """
+"""Get models."""
 
 import torch
 from torchvision import models
@@ -15,7 +14,7 @@ URL_TEMPLATE = 'https://hanlab.mit.edu/projects/anycost-gan/files/{}_{}.pt'
 
 
 def load_state_dict_from_url(url, key=None):
-    """ Load state dict from url. """
+    """Load state dict from url."""
     if url.startswith('http'):
         state_dict = safe_load_state_dict_from_url(url, map_location='cpu',
                                                    progress=True)
@@ -27,7 +26,7 @@ def load_state_dict_from_url(url, key=None):
 
 
 def get_pretrained(model, config=None):
-    """ Get pretrained model. """
+    """Get pretrained model."""
     if model in ['attribute-predictor', 'inception']:
         assert config is None
         # Not used for inception

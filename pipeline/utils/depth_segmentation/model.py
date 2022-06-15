@@ -1,6 +1,5 @@
 # Code from https://github.com/isl-org/DPT
-
-""" Depth estimation models. """
+"""Depth estimation models."""
 
 import torch
 from torch import nn
@@ -15,7 +14,7 @@ from pipeline.utils.depth_segmentation.vit import forward_vit
 
 
 def _make_fusion_block(features, use_bn):
-    """ Return a fusion block. """
+    """Return a fusion block."""
     return FeatureFusionBlock_custom(
         features,
         nn.ReLU(False),
@@ -27,12 +26,12 @@ def _make_fusion_block(features, use_bn):
 
 
 class DPT(BaseModel):
-    """ Dense Prediction transformer. """
+    """Dense Prediction transformer."""
+
     def __init__(self, head, features=256, backbone="vitb_rn50_384",
                  readout="project", channels_last=False, use_bn=False,
                  enable_attention_hooks=False):
-        """ Initialize model. """
-
+        """Initialize model."""
         super().__init__()
 
         self.channels_last = channels_last
@@ -64,7 +63,7 @@ class DPT(BaseModel):
         self.scratch.output_conv = head
 
     def forward(self, x):
-        """ Forward pass. """
+        """Forward pass."""
         if self.channels_last:
             x.contiguous(memory_format=torch.channels_last)
         layer_1, layer_2, layer_3, layer_4 = forward_vit(self.pretrained, x)
@@ -85,10 +84,11 @@ class DPT(BaseModel):
 
 
 class DPTDepthModel(DPT):
-    """ Depth estimation model. """
+    """Depth estimation model."""
+
     def __init__(self, path=None, non_negative=True, scale=1.0, shift=0.0,
                  invert=False, **kwargs):
-        """ Initialize model. """
+        """Initialize model."""
         features = kwargs["features"] if "features" in kwargs else 256
 
         self.scale = scale
@@ -112,7 +112,7 @@ class DPTDepthModel(DPT):
             self.load(path)
 
     def forward(self, x):
-        """ Forward pass. """
+        """Forward pass."""
         inv_depth = super().forward(x).squeeze(dim=1)
 
         if self.invert:

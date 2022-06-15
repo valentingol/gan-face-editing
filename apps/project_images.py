@@ -1,5 +1,4 @@
-
-""" Project all images in the data directory to latent space. """
+"""Project all images in the data directory to latent space."""
 
 import os
 
@@ -7,7 +6,7 @@ from pipeline.utils.global_config import GlobalConfig
 
 
 def run(config):
-    """ Run the images projection. """
+    """Run the images projection."""
     # Get the configs
     data_dir = config.data_dir
     output_dir = config.projection_dir

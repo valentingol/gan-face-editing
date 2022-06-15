@@ -1,22 +1,23 @@
 # Code from https://github.com/mseitzer/pytorch-fid
-
-""" Inception model. """
+"""Inception model."""
 
 import torch
-import torch.nn as nn
+from torch import nn
 import torch.nn.functional as F
+import torchvision
 from torchvision import models
 
 from anycostgan.utils.torch_utils import safe_load_state_dict_from_url
 
 # Inception weights ported to Pytorch from
-# http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz
+# http://download.tensorflow.org/models/image/imagenet/
+# inception-2015-12-05.tgz
 FID_WEIGHTS_URL = ('https://github.com/mseitzer/pytorch-fid/releases/download/'
                    'fid_weights/pt_inception-2015-12-05-6726825d.pth')
 
 
 class InceptionV3(nn.Module):
-    """Pretrained InceptionV3 network returning feature maps"""
+    """Pretrained InceptionV3 network returning feature maps."""
 
     # Index of default block of inception to return,
     # corresponds to output of final average pooling
@@ -28,7 +29,7 @@ class InceptionV3(nn.Module):
         192: 1,  # Second max pooling featurs
         768: 2,  # Pre-aux classifier features
         2048: 3  # Final average pooling features
-    }
+        }
 
     def __init__(self,
                  output_blocks=[DEFAULT_BLOCK_INDEX],
@@ -38,7 +39,7 @@ class InceptionV3(nn.Module):
                  normalize_input=True,
                  requires_grad=False,
                  use_fid_inception=True):
-        """Build pretrained InceptionV3
+        """Build pretrained InceptionV3.
 
         Parameters
         ----------
@@ -71,7 +72,7 @@ class InceptionV3(nn.Module):
             are strongly advised to set this parameter to true to get
             comparable results.
         """
-        super(InceptionV3, self).__init__()
+        super().__init__()
 
         self.resize_input = resize_input
         self.normalize_input = normalize_input
@@ -94,7 +95,7 @@ class InceptionV3(nn.Module):
             inception.Conv2d_2a_3x3,
             inception.Conv2d_2b_3x3,
             nn.MaxPool2d(kernel_size=3, stride=2)
-        ]
+            ]
         self.blocks.append(nn.Sequential(*block0))
 
         # Block 1: maxpool1 to maxpool2
@@ -103,7 +104,7 @@ class InceptionV3(nn.Module):
                 inception.Conv2d_3b_1x1,
                 inception.Conv2d_4a_3x3,
                 nn.MaxPool2d(kernel_size=3, stride=2)
-            ]
+                ]
             self.blocks.append(nn.Sequential(*block1))
 
         # Block 2: maxpool2 to aux classifier
@@ -117,7 +118,7 @@ class InceptionV3(nn.Module):
                 inception.Mixed_6c,
                 inception.Mixed_6d,
                 inception.Mixed_6e,
-            ]
+                ]
             self.blocks.append(nn.Sequential(*block2))
 
         # Block 3: aux classifier to final avgpool
@@ -127,14 +128,14 @@ class InceptionV3(nn.Module):
                 inception.Mixed_7b,
                 inception.Mixed_7c,
                 nn.AdaptiveAvgPool2d(output_size=(1, 1))
-            ]
+                ]
             self.blocks.append(nn.Sequential(*block3))
 
         for param in self.parameters():
             param.requires_grad = requires_grad
 
     def forward(self, inp):
-        """Get Inception feature maps
+        """Get Inception feature maps.
 
         Parameters
         ----------
@@ -171,7 +172,7 @@ class InceptionV3(nn.Module):
 
 
 def fid_inception_v3():
-    """Build pretrained Inception models for FID computation
+    """Build pretrained Inception models for FID computation.
 
     The Inception models for FID computation uses a different set of
     weights and has a slightly different structure than torchvision's
@@ -181,7 +182,6 @@ def fid_inception_v3():
     patches the necessary parts that are different in the FID Inception
     models.
     """
-    import torchvision
     inception = torchvision.models.Inception3(num_classes=1008,
                                               aux_logits=False,
                                               init_weights=False)
@@ -203,12 +203,14 @@ def fid_inception_v3():
 
 
 class FIDInceptionA(models.inception.InceptionA):
-    """InceptionA block patched for FID computation"""
+    """InceptionA block patched for FID computation."""
 
     def __init__(self, in_channels, pool_features):
-        super(FIDInceptionA, self).__init__(in_channels, pool_features)
+        """Initialize the block."""
+        super().__init__(in_channels, pool_features)
 
     def forward(self, x):
+        """Forward pass."""
         branch1x1 = self.branch1x1(x)
 
         branch5x5 = self.branch5x5_1(x)
@@ -229,14 +231,14 @@ class FIDInceptionA(models.inception.InceptionA):
 
 
 class FIDInceptionC(models.inception.InceptionC):
-    """ InceptionC block patched for FID computation. """
+    """InceptionC block patched for FID computation."""
 
     def __init__(self, in_channels, channels_7x7):
-        """ Initialize the block. """
-        super(FIDInceptionC, self).__init__(in_channels, channels_7x7)
+        """Initialize the block."""
+        super().__init__(in_channels, channels_7x7)
 
     def forward(self, x):
-        """ Forward pass. """
+        """Forward pass."""
         branch1x1 = self.branch1x1(x)
 
         branch7x7 = self.branch7x7_1(x)
@@ -260,14 +262,14 @@ class FIDInceptionC(models.inception.InceptionC):
 
 
 class FIDInceptionE_1(models.inception.InceptionE):
-    """First InceptionE block patched for FID computation"""
+    """First InceptionE block patched for FID computation."""
 
     def __init__(self, in_channels):
-        """ Initialize the block. """
-        super(FIDInceptionE_1, self).__init__(in_channels)
+        """Initialize the block."""
+        super().__init__(in_channels)
 
     def forward(self, x):
-        """ Forward pass. """
+        """Forward pass."""
         branch1x1 = self.branch1x1(x)
 
         branch3x3 = self.branch3x3_1(x)
@@ -296,14 +298,14 @@ class FIDInceptionE_1(models.inception.InceptionE):
 
 
 class FIDInceptionE_2(models.inception.InceptionE):
-    """Second InceptionE block patched for FID computation"""
+    """Second InceptionE block patched for FID computation."""
 
     def __init__(self, in_channels):
-        """ Initialize the block. """
-        super(FIDInceptionE_2, self).__init__(in_channels)
+        """Initialize the block."""
+        super().__init__(in_channels)
 
     def forward(self, x):
-        """ Forward pass. """
+        """Forward pass."""
         branch1x1 = self.branch1x1(x)
 
         branch3x3 = self.branch3x3_1(x)

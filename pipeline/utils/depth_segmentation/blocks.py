@@ -1,6 +1,5 @@
 # Code from https://github.com/isl-org/DPT
-
-""" Blocks and modules for the ViT model. """
+"""Blocks and modules for the ViT model."""
 
 import torch
 from torch import nn
@@ -145,9 +144,12 @@ class Interpolate(nn.Module):
     def __init__(self, scale_factor, mode, align_corners=False):
         """Init.
 
-        Args:
-            scale_factor (float): scaling
-            mode (str): interpolation mode
+        Parameters
+        ----------
+        scale_factor : float
+            Scaling factor
+        mode : str
+            Interpolation mode
         """
         super().__init__()
 
@@ -159,19 +161,22 @@ class Interpolate(nn.Module):
     def forward(self, x):
         """Forward pass.
 
-        Args:
-            x (tensor): input
+        Parameters
+        ----------
+        x : tensor
+            Input tensor
 
-        Returns:
-            tensor: interpolated data
+        Returns
+        -------
+        tensor
+            interpolated data
         """
-
         x = self.interp(
             x,
             scale_factor=self.scale_factor,
             mode=self.mode,
             align_corners=self.align_corners,
-        )
+            )
 
         return x
 
@@ -182,8 +187,10 @@ class ResidualConvUnit(nn.Module):
     def __init__(self, features):
         """Init.
 
-        Args:
-            features (int): number of features
+        Parameters
+        ----------
+        features : int
+            Number of features
         """
         super().__init__()
 
@@ -198,11 +205,15 @@ class ResidualConvUnit(nn.Module):
     def forward(self, x):
         """Forward pass.
 
-        Args:
-            x (tensor): input
+        Parameters
+        ----------
+        x : tensor
+            Input tensor
 
-        Returns:
-            tensor: output
+        Returns
+        -------
+        tensor
+            Output tensor
         """
         out = self.relu(x)
         out = self.conv1(out)
@@ -218,8 +229,10 @@ class FeatureFusionBlock(nn.Module):
     def __init__(self, features):
         """Init.
 
-        Args:
-            features (int): number of features
+        Parameters
+        ----------
+        features : int
+            Number of features
         """
         super().__init__()
 
@@ -229,8 +242,10 @@ class FeatureFusionBlock(nn.Module):
     def forward(self, *xs):
         """Forward pass.
 
-        Returns:
-            tensor: output
+        Returns
+        -------
+        tensor
+            Output tensor
         """
         output = xs[0]
 
@@ -250,8 +265,10 @@ class ResidualConvUnit_custom(nn.Module):
     def __init__(self, features, activation, bn):
         """Init.
 
-        Args:
-            features (int): number of features
+        Parameters
+        ----------
+        features : int
+            Number of features
         """
         super().__init__()
 
@@ -277,13 +294,16 @@ class ResidualConvUnit_custom(nn.Module):
     def forward(self, x):
         """Forward pass.
 
-        Args:
-            x (tensor): input
+        Parameters
+        ----------
+        x : tensor
+            Input tensor
 
-        Returns:
-            tensor: output
+        Returns
+        -------
+        tensor
+            Output tensor
         """
-
         out = self.activation(x)
         out = self.conv1(out)
         if self.batch_norm:
@@ -314,8 +334,10 @@ class FeatureFusionBlock_custom(nn.Module):
             ):
         """Init.
 
-        Args:
-            features (int): number of features
+        Parameters
+        ----------
+        features : int
+            Number of features
         """
         super().__init__()
 
@@ -342,8 +364,10 @@ class FeatureFusionBlock_custom(nn.Module):
     def forward(self, *xs):
         """Forward pass.
 
-        Returns:
-            tensor: output
+        Returns
+        -------
+        tensor
+            Output tensor
         """
         output = xs[0]
 

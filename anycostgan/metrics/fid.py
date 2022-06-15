@@ -1,21 +1,22 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 
-""" Compute FID. """
+"""Compute FID."""
 
 import argparse
 import math
 import pickle
 
+import horovod.torch as hvd
 import numpy as np
 from scipy import linalg
 import torch
 from tqdm import tqdm
 
-import anycostgan.models as models
+from anycostgan import models
 
 
 def calc_fid(sample_mean, sample_cov, real_mean, real_cov, eps=1e-6):
-    """ Calculates the FID score. """
+    """Calculate the FID score."""
     cov_sqrt, _ = linalg.sqrtm(sample_cov @ real_cov, disp=False)
 
     if not np.isfinite(cov_sqrt).all():
@@ -42,13 +43,13 @@ def calc_fid(sample_mean, sample_cov, real_mean, real_cov, eps=1e-6):
 
 
 def extract_feature_from_samples():
-    """ Extracts features from samples. """
+    """Extract features from samples."""
     n_batch = math.ceil(args.n_sample * 1. / args.batch_size / hvd.size())
     features = None
 
     with torch.no_grad():
         for _ in tqdm(range(n_batch), disable=hvd.rank() != 0):
-            latent = torch.randn(args.batch_size, 1, 512, device=device)
+            latent = torch.randn(args.batch_size, 1, 512, device=DEVICE)
             img, _ = generator(latent)
             img = img.clamp(min=-1., max=1.)
             # The img will be automatically resized
@@ -61,14 +62,8 @@ def extract_feature_from_samples():
     return features
 
 
-def compute_fid():
-    pass
-
-
 if __name__ == '__main__':
-    import horovod.torch as hvd
-
-    device = 'cuda'
+    DEVICE = 'cuda'
 
     parser = argparse.ArgumentParser()
 
@@ -86,7 +81,7 @@ if __name__ == '__main__':
     hvd.init()
     torch.cuda.set_device(hvd.local_rank())
 
-    generator = models.get_pretrained('generator', args.config).to(device)
+    generator = models.get_pretrained('generator', args.config).to(DEVICE)
     generator.eval()
 
     # set sub-generator
@@ -105,13 +100,13 @@ if __name__ == '__main__':
         try:
             from torchprofile import profile_macs
 
-            macs = profile_macs(generator, torch.rand(1, 1, 512).to(device))
+            macs = profile_macs(generator, torch.rand(1, 1, 512).to(DEVICE))
             params = sum([p.numel() for p in generator.parameters()])
             print(f' * MACs: {macs / 1e9:.2f}G, Params: {params / 1e6:.2f}M')
         except ImportError:
             print(' * Profiling failed. Passed.')
 
-    inception = models.get_pretrained('inception').to(device)
+    inception = models.get_pretrained('inception').to(DEVICE)
     inception.eval()
 
     inception_features = extract_feature_from_samples()

@@ -1,6 +1,5 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
-
-""" Project image in the latent space. """
+"""Project image in the latent space."""
 
 import argparse
 import json
@@ -29,7 +28,7 @@ torch.backends.cudnn.benchmark = False
 
 
 def make_image(tensor):
-    """ Convert a tensor to a numpy uint8 image. """
+    """Convert a tensor to a numpy uint8 image."""
     return (
         tensor.detach()
         .clamp_(min=-1, max=1)
@@ -44,7 +43,7 @@ def make_image(tensor):
 
 
 def extract_left_eye(img):
-    """ Extract the left eye from an image. """
+    """Extract the left eye from an image."""
     if img.shape[-1] != 1024:
         img = F.interpolate(img, size=1024, mode='bilinear',
                             align_corners=True)
@@ -52,7 +51,7 @@ def extract_left_eye(img):
 
 
 def extract_right_eye(img):
-    """ Extract the right eye from an image. """
+    """Extract the right eye from an image."""
     if img.shape[-1] != 1024:
         img = F.interpolate(img, size=1024, mode='bilinear',
                             align_corners=True)
@@ -60,7 +59,7 @@ def extract_right_eye(img):
 
 
 def compute_loss_sum(x, y, w):
-    """ Compute the sum of all losses. """
+    """Compute the sum of all losses."""
     # WARNING: here we return the sum of losses for each sample,
     # so that the lr is not related to batch size
 
@@ -82,7 +81,7 @@ def compute_loss_sum(x, y, w):
         pred_w = encoder(adaptive_resize(imgs, 256))
         enc_loss = nn.MSELoss()(w, pred_w) * x.shape[0] * args.enc_reg_weight
     else:
-        enc_loss = torch.tensor(0.).to(device)
+        enc_loss = torch.tensor(0.).to(DEVICE)
 
     loss = mse_loss + percep_loss + enc_loss
     # average loss per sample for display
@@ -93,7 +92,7 @@ def compute_loss_sum(x, y, w):
 
 
 def process_generator():
-    """ Process the generator. """
+    """Process the generator."""
     if args.optimize_sub_g:
         if evolve_cfgs is not None:
             # The generator is trained with elastic channels and
@@ -115,7 +114,7 @@ def process_generator():
 
 
 def project_images(images, save_intermediate=False):
-    """ Project images in the latent space. """
+    """Project images in the latent space."""
     with torch.no_grad():
         if encoder is not None:
             styles = encoder(adaptive_resize(images, 256))
@@ -180,7 +179,7 @@ def project_images(images, save_intermediate=False):
 
 
 if __name__ == "__main__":
-    device = "cuda"
+    DEVICE = "cuda"
 
     parser = argparse.ArgumentParser(
         description="Image projector to the generator latent spaces"
@@ -219,11 +218,11 @@ if __name__ == "__main__":
     n_mean_latent = 10000
 
     # build generator to project
-    generator = models.get_pretrained('generator', args.config).to(device)
+    generator = models.get_pretrained('generator', args.config).to(DEVICE)
 
     generator.eval()
     if args.encoder:
-        encoder = models.get_pretrained('encoder', args.config).to(device)
+        encoder = models.get_pretrained('encoder', args.config).to(DEVICE)
         encoder.eval()
     else:
         encoder = None
@@ -234,7 +233,7 @@ if __name__ == "__main__":
         print(' * loading evolution configs...')
         with open(os.path.join(
                 f'anycostgan/evolve_configs/{args.config}.json'
-                )) as f:
+                ), encoding='utf-8') as f:
             evolve_cfgs = json.load(f)
         # pick some reduction ratios; you can modify this to include
         # more or fewer reduction ratio: search MACs limit (the key in
@@ -251,7 +250,7 @@ if __name__ == "__main__":
         evolve_cfgs = None
 
     # load perceptual loss
-    percept = lpips.LPIPS(net='vgg', verbose=False).to(device)
+    percept = lpips.LPIPS(net='vgg', verbose=False).to(DEVICE)
 
     # load images to project
     resize = min(generator.resolution, 256)
@@ -261,7 +260,7 @@ if __name__ == "__main__":
         transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
     ])
     imgs = [transform(Image.open(f).convert("RGB")) for f in args.files]
-    imgs = torch.stack(imgs, 0).to(device)
+    imgs = torch.stack(imgs, 0).to(DEVICE)
     projected_styles = project_images(imgs,
                                       save_intermediate=args.save_intermediate)
 

@@ -1,9 +1,9 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 # Code adapted from https://gist.github.com/lzhbrian/
 # bde87ab23b499dd02ba4f588258f57d5
+"""Face alignment with FFHQ method.
 
-"""
-brief: face alignment with FFHQ method (https://github.com/NVlabs/ffhq-dataset)
+link: https://github.com/NVlabs/ffhq-dataset
 author: lzhbrian (https://lzhbrian.me)
 date: 2020.1.5
 note: code is heavily borrowed from
@@ -35,8 +35,17 @@ predictor = dlib.shape_predictor('./shape_predictor_68_face_landmarks.dat')
 
 
 def get_landmark(filepath):
-    """get landmark with dlib
-    :return: np.array shape=(68, 2)
+    """Get landmark with dlib.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to image.
+
+    Returns
+    -------
+    np.array
+        Landmarks, shape=(68, 2).
     """
     detector = dlib.get_frontal_face_detector()
 
@@ -67,8 +76,7 @@ def get_landmark(filepath):
 
 
 def align_face(filepath):
-    """
-    Align face function.
+    """Align face.
 
     Parameters
     ----------
@@ -80,7 +88,6 @@ def align_face(filepath):
     PIL Image:
         Aligned face image.
     """
-
     landmark = get_landmark(filepath)
 
     lm_eye_left = landmark[36: 42]  # left-clockwise

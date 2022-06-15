@@ -1,12 +1,12 @@
 # Code from https://github.com/isl-org/DPT
-
-""" Base model. """
+"""Base depth segmentation model."""
 
 import torch
 
 
 class BaseModel(torch.nn.Module):
-    """ Base model class. """
+    """Base model class."""
+
     def load(self, path):
         """Load model from file.
 
