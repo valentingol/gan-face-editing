@@ -6,6 +6,7 @@
 
 [![Pycodestyle](https://github.com/valentingol/gan-face-editing/actions/workflows/pycodestyle.yaml/badge.svg)](https://github.com/valentingol/gan-face-editing/actions/workflows/pycodestyle.yaml)
 [![Flake8](https://github.com/valentingol/gan-face-editing/actions/workflows/flake.yaml/badge.svg)](https://github.com/valentingol/gan-face-editing/actions/workflows/flake.yaml)
+[![Pydocstyle](https://github.com/valentingol/gan-face-editing/actions/workflows/pydocstyle.yaml/badge.svg)](https://github.com/valentingol/gan-face-editing/actions/workflows/pydocstyle.yaml)
 [![PyLint](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/valentingol/c60e6ce49447254be085193c99b8425b/raw/gan_face_editing_pylint_badge.json)](https://github.com/valentingol/gan-face-editing/actions/workflows/pylint.yaml)
 
 Winner team repository of Inter-Centrales 2022 AI competition: Ceteris Paribus Face Challenge: [site of the competition](https://transfer-learning.org/competition.html).
@@ -63,6 +64,8 @@ pip install -r requirements.txt
 The original dataset of the competition is available here: [drive dataset](https://drive.google.com/drive/folders/1-R1863MV8CuCjmycsLy05Uc6bdkWfuOP?usp=sharing)
 
 Unzip the content in a folde called `data/face_challenge`.
+
+By default, a depth estimation is performed to correct artefacts of the backgrounds. You need download the model for depth estimation here: [download](https://drive.google.com/file/d/1vnuhoMc6caF-buQQ4hK0CeiMk9SjwB-G/view) and put it on `postprocess/depth_segmentation/model/`.
 
 ### Compute latent space of images
 
@@ -141,7 +144,7 @@ By default, the resulting images are in `res/run1/images_post_segmentation/`
 
 ### Depth estimation
 
-In order to improve the segmentation, we perform depth estimation to correct artefacts of the backgrounds for the images coming from the segmentation. First, you need get the model for depth estimation with LFS. Otherwise you can download it here: [download](https://drive.google.com/file/d/1vnuhoMc6caF-buQQ4hK0CeiMk9SjwB-G/view) and put it on `postprocess/depth_segmentation/model/`.
+In order to improve the segmentation, we perform depth estimation to correct artefacts of the backgrounds for the images coming from the segmentation. First, you need get the model for depth estimation. You can download it here: [download](https://drive.google.com/file/d/1vnuhoMc6caF-buQQ4hK0CeiMk9SjwB-G/view) and put it on `postprocess/depth_segmentation/model/`.
 The idea is to make a depth estimation with a transformer model (see [DPT](https://github.com/isl-org/DPT)). Then we build the foreground mask with a K-means algorithm. This allows to extract a relevant foreground from the segmented image and to paste it on the background of the original image.
 
 Then you can run the following script to merge the previously edited images with the original ones by depth estimation:
