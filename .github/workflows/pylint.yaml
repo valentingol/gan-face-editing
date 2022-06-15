@@ -26,7 +26,7 @@ jobs:
     - name: Create badge for pylint
       run: |
         score=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' pylint.txt)
-        color=$(python .badge/pylint_get_color.py --score=$score)
+        color=$(python .github/workflows/actions_utils/pylint_get_color.py --score=$score)
         echo "Pylint score was $score"
         echo "PYLINT_COLOR=$color"
         echo "PYLINT_COLOR=$color" >> $GITHUB_ENV
