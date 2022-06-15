@@ -1,6 +1,5 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
-
-""" Train AnycostGAN. """
+"""Train AnycostGAN."""
 
 import argparse
 import json
@@ -49,7 +48,7 @@ best_fid = 1e9
 
 
 def train(epoch):
-    """ Train for one epoch. """
+    """Train for one epoch."""
     generator.train()
     discriminator.train()
     g_ema.eval()
@@ -277,12 +276,13 @@ def train(epoch):
 
 
 def validate(epoch):
+    """Perform one loop of validation."""
     if args.dynamic_channel:  # we also evaluate the model with half channels
         set_uniform_channel_ratio(g_ema, 0.5)
         fid = measure_fid()
         reset_generator(g_ema)
         if hvd.rank() == 0:
-            print(' * FID-0.5x: {:.2f}'.format(fid))
+            print(f' * FID-0.5x: {fid:.2f}')
             n = len(data_loader) * (epoch + 1) * args.batch_size * hvd.size()
             log_writer.add_scalar('Metrics/fid-0.5x', fid, n)
 
@@ -293,7 +293,7 @@ def validate(epoch):
     global best_fid
     best_fid = min(best_fid, fid)
     if hvd.rank() == 0:
-        print(' * FID: {:.2f} ({:.2f})'.format(fid, best_fid))
+        print(f' * FID: {fid:.2f} ({best_fid:.2f})')
         state_dict = {
             "g": generator.state_dict(),
             "d": discriminator.state_dict(),
@@ -313,7 +313,7 @@ def validate(epoch):
 
 
 def measure_fid():
-    # Get all the resolutions to evaluate fid
+    """Get all the resolutions to evaluate fid."""
     # WARNING: always assume that we measure the largest few resolutions
 
     # Support evaluating multiple resolutions
@@ -343,15 +343,16 @@ def measure_fid():
                         (features_list[i_res], feat), dim=0
                         )
     # compute the FID
-    fid_dict = dict()
+    fid_dict = {}
     for i_res, features in enumerate(features_list):
-        features = hvd.allgather(features, name='ffid_features{i_res}'.numpy())
+        features = hvd.allgather(features,
+                                 name=f'ffid_features{i_res}').numpy()
         features = features[:args.fid_n_sample]
         if hvd.rank() == 0:  # only compute on node 1, save some CPU
             sample_mean = np.mean(features, 0)
             sample_cov = np.cov(features, rowvar=False)
-            with open(inception_path_list[i_res], 'rb') as f:
-                embeds = pickle.load(f)
+            with open(inception_path_list[i_res], 'rb') as file:
+                embeds = pickle.load(file)
             real_mean = embeds['mean']
             real_cov = embeds['cov']
             fid = calc_fid(sample_mean, sample_cov, real_mean, real_cov)
@@ -448,7 +449,8 @@ if __name__ == "__main__":
         if hvd.rank() == 0 else None
 
     if hvd.rank() == 0:  # save args
-        with open(os.path.join(LOG_DIR, args.job, 'args.txt'), 'w') as f:
+        with open(os.path.join(LOG_DIR, args.job, 'args.txt'), 'w',
+                  encoding='utf-8') as f:
             json.dump(args.__dict__, f, indent=4)
 
     # build dataset

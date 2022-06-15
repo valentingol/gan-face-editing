@@ -1,6 +1,5 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
-
-""" Compute attribute consistency. """
+"""Compute attribute consistency."""
 
 import argparse
 import math
@@ -10,11 +9,12 @@ import torch
 from tqdm import tqdm
 
 from anycostgan import models
+from anycostgan.models.dynamic_channel import set_uniform_channel_ratio
 from anycostgan.utils.torch_utils import adaptive_resize
 
 
 def compute_attribute_consistency(g, sub_g, n_sample, batch_size):
-    """ Compute attribute consistency. """
+    """Compute attribute consistency."""
     attr_pred = models.get_pretrained('attribute-predictor').to(DEVICE)
     attr_pred.eval()
 
@@ -85,7 +85,6 @@ if __name__ == "__main__":
         'generator', args.config
         ).to(DEVICE).eval()
     if args.channel_ratio:
-        from anycostgan.models.dynamic_channel import set_uniform_channel_ratio
         set_uniform_channel_ratio(sub_generator, args.channel_ratio)
 
     if args.target_res is not None:

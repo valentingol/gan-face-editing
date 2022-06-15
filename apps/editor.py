@@ -1,7 +1,5 @@
 # Code adapted from https://github.com/mit-han-lab/anycost-gan
-
-""" Launch editor API. """
-
+"""Launch editor API."""
 
 from functools import partial
 import os
@@ -24,36 +22,39 @@ from pipeline.utils.global_config import GlobalConfig
 
 
 class WorkerSignals(QObject):
-    """ WorkerSignals class. """
+    """WorkerSignals class."""
+
     finished = pyqtSignal()
     error = pyqtSignal(tuple)
     result = pyqtSignal(object)
 
 
 class Worker(QRunnable):
-    """ Worker class. """
+    """Worker class."""
+
     def __init__(self, fn, *args, **kwargs):
-        """ Initialize Worker class. """
+        """Initialize Worker class."""
         super().__init__()
         # Store constructor arguments (re-used for processing)
-        self.fn = fn
+        self.func = fn
         self.args = args
         self.kwargs = kwargs
         self.signals = WorkerSignals()
 
     @pyqtSlot()
     def run(self):
-        """ Run worker. """
+        """Run worker."""
         time_1 = time.time()
-        ret = self.fn(*self.args, **self.kwargs)
+        ret = self.func(*self.args, **self.kwargs)
         time_2 = time.time()
         self.signals.result.emit((ret, time_2 - time_1))
 
 
 class FaceEditor(QMainWindow):
-    """ FaceEditor App. """
+    """FaceEditor App."""
+
     def __init__(self, anycost_config, default_max_value, custom_max_value):
-        """ Initialize FaceEditor class. """
+        """Initialize FaceEditor class."""
         super().__init__()
         self.anycost_config = anycost_config
         # Load assets
@@ -225,7 +226,7 @@ class FaceEditor(QMainWindow):
         self.show()
 
     def load_assets(self, default_max_value, custom_max_values):
-        """ Load assets from the configs """
+        """Load assets from the configs."""
         # Build the generator
         self.generator = models.get_pretrained('generator',
                                                self.anycost_config).to('cpu')
@@ -282,7 +283,7 @@ class FaceEditor(QMainWindow):
             'lipstick': '36_Wearing_Lipstick',
             'rosy cheeks': '29_Rosy_Cheeks',
         }
-        max_values = {k: default_max_value for k in direction_map.keys()}
+        max_values = {k: default_max_value for k in direction_map}
         max_values = {**max_values, **custom_max_values}
         self.max_values = max_values
 
@@ -324,7 +325,7 @@ class FaceEditor(QMainWindow):
 
     @staticmethod
     def np2pixmap(np_arr):
-        """ Convert a numpy array to a QPixmap. """
+        """Convert a numpy array to a QPixmap."""
         height, width, _ = np_arr.shape
         q_image = QImage(np_arr.data, width, height, 3 * width,
                          QImage.Format_RGB888)
@@ -332,14 +333,14 @@ class FaceEditor(QMainWindow):
 
     @staticmethod
     def set_img_location(img_op, x, y, w, h):
-        """ Set the location of an image. """
+        """Set the location of an image."""
         img_op.setScaledContents(True)
         img_op.setFixedSize(w, h)  # w, h
         img_op.move(x, y)  # x, y
 
     @staticmethod
     def set_text_format(text_op, align='center', font_size=18):
-        """ Set the format of a text. """
+        """Set the format of a text."""
         if align == 'center':
             align = Qt.AlignCenter
         elif align == 'left':
@@ -352,7 +353,7 @@ class FaceEditor(QMainWindow):
         text_op.setFont(QFont('Arial', font_size))
 
     def select_image(self, idx):
-        """ Select an image to display. """
+        """Select an image to display."""
         self.sample_idx = idx
         self.org_latent_code = self.latent_code_list[self.sample_idx]
         pixmap = self.np2pixmap(self.org_image_list[self.sample_idx])
@@ -363,7 +364,7 @@ class FaceEditor(QMainWindow):
         self.reset_sliders()
 
     def reset_sliders(self):
-        """ Reset the sliders to the original values. """
+        """Reset the sliders to the original values."""
         for slider in self.attr_sliders.values():
             slider.setValue(0)
         self.edited_image_label.setText('projected')
@@ -371,9 +372,10 @@ class FaceEditor(QMainWindow):
         self.time_label.setText('')
 
     def generate_image(self, pixmap=True):
-        """ Generate an image. """
+        """Generate an image."""
+
         def image_to_np(x):
-            """ Convert a torch tensor to a numpy array. """
+            """Convert a torch tensor to a numpy array."""
             assert x.shape[0] == 1
             x = x.squeeze(0).permute(1, 2, 0)
             x = (x + 1) * 0.5  # 0-1
@@ -389,22 +391,22 @@ class FaceEditor(QMainWindow):
             return out
 
     def set_sliders_status(self, active):
-        """ Set the status of the sliders. """
+        """Set the status of the sliders."""
         for slider in self.attr_sliders.values():
             slider.setEnabled(active)
 
     def slider_update(self, force_full_g=True, save_trans=False,
                       save_img=False):
-        """ Update the sliders. """
+        """Update the sliders."""
         self.set_sliders_status(False)
         self.statusBar().showMessage('Running...')
         self.time_label.setText('')
         self.loading_label.setVisible(True)
         edited_code = self.org_latent_code.clone()
-        for direction_name in self.attr_sliders.keys():
+        for direction_name, attribute in self.attr_sliders.items():
             edited_code[:, : N_STYLE_TO_CHANGE] = \
                 edited_code[:, : N_STYLE_TO_CHANGE] \
-                + self.attr_sliders[direction_name].value() \
+                + attribute.value() \
                 * self.direction_dict[direction_name] / 100 \
                 * self.max_values[direction_name]
         self.input_kwargs['styles'] = edited_code
@@ -446,7 +448,7 @@ class FaceEditor(QMainWindow):
         self.thread_pool.start(worker)
 
     def after_slider_update(self, ret):
-        """ Update the class after the sliders are updated. """
+        """Update the class after the sliders are updated."""
         edited, used_time = ret
         self.edited_image.setPixmap(edited)
 
@@ -458,14 +460,14 @@ class FaceEditor(QMainWindow):
         self.loading_label.setVisible(False)
 
     def model_update(self):
-        """ Update the model. """
+        """Update the model."""
         channel_slider_num = self.channel_slider.value()
         resolution_slider_num = self.resolution_slider.value()
         self.anycost_channel = [0.25, 0.5, 0.75, 1.0][channel_slider_num]
         self.anycost_resolution = [128, 256, 512, 1024][resolution_slider_num]
 
     def reset_clicked(self):
-        """ Reset button. """
+        """Reset button."""
         self.reset_sliders()
         self.edited_image.setPixmap(self.projected_image)
 
@@ -481,10 +483,10 @@ if __name__ == '__main__':
     custom_max_val = config.editor.custom_max_value
 
     flexible_config = config.anycost_config_flexible
-    anycost_config = ('anycost-ffhq-config-f-flexible'
+    ANYCOST_CONFIG = ('anycost-ffhq-config-f-flexible'
                       if flexible_config else 'anycost-ffhq-config-f')
 
     # Run the editor
     app = QApplication(sys.argv[0:1])
-    ex = FaceEditor(anycost_config, default_max_val, custom_max_val)
+    ex = FaceEditor(ANYCOST_CONFIG, default_max_val, custom_max_val)
     sys.exit(app.exec_())

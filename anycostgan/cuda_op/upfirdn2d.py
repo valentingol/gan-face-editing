@@ -1,12 +1,13 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
-
-""" Native CUDA implementation of the UpFirDn2d function. """
+"""Native CUDA implementation of the UpFirDn2d function."""
 
 import os
 
 import torch
 from torch.autograd import Function
 from torch.utils.cpp_extension import load
+
+from anycostgan.cuda_op.op_native import upfirdn2d_native
 
 
 module_path = os.path.dirname(__file__)
@@ -21,11 +22,11 @@ upfirdn2d_op = load(
 
 class UpFirDn2dBackward(Function):
     """Backward version of UpFirDn2d."""
+
     @staticmethod
     def forward(ctx, grad_output, kernel, grad_kernel, up, down, pad, g_pad,
                 in_size, out_size):
         """Forward pass UpFirDn2dBackward."""
-
         up_x, up_y = up
         down_x, down_y = down
         g_pad_x0, g_pad_x1, g_pad_y0, g_pad_y1 = g_pad
@@ -43,7 +44,7 @@ class UpFirDn2dBackward(Function):
             g_pad_x1,
             g_pad_y0,
             g_pad_y1,
-        )
+            )
         grad_input = grad_input.view(in_size[0], in_size[1], in_size[2],
                                      in_size[3])
 
@@ -83,28 +84,29 @@ class UpFirDn2dBackward(Function):
             ctx.pad_x1,
             ctx.pad_y0,
             ctx.pad_y1,
-        )
+            )
         gradgrad_out = gradgrad_out.view(
             ctx.in_size[0], ctx.in_size[1], ctx.out_size[0], ctx.out_size[1]
-        )
+            )
 
         return gradgrad_out, None, None, None, None, None, None, None, None
 
 
 class UpFirDn2d(Function):
     """UpFirDn2d."""
+
     @staticmethod
-    def forward(ctx, input, kernel, up, down, pad):
+    def forward(ctx, X, kernel, up, down, pad):
         """Forward pass UpFirDn2d."""
         up_x, up_y = up
         down_x, down_y = down
         pad_x0, pad_x1, pad_y0, pad_y1 = pad
 
         kernel_h, kernel_w = kernel.shape
-        _, channel, in_h, in_w = input.shape
-        ctx.in_size = input.shape
+        _, channel, in_h, in_w = X.shape
+        ctx.in_size = X.shape
 
-        input = input.reshape(-1, in_h, in_w, 1)
+        X = X.reshape(-1, in_h, in_w, 1)
 
         ctx.save_for_backward(kernel, torch.flip(kernel, [0, 1]))
 
@@ -124,7 +126,7 @@ class UpFirDn2d(Function):
         ctx.g_pad = (g_pad_x0, g_pad_x1, g_pad_y0, g_pad_y1)
 
         out = upfirdn2d_op.upfirdn2d(
-            input, kernel, up_x, up_y, down_x, down_y, pad_x0, pad_x1, pad_y0,
+            X, kernel, up_x, up_y, down_x, down_y, pad_x0, pad_x1, pad_y0,
             pad_y1
             )
         # out = out.view(major, out_h, out_w, minor)
@@ -152,18 +154,20 @@ class UpFirDn2d(Function):
         return grad_input, None, None, None, None
 
 
-def upfirdn2d(input, kernel, up=1, down=1, pad=(0, 0)):
+def upfirdn2d(X, kernel, up=1, down=1, pad=(0, 0)):
     """UpFirDn2d."""
     if input.device.type == "cpu":
-        from anycostgan.cuda_op.op_native import upfirdn2d_native
         out = upfirdn2d_native(
-            input, kernel, up, up, down, down, pad[0], pad[1], pad[0], pad[1]
-        )
+            X, kernel, up, up, down, down, pad[0], pad[1], pad[0], pad[1]
+            )
 
     else:
         out = UpFirDn2d.apply(
-            input, kernel, (up, up), (down, down), (pad[0], pad[1], pad[0],
-                                                    pad[1])
-        )
+            X,
+            kernel,
+            (up, up),
+            (down, down),
+            (pad[0], pad[1], pad[0], pad[1])
+            )
 
     return out

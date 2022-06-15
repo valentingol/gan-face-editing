@@ -1,6 +1,5 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
-
-""" Anycost GAN Generator and Discriminator. """
+"""Anycost GAN Generator and Discriminator."""
 
 import math
 import random
@@ -28,12 +27,13 @@ D_CHANNEL_CONFIG = G_CHANNEL_CONFIG
 
 
 class Generator(nn.Module):
-    """ Anycost GAN Generator. """
+    """Anycost GAN Generator."""
+
     def __init__(self, resolution, style_dim=512, n_mlp=8,
                  channel_multiplier=2, channel_max=512,
                  blur_kernel=(1, 3, 3, 1), lr_mlp=0.01,
                  act_func='lrelu'):
-        """ Initialize the generator. """
+        """Initialize the generator."""
         super().__init__()
         self.resolution = resolution
         self.style_dim = style_dim  # usually 512
@@ -80,7 +80,7 @@ class Generator(nn.Module):
                                         torch.randn(*shape))
 
     def make_noise(self):
-        """ Make input noise for the generator. """
+        """Make input noise for the generator."""
         device = self.style[-1].weight.device
 
         noises = [torch.randn(1, 1, 2 ** 2, 2 ** 2, device=device)]
@@ -90,14 +90,14 @@ class Generator(nn.Module):
         return noises
 
     def mean_style(self, n_sample):
-        """ Get the mean style of the generator. """
+        """Get the mean style of the generator."""
         z = torch.randn(n_sample, self.style_dim,
                         device=self.style[-1].weight.device)
         w = self.style(z).mean(0, keepdim=True)
         return w
 
     def get_style(self, z):
-        """ Get the style of noise z. """
+        """Get the style of noise z."""
         z_shape = z.shape
         return self.style(z.view(-1, z.shape[-1])).view(z_shape)
 
@@ -199,17 +199,17 @@ class Generator(nn.Module):
 
         if return_styles:
             return skip, styles
-        elif return_rgbs:
+        if return_rgbs:
             return skip, all_rgbs
-        else:
-            return skip, None
+        return skip, None
 
 
 class Discriminator(nn.Module):
-    """ Anycost GAN discriminator. """
+    """Anycost GAN discriminator."""
+
     def __init__(self, resolution, channel_multiplier=2, channel_max=512,
                  blur_kernel=(1, 3, 3, 1), act_func='lrelu'):
-        """ Initialize the discriminator. """
+        """Initialize the discriminator."""
         super().__init__()
 
         channels = {
@@ -222,7 +222,7 @@ class Discriminator(nn.Module):
             256: 64,
             512: 32,
             1024: 16,
-        }
+            }
 
         channels = {k: min(channel_max, int(v * channel_multiplier))
                     for k, v in channels.items()}
@@ -253,7 +253,7 @@ class Discriminator(nn.Module):
         )
 
     def forward(self, x):
-        """ Forward pass. """
+        """Forward pass."""
         out = self.convs(x)
 
         batch, channel, height, width = out.shape
@@ -276,11 +276,12 @@ class Discriminator(nn.Module):
 
 
 class DiscriminatorMultiRes(nn.Module):
-    """ Anycost GAN discriminator with multi resolution. """
+    """Anycost GAN discriminator with multi resolution."""
+
     def __init__(self, resolution, channel_multiplier=2, channel_max=512,
                  blur_kernel=(1, 3, 3, 1), act_func='lrelu',
                  n_res=1, modulate=False):
-        """ Initialize the discriminator. """
+        """Initialize the discriminator."""
         super().__init__()
 
         channels = {k: min(channel_max, int(v * channel_multiplier))
@@ -323,7 +324,7 @@ class DiscriminatorMultiRes(nn.Module):
         )
 
     def forward(self, x, g_arch=None):
-        """ Forward pass. """
+        """Forward pass."""
         res = x.shape[-1]
         idx = self.res2idx[res]
         out = self.convs[idx](x)
@@ -339,7 +340,7 @@ class DiscriminatorMultiRes(nn.Module):
 
     @staticmethod
     def minibatch_discrimination(x, stddev_group, stddev_feat):
-        """ Minibatch discrimination. """
+        """Minibatch discrimination."""
         out = x
         batch, channel, height, width = out.shape
         group = min(batch, stddev_group)

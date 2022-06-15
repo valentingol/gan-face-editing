@@ -1,5 +1,4 @@
-
-""" Translation functions. """
+"""Translation functions."""
 
 import os
 
@@ -12,9 +11,9 @@ from pipeline.utils.translation.get_translations import get_translations
 
 
 def generate_image(generator, **input_kwargs):
-    """ Generate an image from the latent code. """
+    """Generate an image from the latent code."""
     def image_to_np(x):
-        """ Convert an torch tensor to numpy array. """
+        """Convert an torch tensor to numpy array."""
         assert x.shape[0] == 1
         x = x.squeeze(0).permute(1, 2, 0)
         x = (x + 1) * 0.5  # 0-1

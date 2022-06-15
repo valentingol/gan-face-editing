@@ -1,6 +1,5 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
-
-""" Native CUDA implementation of the Fused Leaky ReLU activation function. """
+"""Native CUDA implementation of the Fused Leaky ReLU activation function."""
 
 import os
 
@@ -22,6 +21,7 @@ fused = load(
 
 class FusedLeakyReLUFunctionBackward(Function):
     """Backward version of FusedLeakyReLUFunction."""
+
     @staticmethod
     def forward(ctx, grad_output, out, negative_slope, scale):
         """Forward pass FusedLeakyReLUFunctionBackward."""
@@ -58,6 +58,7 @@ class FusedLeakyReLUFunctionBackward(Function):
 
 class FusedLeakyReLUFunction(Function):
     """Forward version of FusedLeakyReLUFunction."""
+
     @staticmethod
     def forward(ctx, input, bias, negative_slope, scale):
         """Forward pass of FusedLeakyReLUFunction."""
@@ -83,7 +84,8 @@ class FusedLeakyReLUFunction(Function):
 
 
 class FusedLeakyReLU(nn.Module):
-    """ Fused Leaky ReLU module."""
+    """Fused Leaky ReLU module."""
+
     def __init__(self, channel, negative_slope=0.2, scale=2 ** 0.5):
         """Initialize FusedLeakyReLU module."""
         super().__init__()
@@ -92,13 +94,13 @@ class FusedLeakyReLU(nn.Module):
         self.negative_slope = negative_slope
         self.scale = scale
 
-    def forward(self, input):
+    def forward(self, X):
         """Forward pass of FusedLeakyReLU module."""
-        return fused_leaky_relu(input, self.bias[:input.shape[1]],
+        return fused_leaky_relu(X, self.bias[:X.shape[1]],
                                 self.negative_slope, self.scale)
 
 
-def fused_leaky_relu(input, bias, negative_slope=0.2, scale=2 ** 0.5):
+def fused_leaky_relu(X, bias, negative_slope=0.2, scale=2 ** 0.5):
     """Apply Fused Leaky ReLU."""
-    return FusedLeakyReLUFunction.apply(input, bias[:input.shape[1]],
+    return FusedLeakyReLUFunction.apply(X, bias[:X.shape[1]],
                                         negative_slope, scale)

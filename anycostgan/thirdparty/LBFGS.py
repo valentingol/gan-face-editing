@@ -1,4 +1,5 @@
-""" L-BFGS functions. """
+"""L-BFGS functions."""
+
 from copy import deepcopy
 from functools import reduce
 
@@ -10,8 +11,7 @@ from torch.optim import Optimizer
 
 
 def is_legal(v):
-    """
-    Checks that tensor is not NaN or Inf.
+    """Check that tensor is not NaN or Inf.
 
     Parameters
     ----------
@@ -28,8 +28,9 @@ def is_legal(v):
 
 
 def polyinterp(points, x_min_bound=None, x_max_bound=None, plot=False):
-    """
-    Gives the minimizer and minimum of the interpolating polynomial
+    """Polynomial interpolation.
+
+    Give the minimizer and minimum of the interpolating polynomial
     over given points based on function and derivative information.
     Defaults to bisection if no critical points are valid.
 
@@ -162,8 +163,8 @@ def polyinterp(points, x_min_bound=None, x_max_bound=None, plot=False):
             f_min = np.Inf
             x_sol = (x_min_bound + x_max_bound) / 2  # defaults to bisection
             for crit_pt in crit_pts:
-                if np.isreal(crit_pt) and crit_pt >= x_min_bound \
-                        and crit_pt <= x_max_bound:
+                if np.isreal(crit_pt) and \
+                        x_min_bound <= crit_pt <= x_max_bound:
                     F_cp = np.polyval(coeff, crit_pt)
                     if np.isreal(F_cp) and F_cp < f_min:
                         x_sol = np.real(crit_pt)
@@ -176,7 +177,8 @@ def polyinterp(points, x_min_bound=None, x_max_bound=None, plot=False):
 
 
 class LBFGS(Optimizer):
-    """
+    """L-BFGS optimizer.
+
     Implements the L-BFGS algorithm. Compatible with multi-batch
     and full-overlap L-BFGS implementations and (stochastic) Powell
     damping. Partly based on the original L-BFGS implementation in
@@ -190,8 +192,8 @@ class LBFGS(Optimizer):
       . Does not support per-parameter options and parameter groups.
       . All parameters have to be on a single device.
 
-    Paramters
-    ---------
+    Parameters
+    ----------
     lr : float
         Step length or learning rate. By default 1.0
     history_size : int
@@ -208,7 +210,8 @@ class LBFGS(Optimizer):
     debug : bool
         Debugging mode. By default False
 
-    References:
+    References
+    ----------
     [1] Berahas, Albert S., Jorge Nocedal, and Martin Takác.
         "A Multi-Batch L-BFGS Method for Machine Learning." Advances in
         Neural Information Processing Systems. 2016.
@@ -238,8 +241,7 @@ class LBFGS(Optimizer):
 
     def __init__(self, params, lr=1, history_size=10, line_search='Wolfe',
                  dtype=torch.float, debug=False):
-        """ Initialize LBFGS optimizer. """
-
+        """Initialize LBFGS optimizer."""
         # Ensure inputs are valid
         if lr < 0.0:
             raise ValueError(f"Invalid learning rate: {lr}")
@@ -251,7 +253,7 @@ class LBFGS(Optimizer):
         defaults = dict(lr=lr, history_size=history_size,
                         line_search=line_search,
                         dtype=dtype, debug=debug)
-        super(LBFGS, self).__init__(params, defaults)
+        super().__init__(params, defaults)
 
         if len(self.param_groups) != 1:
             raise ValueError("L-BFGS doesn't support per-parameter options "
@@ -271,53 +273,52 @@ class LBFGS(Optimizer):
         state['old_stps'] = []
 
     def _numel(self):
-        """ Count number of elements in parameters. """
+        """Count number of elements in parameters."""
         if self._numel_cache is None:
             self._numel_cache = reduce(lambda total, p: total + p.numel(),
                                        self._params, 0)
         return self._numel_cache
 
     def _gather_flat_grad(self):
-        """ Gather flattened gradient. """
+        """Gather flattened gradient."""
         views = []
-        for p in self._params:
-            if p.grad is None:
-                view = p.data.new(p.data.numel()).zero_()
-            elif p.grad.data.is_sparse:
-                view = p.grad.data.to_dense().view(-1)
+        for param in self._params:
+            if param.grad is None:
+                view = param.data.new(param.data.numel()).zero_()
+            elif param.grad.data.is_sparse:
+                view = param.grad.data.to_dense().view(-1)
             else:
-                view = p.grad.data.view(-1)
+                view = param.grad.data.view(-1)
             views.append(view)
         return torch.cat(views, 0)
 
     def _add_update(self, step_size, update):
-        """ Apply an update to the parameters. """
+        """Apply an update to the parameters."""
         offset = 0
-        for p in self._params:
-            numel = p.numel()
+        for param in self._params:
+            numel = param.numel()
             # view as to avoid deprecated pointwise semantics
-            p.data.add_(update[offset:offset + numel].view_as(p.data),
-                        alpha=step_size)
+            param.data.add_(update[offset:offset + numel].view_as(param.data),
+                            alpha=step_size)
             offset += numel
         assert offset == self._numel()
 
     def _copy_params(self):
-        """ Copy the parameters. """
+        """Copy the parameters."""
         current_params = []
         for param in self._params:
             current_params.append(deepcopy(param.data))
         return current_params
 
     def _load_params(self, current_params):
-        """ Load the parameters. """
+        """Load the parameters."""
         i = 0
         for param in self._params:
             param.data[:] = current_params[i]
             i += 1
 
     def line_search(self, line_search):
-        """
-        Switches line search option.
+        """Switches line search option.
 
         Parameters
         ----------
@@ -328,25 +329,22 @@ class LBFGS(Optimizer):
                 'Armijo': uses Armijo backtracking line search
                 'Wolfe': uses Armijo-Wolfe bracketing line search
         """
-
         group = self.param_groups[0]
         group['line_search'] = line_search
 
-        return
-
     def two_loop_recursion(self, vec):
-        """
-        Performs two-loop recursion on given vector to obtain Hv.
+        """Perform two-loop recursion on given vector to obtain Hv.
 
         Parameters
         ----------
-            vec (tensor): 1-D tensor to apply two-loop recursion to
+        vec : tensor
+            1-D tensor to apply two-loop recursion to
 
-        Output:
-            r (tensor): matrix-vector product Hv
-
+        Returns
+        -------
+        r : tensor
+            Matrix-vector product Hv
         """
-
         group = self.param_groups[0]
         history_size = group['history_size']
 
@@ -383,10 +381,10 @@ class LBFGS(Optimizer):
         return r
 
     def curvature_update(self, flat_grad, eps=1e-2, damping=False):
-        """
-        Performs curvature update.
+        """Perform curvature update.
 
-        Parameters:
+        Parameters
+        ----------
         flat_grad : tensor
             1-D tensor of flattened gradient for computing gradient
             difference with previously stored gradient
@@ -396,7 +394,6 @@ class LBFGS(Optimizer):
         damping : bool
             Flag for using Powell damping. By default False
         """
-
         assert len(self.param_groups) == 1
 
         # load parameters
@@ -467,11 +464,8 @@ class LBFGS(Optimizer):
             if debug:
                 print('Line search failed; curvature pair update skipped')
 
-        return
-
     def _step(self, p_k, g_Ok, g_Sk=None, options=None):
-        """
-        Performs a single optimization step.
+        """Perform a single optimization step.
 
         Parameters
         ----------
@@ -625,8 +619,7 @@ class LBFGS(Optimizer):
             if options:
                 if 'closure' not in options.keys():
                     raise ValueError('closure option not specified.')
-                else:
-                    closure = options['closure']
+                closure = options['closure']
 
                 if 'gtd' not in options.keys():
                     gtd = g_Ok.dot(d)
@@ -812,7 +805,7 @@ class LBFGS(Optimizer):
             return F_new, t, ls_step, closure_eval, desc_dir, fail
 
         # perform weak Wolfe line search
-        elif line_search == 'Wolfe':
+        if line_search == 'Wolfe':
 
             # load options
             if options:
@@ -981,8 +974,8 @@ class LBFGS(Optimizer):
 
                     # print info if debugging
                     if ls_debug:
-                        print('Wolfe: g(x+td)*d: %.8e  c2*g*d: %.8e  gtd: %.8e'
-                              % (gtd_new, c2 * gtd, gtd))
+                        print(f'Wolfe: g(x+td)*d: {gtd_new:.8e}  c2*g*d: '
+                              f'{c2 * gtd:.8e}  gtd: {gtd:.8e}')
 
                     # check curvature condition
                     if gtd_new < c2 * gtd:
@@ -1064,27 +1057,25 @@ class LBFGS(Optimizer):
             return (F_new, g_new, t, ls_step, closure_eval, grad_eval,
                     desc_dir, fail)
 
+        # perform update
+        self._add_update(t, d)
+
+        # store Bs
+        if Bs is None:
+            Bs = (g_Sk.mul(-t)).clone()
         else:
+            Bs.copy_(g_Sk.mul(-t))
 
-            # perform update
-            self._add_update(t, d)
+        state['d'] = d
+        state['prev_flat_grad'] = prev_flat_grad
+        state['t'] = t
+        state['Bs'] = Bs
+        state['fail'] = False
 
-            # store Bs
-            if Bs is None:
-                Bs = (g_Sk.mul(-t)).clone()
-            else:
-                Bs.copy_(g_Sk.mul(-t))
-
-            state['d'] = d
-            state['prev_flat_grad'] = prev_flat_grad
-            state['t'] = t
-            state['Bs'] = Bs
-            state['fail'] = False
-
-            return t
+        return t
 
     def step(self, p_k, g_Ok, g_Sk=None, options=None):
-        """ Performs a single optimization step. """
+        """Perform a single optimization step."""
         return self._step(p_k, g_Ok, g_Sk, options)
 
 
@@ -1092,8 +1083,8 @@ class LBFGS(Optimizer):
 
 
 class FullBatchLBFGS(LBFGS):
-    """
-    Implements full-batch or deterministic L-BFGS algorithm.
+    """Implements full-batch or deterministic L-BFGS algorithm.
+
     Compatible with Powell damping. Can be used when evaluating a
     deterministic function and gradient. Wraps the LBFGS optimizer.
     Performs the two-loop recursion, updating, and curvature updating
@@ -1127,12 +1118,11 @@ class FullBatchLBFGS(LBFGS):
 
     def __init__(self, params, lr=1, history_size=10, line_search='Wolfe',
                  dtype=torch.float, debug=False):
-        """ Initializes FullBatchLBFGS. """
+        """Initialize FullBatchLBFGS."""
         super().__init__(params, lr, history_size, line_search, dtype, debug)
 
     def step(self, options=None):
-        """
-        Performs a single optimization step.
+        """Perform a single optimization step.
 
         Parameters
         ----------

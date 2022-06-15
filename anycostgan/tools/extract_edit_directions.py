@@ -1,6 +1,5 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
-
-""" Get edit directions for FFHQ models """
+"""Get edit directions for FFHQ models."""
 
 import horovod.torch as hvd
 import numpy as np
@@ -33,7 +32,7 @@ CONFIG = 'anycost-ffhq-config-f'
 
 @torch.no_grad()
 def get_style_attribute_pairs():
-    """ Get style and attribute pairs. """
+    """Get style and attribute pairs."""
     # NOTE: This function is written with horovod to accelerate
     # the extraction (by n_gpu times)
     hvd.init()
@@ -98,7 +97,7 @@ def get_style_attribute_pairs():
 
 
 def extract_boundaries():
-    """ Extract boundaries for the style-attribute pairs. """
+    """Extract boundaries for the style-attribute pairs."""
     styles = torch.load(f'styles_{CONFIG}.pt')
     attributes = torch.load(f'attributes_{CONFIG}.pt')
     attributes = attributes.view(-1, 40, 2)
@@ -124,7 +123,7 @@ def extract_boundaries():
 # experimental; not yet used in the demo
 # do not observe significant improvement right now
 def project_boundaries():  # only project the ones used for demo
-    """ Project boundaries to the latent space and save them. """
+    """Project boundaries to the latent space and save them."""
     boundaries = torch.load(f'boundaries_{CONFIG}.pt')
     chosen_idx = [attr_list.index(attr) for attr in chosen_attr]
     sorted_keys = [f'{idx:02d}' + '_' + attr_list[idx]

@@ -1,5 +1,4 @@
-
-""" Get the translation to apply to the images. """
+"""Get the translation to apply to the images."""
 
 import os
 
@@ -8,7 +7,7 @@ import torch
 
 
 def browse_translation_dir(translation_dir, caracs):
-    """ Browse the translation directory and get the translations. """
+    """Browse the translation directory and get the translations."""
     translations = {}
     translations_default = {}
 
@@ -62,7 +61,7 @@ def browse_translation_dir(translation_dir, caracs):
 
 
 def get_translations(translation_dir, carac_list, use_precomputed):
-    """ Get translations for a given list of caracteristics.
+    """Get translations for a given list of caracteristics.
 
     Parameters
     ----------

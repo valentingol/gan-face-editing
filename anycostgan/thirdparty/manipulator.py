@@ -1,8 +1,6 @@
 # Code taken from https://raw.githubusercontent.com/genforce/
 # interfacegan/6f448e0c5beec97722a9f3a498720bd037125154/utils/
 # manipulator.py
-
-# python3.7
 """Utility functions for latent codes manipulation."""
 
 import numpy as np
@@ -16,8 +14,7 @@ def train_boundary(latent_codes,
                    chosen_num_or_ratio=0.02,
                    split_ratio=0.7,
                    invalid_value=None):
-    """Trains boundary in latent space with offline predicted attribute
-    scores.
+    """Trains boundary with offline predicted attribute scores.
 
     Given a collection of latent codes and the attribute scores
     predicted from the corresponding images, this function will train
@@ -210,8 +207,7 @@ def linear_interpolate(latent_code,
                        start_distance=-3.0,
                        end_distance=3.0,
                        steps=10):
-    """Manipulates the given latent code with respect to a particular
-    boundary.
+    """Manipulate the latent code with respect to boundary.
 
     Basically, this function takes a latent code and a boundary as
     inputs, and outputs a collection of manipulated latent codes.

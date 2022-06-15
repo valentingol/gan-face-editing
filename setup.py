@@ -1,3 +1,5 @@
+"""Setup of gan-face-editing."""
+
 from setuptools import setup, find_packages
 
 # Installation

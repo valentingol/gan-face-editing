@@ -1,5 +1,4 @@
-
-""" Apply depth segmentation mixup. """
+"""Apply depth segmentation mixup."""
 
 import os
 import os.path as osp
@@ -18,8 +17,9 @@ from pipeline.utils.depth_segmentation.model import DPTDepthModel
 
 def depth_estimation_mix(data_dir, input_path, output_path, model_path,
                          configs):
-    """
-    Performs background correction of original
+    """Depth estimation mixup.
+
+    Perform background correction of original
     images with using depth estimation model and saves
     the result in output_path.
 
@@ -54,7 +54,7 @@ def depth_estimation_mix(data_dir, input_path, output_path, model_path,
     to_tensor = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
-    ])
+        ])
     with torch.no_grad():
         # Original images
         depth_original, original_imgs = {}, {}
@@ -135,7 +135,7 @@ def get_foreground(depth):
 
 
 def get_foreground_mask(depth):
-    """Get foreground mask from depth map
+    """Get foreground mask from depth map.
 
     Parameters
     ----------
@@ -157,8 +157,10 @@ def get_foreground_mask(depth):
 
 
 def fix_background(depth_org, depth_img, img_org, img, foreground_coef):
-    """Return target image with base_image background
-    using monocular depth estimation
+    """Fix the background of the image.
+
+    Return target image with base_image background
+    using monocular depth estimation.
 
     Parameters
     ----------
@@ -216,7 +218,7 @@ def fix_background(depth_org, depth_img, img_org, img, foreground_coef):
 
 
 def depth_estimation(image, net, device):
-    """Compute depth map from image using monocular depth estimation
+    """Compute depth map from image using monocular depth estimation.
 
     Parameters
     ----------

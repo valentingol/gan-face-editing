@@ -1,6 +1,5 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
-
-""" Compute perceptual path lenght. """
+"""Compute perceptual path lenght."""
 
 import argparse
 import math
@@ -11,16 +10,16 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-import anycostgan.models as models
+from anycostgan import models
 
 
 def normalize(x):
-    """ Normalization function. """
+    """Normalize inputs."""
     return x / torch.sqrt(x.pow(2).sum(-1, keepdim=True))
 
 
 def slerp(a, b, t):
-    """ Spherical linear interpolation. """
+    """Spherical linear interpolation."""
     a = normalize(a)
     b = normalize(b)
     d = (a * b).sum(-1, keepdim=True)
@@ -32,13 +31,13 @@ def slerp(a, b, t):
 
 
 def lerp(a, b, t):
-    """ Linear interpolation. """
+    """Linear interpolation."""
     return a + (b - a) * t
 
 
 def compute_ppl(g, n_sample, batch_size, space='w', sampling='end',
                 eps=1e-4, crop=False):
-    """ Compute perceptual path length. """
+    """Compute perceptual path length."""
     percept = lpips.LPIPS(net='vgg', verbose=False).to(device)
 
     distances = []
@@ -71,8 +70,9 @@ def compute_ppl(g, n_sample, batch_size, space='w', sampling='end',
             image = image.clamp(-1, 1)
 
             if crop:
-                c = image.shape[2] // 8
-                image = image[:, :, c * 3: c * 7, c * 2: c * 6]
+                factor = image.shape[2] // 8
+                image = image[:, :, factor * 3: factor * 7,
+                              factor * 2: factor * 6]
 
             factor = image.shape[2] // 256
 
@@ -80,9 +80,9 @@ def compute_ppl(g, n_sample, batch_size, space='w', sampling='end',
                 # following tf official implementation,
                 # we do not use F.interpolate
                 # it will make a difference for 1024 resolution.
-                n, c, h, w = image.shape
+                batch, channels, h, w = image.shape
                 image = image.view(
-                    n, c, h // factor, factor, w // factor, factor
+                    batch, channels, h // factor, factor, w // factor, factor
                     ).mean([3, 5])
 
             dist = percept(image[::2], image[1::2]

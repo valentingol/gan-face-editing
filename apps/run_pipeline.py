@@ -1,5 +1,4 @@
-
-""" Run translation and postprocessing pipeline. """
+"""Run translation and postprocessing pipeline."""
 
 import os
 from os.path import join

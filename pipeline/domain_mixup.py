@@ -1,5 +1,4 @@
-
-""" Apply domain mixup. """
+"""Apply domain mixup."""
 
 import os
 
@@ -10,8 +9,7 @@ from pipeline.utils.domain_mixup.dist import compute_dist
 
 
 def alpha_from_dist(dist, margin):
-    """
-    Compute alpha from distance matrix.
+    """Compute alpha from distance matrix.
 
     Parameters
     ----------
@@ -25,8 +23,7 @@ def alpha_from_dist(dist, margin):
 
 def domain_mix(data_dir, input_path, output_path,
                domains_dist_path, domains_img_path, configs):
-    """
-    Apply domain mixup.
+    """Apply domain mixup.
 
     Parameters
     ----------

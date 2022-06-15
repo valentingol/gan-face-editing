@@ -1,6 +1,6 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 
-""" Utility functions for training the GAN. """
+"""Utility functions for training the GAN."""
 
 import random
 
@@ -17,14 +17,13 @@ __all__ = ['requires_grad', 'accumulate', 'get_mixing_z', 'get_g_arch',
 
 
 def requires_grad(model, flag=True):
-    """ Make all parameters of the model require gradients according
-    to flag. """
+    """Change the requires_grad behaviour of all parameters."""
     for param in model.parameters():
         param.requires_grad = flag
 
 
 def accumulate(model1, model2, decay=0.999):
-    """ Smooth mixup of two models parameters. """
+    """Smooth mixup of two models parameters."""
     params1 = dict(model1.named_parameters())
     params2 = dict(model2.named_parameters())
 
@@ -33,7 +32,7 @@ def accumulate(model1, model2, decay=0.999):
 
 
 def get_mixing_z(batch_size, latent_dim, prob, device):
-    """ Get a random batch of noise vectors. """
+    """Get a random batch of noise vectors."""
     if prob > 0 and random.random() < prob:
         return torch.randn(batch_size, 2, latent_dim, device=device)
 
@@ -41,7 +40,7 @@ def get_mixing_z(batch_size, latent_dim, prob, device):
 
 
 def get_g_arch(ratios, device='cuda'):
-    """ Get the architecture of the generator. """
+    """Get the architecture of the generator."""
     out = []
     for ratio in ratios:
         one_hot = [0] * len(CHANNEL_CONFIGS)
@@ -51,7 +50,7 @@ def get_g_arch(ratios, device='cuda'):
 
 
 def adaptive_downsample256(img):
-    """ Adaptive downsample to 256x256. """
+    """Adaptive downsample to 256x256."""
     img = img.clamp(-1, 1)
     if img.shape[-1] > 256:
         return F.interpolate(img, size=(256, 256), mode='bilinear',
@@ -60,7 +59,7 @@ def adaptive_downsample256(img):
 
 
 def get_teacher_multi_res(teacher_out, n_res):
-    """ Get the teacher for multi-resolution. """
+    """Get the teacher for multi-resolution."""
     teacher_rgbs = [teacher_out]
     cur_res = teacher_out.shape[-1] // 2
     for _ in range(n_res - 1):
@@ -74,7 +73,7 @@ def get_teacher_multi_res(teacher_out, n_res):
 
 def get_random_g_arch(generator, min_channel, divided_by, dynamic_channel_mode,
                       seed=None):
-    """ Get a random architecture for the generator. """
+    """Get a random architecture for the generator."""
     rand_ratio = sample_random_sub_channel(
         generator,
         min_channel=min_channel,
@@ -87,7 +86,7 @@ def get_random_g_arch(generator, min_channel, divided_by, dynamic_channel_mode,
 
 
 def partially_load_d_for_multi_res(d, sd, n_res=4):
-    """ Load the iscriminator for multi-resolution. """
+    """Load the iscriminator for multi-resolution."""
     new_sd = {}
     for key, value in sd.items():
         if key.startswith('convs.') and not key.startswith('convs.0.'):
@@ -106,7 +105,7 @@ def partially_load_d_for_multi_res(d, sd, n_res=4):
 
 
 def partially_load_d_for_ada_ch(d, sd):
-    """ Handling the new modulation FC. """
+    """Handle the new modulation FC."""
     blocks_with_mapping = []
     for key, value in d.state_dict().items():
         if '_mapping.' in key:

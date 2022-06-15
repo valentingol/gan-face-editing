@@ -1,5 +1,4 @@
-
-""" Compute distances to domains. """
+"""Compute distances to domains."""
 
 import os
 
@@ -9,7 +8,7 @@ from scipy.ndimage import distance_transform_edt as dist_edt
 
 
 def compute_dist(domains_img_path, domains_dist_path):
-    """ Compute distances to domains. """
+    """Compute distances to domains."""
     if not os.path.exists(domains_img_path):
         raise ValueError('Path to the directory with images of domains '
                          f'does not exist: {domains_img_path}')
