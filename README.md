@@ -7,6 +7,7 @@
 [![Pycodestyle](https://github.com/valentingol/gan-face-editing/actions/workflows/pycodestyle.yaml/badge.svg)](https://github.com/valentingol/gan-face-editing/actions/workflows/pycodestyle.yaml)
 [![Flake8](https://github.com/valentingol/gan-face-editing/actions/workflows/flake.yaml/badge.svg)](https://github.com/valentingol/gan-face-editing/actions/workflows/flake.yaml)
 [![Pydocstyle](https://github.com/valentingol/gan-face-editing/actions/workflows/pydocstyle.yaml/badge.svg)](https://github.com/valentingol/gan-face-editing/actions/workflows/pydocstyle.yaml)
+[![Isort](https://github.com/valentingol/gan-face-editing/actions/workflows/isort.yaml/badge.svg)](https://github.com/valentingol/gan-face-editing/actions/workflows/isort.yaml)
 [![PyLint](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/valentingol/c60e6ce49447254be085193c99b8425b/raw/gan_face_editing_pylint_badge.json)](https://github.com/valentingol/gan-face-editing/actions/workflows/pylint.yaml)
 
 Winner team repository of Inter-Centrales 2022 AI competition: Ceteris Paribus Face Challenge: [site of the competition](https://transfer-learning.org/competition.html).
@@ -59,6 +60,7 @@ Then, create a new virtual environment and install all the required packages:
 ```bash
 pip install -e .
 pip install -r requirements.txt
+pip install dlib
 ```
 
 The original dataset of the competition is available here: [drive dataset](https://drive.google.com/drive/folders/1-R1863MV8CuCjmycsLy05Uc6bdkWfuOP?usp=sharing)

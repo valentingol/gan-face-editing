@@ -5,11 +5,11 @@ import os
 import os.path as osp
 
 import cv2
-from cv2 import cvtColor
 import numpy as np
+import torch
+from cv2 import cvtColor
 from PIL import Image
 from scipy.ndimage import distance_transform_edt as dist_edt
-import torch
 from torchvision import transforms
 
 from pipeline.utils.segmentation.model import BiSeNet

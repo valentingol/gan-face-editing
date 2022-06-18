@@ -8,7 +8,6 @@ from torch import nn
 from torch.autograd import Function
 from torch.utils.cpp_extension import load
 
-
 module_path = os.path.dirname(__file__)
 fused = load(
     'fused',

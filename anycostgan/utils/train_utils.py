@@ -7,7 +7,6 @@ import random
 import numpy as np
 import torch
 import torch.nn.functional as F
-
 from models.dynamic_channel import CHANNEL_CONFIGS, sample_random_sub_channel
 
 __all__ = ['requires_grad', 'accumulate', 'get_mixing_z', 'get_g_arch',

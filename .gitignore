@@ -2,6 +2,7 @@
 **.png
 **.jpg
 test_proj
+.mypy_cache
 
 # General (Python)
 *egg-info

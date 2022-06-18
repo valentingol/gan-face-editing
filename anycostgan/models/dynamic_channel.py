@@ -4,12 +4,12 @@
 
 import math
 import random
+
 import torch
 
 from anycostgan.models.anycost_gan import G_CHANNEL_CONFIG
 from anycostgan.models.ops import (ConstantInput, ModulatedConv2d, StyledConv,
                                    ToRGB)
-
 
 CHANNEL_CONFIGS = [0.25, 0.5, 0.75, 1.0]
 

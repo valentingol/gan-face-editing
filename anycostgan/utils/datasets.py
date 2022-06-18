@@ -3,9 +3,9 @@
 
 import random
 
+import torchvision.transforms.functional as F
 from PIL import Image
 from torchvision import datasets, transforms
-import torchvision.transforms.functional as F
 
 
 class NativeDataset(datasets.ImageFolder):

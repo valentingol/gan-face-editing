@@ -13,32 +13,31 @@ import horovod.torch as hvd
 import lpips
 import numpy as np
 import torch
-from torch import optim
+from torch import nn, optim
 from torch.backends import cudnn
-from torch import nn
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms, utils
 from tqdm import tqdm
 
-from anycostgan.metrics.fid import calc_fid
 from anycostgan import models
+from anycostgan.metrics.fid import calc_fid
 from anycostgan.models.anycost_gan import (Discriminator,
-                                           DiscriminatorMultiRes,
-                                           Generator)
+                                           DiscriminatorMultiRes, Generator)
 from anycostgan.models.dynamic_channel import (reset_generator,
                                                sample_random_sub_channel,
                                                set_uniform_channel_ratio,
                                                sort_channel)
 from anycostgan.utils.datasets import NativeDataset
-from anycostgan.utils.losses import (d_logistic_loss, g_nonsaturating_loss,
-                                     g_path_regularize, d_r1_loss)
+from anycostgan.utils.losses import (d_logistic_loss, d_r1_loss,
+                                     g_nonsaturating_loss, g_path_regularize)
 from anycostgan.utils.torch_utils import DistributedMeter
-from anycostgan.utils.train_utils import (
-    accumulate, adaptive_downsample256, get_g_arch, get_mixing_z,
-    get_random_g_arch, get_teacher_multi_res, partially_load_d_for_ada_ch,
-    partially_load_d_for_multi_res, requires_grad
-    )
-
+from anycostgan.utils.train_utils import (accumulate, adaptive_downsample256,
+                                          get_g_arch, get_mixing_z,
+                                          get_random_g_arch,
+                                          get_teacher_multi_res,
+                                          partially_load_d_for_ada_ch,
+                                          partially_load_d_for_multi_res,
+                                          requires_grad)
 
 DEVICE = 'cuda'
 LOG_DIR = 'log'
@@ -455,9 +454,10 @@ if __name__ == "__main__":
 
     # build dataset
     if args.n_res > 1:
-        from anycostgan.utils.datasets import (MultiResize,
-                                               GroupRandomHorizontalFlip,
-                                               GroupTransformWrapper)
+        from anycostgan.utils.datasets import (GroupRandomHorizontalFlip,
+                                               GroupTransformWrapper,
+                                               MultiResize)
+
         # Transforms that return a pyramid
         transform = transforms.Compose([
             MultiResize(args.resolution, args.n_res),

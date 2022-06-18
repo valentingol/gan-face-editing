@@ -8,8 +8,8 @@ import pickle
 
 import horovod.torch as hvd
 import numpy as np
-from scipy import linalg
 import torch
+from scipy import linalg
 from tqdm import tqdm
 
 from anycostgan import models
@@ -86,8 +86,8 @@ if __name__ == '__main__':
 
     # set sub-generator
     if args.channel_ratio:
-        from models.dynamic_channel import (set_uniform_channel_ratio,
-                                            CHANNEL_CONFIGS)
+        from models.dynamic_channel import (CHANNEL_CONFIGS,
+                                            set_uniform_channel_ratio)
 
         assert args.channel_ratio in CHANNEL_CONFIGS
         set_uniform_channel_ratio(generator, args.channel_ratio)

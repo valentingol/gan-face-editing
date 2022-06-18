@@ -1,23 +1,23 @@
 # Code adapted from https://github.com/mit-han-lab/anycost-gan
 """Launch editor API."""
 
-from functools import partial
 import os
 import sys
 import time
+from functools import partial
 
 import numpy as np
+import torch
 from PIL import Image
-from PyQt5.QtWidgets import (QApplication, QComboBox, QInputDialog, QLabel,
-                             QLineEdit, QPushButton, QMainWindow, QSlider)
-from PyQt5.QtGui import QFont, QImage, QMovie, QPixmap
 from PyQt5.QtCore import (QObject, QRunnable, QSize, Qt, QThreadPool,
                           pyqtSignal, pyqtSlot)
-import torch
+from PyQt5.QtGui import QFont, QImage, QMovie, QPixmap
+from PyQt5.QtWidgets import (QApplication, QComboBox, QInputDialog, QLabel,
+                             QLineEdit, QMainWindow, QPushButton, QSlider)
 
 from anycostgan import models
-from anycostgan.models.dynamic_channel import (set_uniform_channel_ratio,
-                                               reset_generator)
+from anycostgan.models.dynamic_channel import (reset_generator,
+                                               set_uniform_channel_ratio)
 from pipeline.utils.global_config import GlobalConfig
 
 

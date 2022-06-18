@@ -8,8 +8,8 @@ import random
 
 import lpips
 import numpy as np
-from PIL import Image
 import torch
+from PIL import Image
 from torch import nn
 from torch.nn import functional as F
 from torchvision import transforms
@@ -17,12 +17,11 @@ from tqdm import tqdm
 
 from anycostgan import models
 from anycostgan.models.dynamic_channel import (CHANNEL_CONFIGS,
-                                               set_uniform_channel_ratio,
                                                reset_generator,
-                                               set_sub_channel_config)
+                                               set_sub_channel_config,
+                                               set_uniform_channel_ratio)
 from anycostgan.thirdparty import LBFGS
 from anycostgan.utils.torch_utils import adaptive_resize
-
 
 torch.backends.cudnn.benchmark = False
 

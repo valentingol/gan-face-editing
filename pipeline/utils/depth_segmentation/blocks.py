@@ -5,10 +5,8 @@ import torch
 from torch import nn
 
 from pipeline.utils.depth_segmentation.vit import (
-    _make_pretrained_vitb_rn50_384,
-    _make_pretrained_vitl16_384,
-    _make_pretrained_vitb16_384,
-    )
+    _make_pretrained_vitb16_384, _make_pretrained_vitb_rn50_384,
+    _make_pretrained_vitl16_384)
 
 
 def _make_encoder(

@@ -10,7 +10,6 @@ from torch import nn
 from anycostgan.models.ops import (ConstantInput, ConvLayer, EqualLinear,
                                    PixelNorm, ResBlock, StyledConv, ToRGB)
 
-
 G_CHANNEL_CONFIG = {
     4: 4096,
     8: 2048,

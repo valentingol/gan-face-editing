@@ -4,12 +4,12 @@ import os
 import os.path as osp
 
 import cv2
-from cv2 import cvtColor
 import numpy as np
+import torch
+from cv2 import cvtColor
 from PIL import Image
 from scipy.ndimage import distance_transform_edt as dist_edt
 from sklearn.cluster import KMeans
-import torch
 from torchvision import transforms
 
 from pipeline.utils.depth_segmentation.model import DPTDepthModel
