@@ -2,8 +2,8 @@
 """Segmentation model utilities."""
 
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 
 from pipeline.utils.segmentation.resnet import Resnet18
 

@@ -4,7 +4,6 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
-
 from torch.nn.functional import leaky_relu
 
 

@@ -2,11 +2,11 @@
 
 import os
 
-from pipeline.utils.global_config import GlobalConfig
-from pipeline.translate import apply_translations
+from pipeline.depth_segmentation import depth_estimation_mix
 from pipeline.domain_mixup import domain_mix
 from pipeline.segmentation import segmentation_mix
-from pipeline.depth_segmentation import depth_estimation_mix
+from pipeline.translate import apply_translations
+from pipeline.utils.global_config import GlobalConfig
 from pipeline.utils.pipeline_paths import get_pipeline_paths
 
 

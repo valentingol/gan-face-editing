@@ -10,11 +10,11 @@ from torchvision import transforms
 from tqdm import tqdm
 
 from anycostgan import models
-from anycostgan.models.dynamic_channel import (set_uniform_channel_ratio,
-                                               remove_sub_channel_config)
+from anycostgan.models.dynamic_channel import (remove_sub_channel_config,
+                                               set_uniform_channel_ratio)
+from anycostgan.thirdparty.celeba_hq_split import get_celeba_hq_split
 from anycostgan.utils.datasets import NativeDataset
 from anycostgan.utils.torch_utils import AverageMeter, adaptive_resize
-from anycostgan.thirdparty.celeba_hq_split import get_celeba_hq_split
 
 
 def validate():

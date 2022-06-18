@@ -6,10 +6,7 @@ from torch import nn
 
 from pipeline.utils.depth_segmentation.base_model import BaseModel
 from pipeline.utils.depth_segmentation.blocks import (
-    FeatureFusionBlock_custom,
-    Interpolate,
-    _make_encoder,
-    )
+    FeatureFusionBlock_custom, Interpolate, _make_encoder)
 from pipeline.utils.depth_segmentation.vit import forward_vit
 
 

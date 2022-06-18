@@ -2,9 +2,9 @@
 """ResNet blocks and functions."""
 
 import torch
-from torch import nn
 import torch.nn.functional as F
 import torch.utils.model_zoo as modelzoo
+from torch import nn
 
 # from modules.bn import InPlaceABNSync as BatchNorm2d
 

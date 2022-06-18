@@ -9,7 +9,6 @@ from torch.utils.cpp_extension import load
 
 from anycostgan.cuda_op.op_native import upfirdn2d_native
 
-
 module_path = os.path.dirname(__file__)
 upfirdn2d_op = load(
     "upfirdn2d",

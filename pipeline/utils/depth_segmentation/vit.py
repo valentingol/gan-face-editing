@@ -4,10 +4,10 @@
 import math
 import types
 
-import torch
-from torch import nn
-import torch.nn.functional as F
 import timm
+import torch
+import torch.nn.functional as F
+from torch import nn
 
 activations = {}
 

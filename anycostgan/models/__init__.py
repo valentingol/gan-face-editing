@@ -9,7 +9,6 @@ from anycostgan.models.encoder import ResNet50Encoder
 from anycostgan.thirdparty.inception import InceptionV3
 from anycostgan.utils.torch_utils import safe_load_state_dict_from_url
 
-
 URL_TEMPLATE = 'https://hanlab.mit.edu/projects/anycost-gan/files/{}_{}.pt'
 
 

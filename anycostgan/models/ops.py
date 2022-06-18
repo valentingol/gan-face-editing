@@ -5,9 +5,8 @@ import math
 import os
 
 import torch
-from torch import nn
 import torch.nn.functional as F
-
+from torch import nn
 
 try:  # CUDA kernel
     # Add FORCE_NATIVE in env to force native

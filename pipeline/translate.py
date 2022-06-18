@@ -2,9 +2,9 @@
 
 import os
 
-import torch
-import numpy as np
 import cv2
+import numpy as np
+import torch
 
 from anycostgan.models import get_pretrained
 from pipeline.utils.translation.get_translations import get_translations

@@ -1,7 +1,7 @@
 """Manage badge color."""
 
-from colorsys import hsv_to_rgb
 import sys
+from colorsys import hsv_to_rgb
 
 
 def score_to_rgb_color(score, score_min, score_max):

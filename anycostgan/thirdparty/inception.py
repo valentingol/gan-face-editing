@@ -2,9 +2,9 @@
 """Inception model."""
 
 import torch
-from torch import nn
 import torch.nn.functional as F
 import torchvision
+from torch import nn
 from torchvision import models
 
 from anycostgan.utils.torch_utils import safe_load_state_dict_from_url
