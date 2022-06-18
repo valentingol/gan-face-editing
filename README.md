@@ -60,6 +60,7 @@ Then, create a new virtual environment and install all the required packages:
 ```bash
 pip install -e .
 pip install -r requirements.txt
+pip install dlib
 ```
 
 The original dataset of the competition is available here: [drive dataset](https://drive.google.com/drive/folders/1-R1863MV8CuCjmycsLy05Uc6bdkWfuOP?usp=sharing)
