@@ -1,5 +1,4 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
-
 """Anycost GAN Encoder."""
 
 import torch
@@ -10,8 +9,9 @@ from torchvision.models import resnet50
 class ResNet50Encoder(nn.Module):
     """ResNet50 encoder."""
 
-    def __init__(self, n_style, style_dim=512, mean_latent=None,
-                 pretrained=False):
+    def __init__(
+            self, n_style, style_dim=512, mean_latent=None, pretrained=False
+            ):
         """Initialize the encoder."""
         super().__init__()
         self.n_style = n_style
@@ -38,8 +38,10 @@ class ResNet50Encoder(nn.Module):
 
     def forward(self, x):
         """Forward pass."""
-        assert x.shape[-1] == x.shape[-2] == 256, ("only accept input with "
-                                                   "resolution 256x256")
+        assert x.shape[-1] == x.shape[-2] == 256, (
+                "only accept input with "
+                "resolution 256x256"
+                )
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)

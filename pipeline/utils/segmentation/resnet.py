@@ -13,8 +13,10 @@ RESNET18_URL = 'https://download.pytorch.org/models/resnet18-5c106cde.pth'
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding."""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=1, bias=False)
+    return nn.Conv2d(
+            in_planes, out_planes, kernel_size=3, stride=stride, padding=1,
+            bias=False
+            )
 
 
 class BasicBlock(nn.Module):
@@ -31,10 +33,11 @@ class BasicBlock(nn.Module):
         self.downsample = None
         if in_chan != out_chan or stride != 1:
             self.downsample = nn.Sequential(
-                nn.Conv2d(in_chan, out_chan,
-                          kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(out_chan),
-                )
+                    nn.Conv2d(
+                            in_chan, out_chan, kernel_size=1, stride=stride,
+                            bias=False
+                            ), nn.BatchNorm2d(out_chan),
+                    )
 
     def forward(self, x):
         """Forward pass."""
@@ -55,7 +58,7 @@ class BasicBlock(nn.Module):
 def create_layer_basic(in_chan, out_chan, bnum, stride=1):
     """Create a basic block layer."""
     layers = [BasicBlock(in_chan, out_chan, stride=stride)]
-    for _ in range(bnum-1):
+    for _ in range(bnum - 1):
         layers.append(BasicBlock(out_chan, out_chan, stride=1))
     return nn.Sequential(*layers)
 
@@ -66,8 +69,9 @@ class Resnet18(nn.Module):
     def __init__(self):
         """Initialize module."""
         super().__init__()
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
-                               bias=False)
+        self.conv1 = nn.Conv2d(
+                3, 64, kernel_size=7, stride=2, padding=3, bias=False
+                )
         self.bn1 = nn.BatchNorm2d(64)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = create_layer_basic(64, 64, bnum=2, stride=1)
@@ -106,7 +110,7 @@ class Resnet18(nn.Module):
                 wd_params.append(module.weight)
                 if module.bias is not None:
                     nowd_params.append(module.bias)
-            elif isinstance(module,  nn.BatchNorm2d):
+            elif isinstance(module, nn.BatchNorm2d):
                 nowd_params += list(module.parameters())
         return wd_params, nowd_params
 

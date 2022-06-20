@@ -21,8 +21,10 @@ def alpha_from_dist(dist, margin):
     return np.where(dist < margin, dist / margin, 1.0)
 
 
-def domain_mix(data_dir, input_path, output_path,
-               domains_dist_path, domains_img_path, configs):
+def domain_mix(
+        data_dir, input_path, output_path, domains_dist_path, domains_img_path,
+        configs
+        ):
     """Apply domain mixup.
 
     Parameters
@@ -56,14 +58,13 @@ def domain_mix(data_dir, input_path, output_path,
             dists[carac_name] = dist
     n_images = len(os.listdir(input_path))
     for idx, img_name in enumerate(os.listdir(input_path)):
-        original_image = cv2.imread(os.path.join(data_dir,
-                                                 img_name + '.png'))
-        for edited_name in os.listdir(os.path.join(input_path,
-                                                   img_name)):
+        original_image = cv2.imread(os.path.join(data_dir, img_name + '.png'))
+        for edited_name in os.listdir(os.path.join(input_path, img_name)):
             carac_name = edited_name.split('.')[0]
             carac_name = carac_name.split('_')[0]
-            edited_img = cv2.imread(os.path.join(input_path, img_name,
-                                                 edited_name))
+            edited_img = cv2.imread(
+                    os.path.join(input_path, img_name, edited_name)
+                    )
             if carac_name in dists:
                 # Distance between each pixel and the doamin
                 dist = dists[carac_name]
@@ -99,5 +100,7 @@ if __name__ == '__main__':
 
     CONFIGS = {'margin': 42, 'recompute_dist': False}
 
-    domain_mix(DATA_DIR, INPUT_PATH, OUTPUT_PATH, DOMAINS_DIST_PATH,
-               DOMAINS_IMG_PATH, CONFIGS)
+    domain_mix(
+            DATA_DIR, INPUT_PATH, OUTPUT_PATH, DOMAINS_DIST_PATH,
+            DOMAINS_IMG_PATH, CONFIGS
+            )

@@ -10,53 +10,40 @@ from pipeline.utils.depth_segmentation.vit import (
 
 
 def _make_encoder(
-        backbone,
-        features,
-        use_pretrained,
-        groups=1,
-        expand=False,
-        exportable=True,
-        hooks=None,
-        use_vit_only=False,
-        use_readout="ignore",
+        backbone, features, use_pretrained, groups=1, expand=False,
+        exportable=True, hooks=None, use_vit_only=False, use_readout="ignore",
         enable_attention_hooks=False,
         ):
     if backbone == "vitl16_384":
         pretrained = _make_pretrained_vitl16_384(
-            use_pretrained,
-            hooks=hooks,
-            use_readout=use_readout,
-            enable_attention_hooks=enable_attention_hooks,
-        )
-        scratch = _make_scratch(
-            [256, 512, 1024, 1024], features, groups=groups, expand=expand
-        )  # ViT-L/16 - 85.0% Top1 (backbone)
+                use_pretrained, hooks=hooks, use_readout=use_readout,
+                enable_attention_hooks=enable_attention_hooks,
+                )
+        scratch = _make_scratch([256, 512, 1024, 1024], features,
+                                groups=groups, expand=expand
+                                )  # ViT-L/16 - 85.0% Top1 (backbone)
     elif backbone == "vitb_rn50_384":
         pretrained = _make_pretrained_vitb_rn50_384(
-            use_pretrained,
-            hooks=hooks,
-            use_vit_only=use_vit_only,
-            use_readout=use_readout,
-            enable_attention_hooks=enable_attention_hooks,
-        )
-        scratch = _make_scratch(
-            [256, 512, 768, 768], features, groups=groups, expand=expand
-        )  # ViT-H/16 - 85.0% Top1 (backbone)
+                use_pretrained, hooks=hooks, use_vit_only=use_vit_only,
+                use_readout=use_readout,
+                enable_attention_hooks=enable_attention_hooks,
+                )
+        scratch = _make_scratch([256, 512, 768, 768], features, groups=groups,
+                                expand=expand
+                                )  # ViT-H/16 - 85.0% Top1 (backbone)
     elif backbone == "vitb16_384":
         pretrained = _make_pretrained_vitb16_384(
-            use_pretrained,
-            hooks=hooks,
-            use_readout=use_readout,
-            enable_attention_hooks=enable_attention_hooks,
-        )
-        scratch = _make_scratch(
-            [96, 192, 384, 768], features, groups=groups, expand=expand
-        )  # ViT-B/16 - 84.6% Top1 (backbone)
+                use_pretrained, hooks=hooks, use_readout=use_readout,
+                enable_attention_hooks=enable_attention_hooks,
+                )
+        scratch = _make_scratch([96, 192, 384, 768], features, groups=groups,
+                                expand=expand
+                                )  # ViT-B/16 - 84.6% Top1 (backbone)
     elif backbone == "resnext101_wsl":
         pretrained = _make_pretrained_resnext101_wsl(use_pretrained)
-        scratch = _make_scratch(
-            [256, 512, 1024, 2048], features, groups=groups, expand=expand
-        )  # efficientnet_lite3
+        scratch = _make_scratch([256, 512, 1024, 2048], features,
+                                groups=groups,
+                                expand=expand)  # efficientnet_lite3
     else:
         print(f"Backbone '{backbone}' not implemented")
         assert False
@@ -78,41 +65,21 @@ def _make_scratch(in_shape, out_shape, groups=1, expand=False):
         out_shape4 = out_shape * 8
 
     scratch.layer1_rn = nn.Conv2d(
-        in_shape[0],
-        out_shape1,
-        kernel_size=3,
-        stride=1,
-        padding=1,
-        bias=False,
-        groups=groups,
-        )
+            in_shape[0], out_shape1, kernel_size=3, stride=1, padding=1,
+            bias=False, groups=groups,
+            )
     scratch.layer2_rn = nn.Conv2d(
-        in_shape[1],
-        out_shape2,
-        kernel_size=3,
-        stride=1,
-        padding=1,
-        bias=False,
-        groups=groups,
-        )
+            in_shape[1], out_shape2, kernel_size=3, stride=1, padding=1,
+            bias=False, groups=groups,
+            )
     scratch.layer3_rn = nn.Conv2d(
-        in_shape[2],
-        out_shape3,
-        kernel_size=3,
-        stride=1,
-        padding=1,
-        bias=False,
-        groups=groups,
-        )
+            in_shape[2], out_shape3, kernel_size=3, stride=1, padding=1,
+            bias=False, groups=groups,
+            )
     scratch.layer4_rn = nn.Conv2d(
-        in_shape[3],
-        out_shape4,
-        kernel_size=3,
-        stride=1,
-        padding=1,
-        bias=False,
-        groups=groups,
-        )
+            in_shape[3], out_shape4, kernel_size=3, stride=1, padding=1,
+            bias=False, groups=groups,
+            )
 
     return scratch
 
@@ -120,8 +87,9 @@ def _make_scratch(in_shape, out_shape, groups=1, expand=False):
 def _make_resnet_backbone(resnet):
     pretrained = nn.Module()
     pretrained.layer1 = nn.Sequential(
-        resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool, resnet.layer1
-    )
+            resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool,
+            resnet.layer1
+            )
 
     pretrained.layer2 = resnet.layer2
     pretrained.layer3 = resnet.layer3
@@ -131,8 +99,9 @@ def _make_resnet_backbone(resnet):
 
 
 def _make_pretrained_resnext101_wsl(use_pretrained):
-    resnet = torch.hub.load("facebookresearch/WSL-Images",
-                            "resnext101_32x8d_wsl")
+    resnet = torch.hub.load(
+            "facebookresearch/WSL-Images", "resnext101_32x8d_wsl"
+            )
     return _make_resnet_backbone(resnet)
 
 
@@ -170,11 +139,9 @@ class Interpolate(nn.Module):
             interpolated data
         """
         x = self.interp(
-            x,
-            scale_factor=self.scale_factor,
-            mode=self.mode,
-            align_corners=self.align_corners,
-            )
+                x, scale_factor=self.scale_factor, mode=self.mode,
+                align_corners=self.align_corners,
+                )
 
         return x
 
@@ -193,11 +160,13 @@ class ResidualConvUnit(nn.Module):
         super().__init__()
 
         self.conv1 = nn.Conv2d(
-            features, features, kernel_size=3, stride=1, padding=1, bias=True
-            )
+                features, features, kernel_size=3, stride=1, padding=1,
+                bias=True
+                )
         self.conv2 = nn.Conv2d(
-            features, features, kernel_size=3, stride=1, padding=1, bias=True
-            )
+                features, features, kernel_size=3, stride=1, padding=1,
+                bias=True
+                )
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
@@ -252,8 +221,8 @@ class FeatureFusionBlock(nn.Module):
 
         output = self.resConfUnit2(output)
         output = nn.functional.interpolate(
-            output, scale_factor=2, mode="bilinear", align_corners=True
-            )
+                output, scale_factor=2, mode="bilinear", align_corners=True
+                )
         return output
 
 
@@ -274,13 +243,15 @@ class ResidualConvUnit_custom(nn.Module):
 
         self.groups = 1
 
-        self.conv1 = nn.Conv2d(features, features, kernel_size=3,
-                               stride=1, padding=1, bias=not self.batch_norm,
-                               groups=self.groups)
+        self.conv1 = nn.Conv2d(
+                features, features, kernel_size=3, stride=1, padding=1,
+                bias=not self.batch_norm, groups=self.groups
+                )
 
-        self.conv2 = nn.Conv2d(features, features, kernel_size=3,
-                               stride=1, padding=1, bias=not self.batch_norm,
-                               groups=self.groups)
+        self.conv2 = nn.Conv2d(
+                features, features, kernel_size=3, stride=1, padding=1,
+                bias=not self.batch_norm, groups=self.groups
+                )
 
         if self.batch_norm:
             self.bn1 = nn.BatchNorm2d(features)
@@ -322,12 +293,7 @@ class FeatureFusionBlock_custom(nn.Module):
     """Feature fusion block."""
 
     def __init__(
-            self,
-            features,
-            activation,
-            deconv=False,
-            bn=False,
-            expand=False,
+            self, features, activation, deconv=False, bn=False, expand=False,
             align_corners=True,
             ):
         """Init.
@@ -347,14 +313,9 @@ class FeatureFusionBlock_custom(nn.Module):
         if self.expand:
             out_features = features // 2
         self.out_conv = nn.Conv2d(
-            features,
-            out_features,
-            kernel_size=1,
-            stride=1,
-            padding=0,
-            bias=True,
-            groups=1,
-            )
+                features, out_features, kernel_size=1, stride=1, padding=0,
+                bias=True, groups=1,
+                )
         self.resConfUnit1 = ResidualConvUnit_custom(features, activation, bn)
         self.resConfUnit2 = ResidualConvUnit_custom(features, activation, bn)
         self.skip_add = nn.quantized.FloatFunctional()
@@ -376,9 +337,9 @@ class FeatureFusionBlock_custom(nn.Module):
 
         output = self.resConfUnit2(output)
         output = nn.functional.interpolate(
-            output, scale_factor=2, mode="bilinear",
-            align_corners=self.align_corners
-            )
+                output, scale_factor=2, mode="bilinear",
+                align_corners=self.align_corners
+                )
         output = self.out_conv(output)
 
         return output

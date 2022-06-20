@@ -38,21 +38,22 @@ def browse_translation_dir(translation_dir, caracs):
                     degree = split_name[1]
                     transfo = np.load(translation_path)
                     translations_default[char + '_' + degree] = torch.tensor(
-                        transfo, dtype=torch.float32
-                        )
+                            transfo, dtype=torch.float32
+                            )
             else:
                 if split_name[1] not in {'min', 'max'}:
                     num, from_num = int(split_name[1]), int(split_name[3])
                     if caracs[char] == from_num:
                         transfo = np.load(translation_path)
                         translations[char + '_' + str(num)] = torch.tensor(
-                            transfo, dtype=torch.float32
-                            )
+                                transfo, dtype=torch.float32
+                                )
                 else:
                     raise NotImplementedError(
-                        'Specific translation (ie. using "fr_...") of "min/max'
-                        f' attribute" is not supported yet. {translation_path}'
-                        ' should be removed.')
+                            'Specific translation (ie. using "fr_...") of '
+                            '"min/max attribute" is not supported yet. '
+                            f'{translation_path} should be removed.'
+                            )
 
         # Overwrite default translations with translations
         # from specific caracteristics
@@ -87,25 +88,29 @@ def get_translations(translation_dir, carac_list, use_precomputed):
         (key: 'identifier', value: translation).
     """
     if carac_list is not None:
-        (skin, age, sex, _, _,  bang, haircolor, doublechin,
-         hairstyle) = carac_list
-        caracs = {'Sk': skin, 'A': age, 'Se': sex, 'B': bang, 'Hc': haircolor,
-                  'D': doublechin, 'Hs': hairstyle}
+        (
+                skin, age, sex, _, _, bang, haircolor, doublechin, hairstyle
+                ) = carac_list
+        caracs = {
+                'Sk': skin, 'A': age, 'Se': sex, 'B': bang, 'Hc': haircolor,
+                'D': doublechin, 'Hs': hairstyle
+                }
     else:
         caracs = None
 
     # Get pre-computed translations
     if use_precomputed:
         precomputed_translations = browse_translation_dir(
-            'projection/default_translations/unconditional', caracs
-            )
+                'projection/default_translations/unconditional', caracs
+                )
         # Add conditional translations only when caracs are given
         if caracs is not None:
             precomputed_translations_2 = browse_translation_dir(
-                'projection/default_translations/conditional', caracs
-                )
-            precomputed_translations = {**precomputed_translations,
-                                        **precomputed_translations_2}
+                    'projection/default_translations/conditional', caracs
+                    )
+            precomputed_translations = {
+                    **precomputed_translations, **precomputed_translations_2
+                    }
     else:
         precomputed_translations = {}
 

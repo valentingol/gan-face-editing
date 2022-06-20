@@ -12,11 +12,12 @@ from pipeline.utils.translation.get_translations import get_translations
 
 def generate_image(generator, **input_kwargs):
     """Generate an image from the latent code."""
+
     def image_to_np(x):
         """Convert an torch tensor to numpy array."""
         assert x.shape[0] == 1
         x = x.squeeze(0).permute(1, 2, 0)
-        x = (x + 1) * 0.5  # 0-1
+        x = (x+1) * 0.5  # 0-1
         x = (x * 255).cpu().numpy().astype('uint8')
         return x
 
@@ -50,8 +51,10 @@ def apply_translations(projection_dir, output_path, anycost_config, configs):
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     generator = get_pretrained('generator', anycost_config).to(device)
-    input_kwargs = {'styles': None, 'noise': None, 'randomize_noise': False,
-                    'input_is_style': True}
+    input_kwargs = {
+            'styles': None, 'noise': None, 'randomize_noise': False,
+            'input_is_style': True
+            }
     n_images = len(os.listdir(latent_dir))
 
     for i, fname in enumerate(os.listdir(latent_dir)):
@@ -61,22 +64,23 @@ def apply_translations(projection_dir, output_path, anycost_config, configs):
                 carac_list = list(map(int, basename.split('_')))
             except ValueError as exc:
                 raise ValueError(
-                    'When "use_caracs_in_img" is set to True, the name of '
-                    'images should be like: "%d_%d_%d_%d_%d_%d_%d_%d_%d.png/'
-                    '.jpg" where "%d" are integer cararacteristics (see '
-                    'https://transfer-learning.org/rules for details).'
-                    'Otherwise you can set "use_caracs_in_img" to False to '
-                    'get all translation for all images.') from exc
+                        'When "use_caracs_in_img" is set to True, the name of '
+                        'images should be like: "%d_%d_%d_%d_%d_%d_%d_%d_%d.'
+                        'png/.jpg" where "%d" are integer cararacteristics ('
+                        'see https://transfer-learning.org/rules for details).'
+                        'Otherwise you can set "use_caracs_in_img" to False '
+                        'to get all translation for all images.'
+                        ) from exc
         else:
             carac_list = None
         # Get intial projected latent code
-        base_code = np.load(os.path.join(latent_dir,
-                                         basename + '.npy'))
+        base_code = np.load(os.path.join(latent_dir, basename + '.npy'))
         base_code = torch.tensor(base_code).float().to(device)
         # Get translations for the image
-        translations = get_translations(translation_dir=translation_dir,
-                                        carac_list=carac_list,
-                                        use_precomputed=use_precomputed)
+        translations = get_translations(
+                translation_dir=translation_dir, carac_list=carac_list,
+                use_precomputed=use_precomputed
+                )
         translations = {k: v.to(device) for k, v in translations.items()}
 
         if not os.path.exists(os.path.join(output_path, basename)):

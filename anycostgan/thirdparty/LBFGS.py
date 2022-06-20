@@ -85,14 +85,18 @@ def polyinterp(points, x_min_bound=None, x_max_bound=None, plot=False):
         # x_min = - (g1*x2^2)/(2(f2 - f1 - g1*x2))
 
         if (points[0, 0] == 0):
-            x_sol = -points[0, 2] * points[1, 0] ** 2 / (
-                2 * (points[1, 1] - points[0, 1] - points[0, 2]
-                     * points[1, 0]))
+            x_sol = -points[0, 2] * points[1, 0]**2 / (
+                    2 * (
+                            points[1, 1] - points[0, 1]
+                            - points[0, 2] * points[1, 0]
+                            )
+                    )
         else:
-            a = -(points[0, 1] - points[1, 1] - points[0, 2]
-                  * (points[0, 0] - points[1, 0])) / (
-                points[0, 0] - points[1, 0]) ** 2
-            x_sol = points[0, 0] - points[0, 2] / (2 * a)
+            a = -(
+                    points[0, 1] - points[1, 1] - points[0, 2] *
+                    (points[0, 0] - points[1, 0])
+                    ) / (points[0, 0] - points[1, 0])**2
+            x_sol = points[0, 0] - points[0, 2] / (2*a)
 
         x_sol = np.minimum(np.maximum(x_min_bound, x_sol), x_max_bound)
 
@@ -102,17 +106,16 @@ def polyinterp(points, x_min_bound=None, x_max_bound=None, plot=False):
         # d1 = g1 + g2 - 3((f1 - f2)/(x1 - x2))
         # d2 = sqrt(d1^2 - g1*g2)
         # x_min = x2 - (x2 - x1)*((g2 + d2 - d1)/(g2 - g1 + 2*d2))
-        d1 = points[0, 2] + points[1, 2] - 3 * ((points[0, 1] - points[1, 1])
-                                                / (points[0, 0] - points[1, 0]
-                                                   ))
-        d2 = np.sqrt(d1 ** 2 - points[0, 2] * points[1, 2])
+        d1 = points[0, 2] + points[1, 2] - 3 * ((points[0, 1] - points[1, 1]) /
+                                                (points[0, 0] - points[1, 0]))
+        d2 = np.sqrt(d1**2 - points[0, 2] * points[1, 2])
         if np.isreal(d2):
-            x_sol = points[1, 0] - (points[1, 0] - points[0, 0]) * (
-                (points[1, 2] + d2 - d1) / (points[1, 2] - points[0, 2]
-                                            + 2 * d2))
+            x_sol = points[1, 0] - (points[1, 0] - points[0, 0]
+                                    ) * ((points[1, 2] + d2 - d1) /
+                                         (points[1, 2] - points[0, 2] + 2*d2))
             x_sol = np.minimum(np.maximum(x_min_bound, x_sol), x_max_bound)
         else:
-            x_sol = (x_max_bound + x_min_bound) / 2
+            x_sol = (x_max_bound+x_min_bound) / 2
 
     # solve linear system
     else:
@@ -125,7 +128,7 @@ def polyinterp(points, x_min_bound=None, x_max_bound=None, plot=False):
             if not np.isnan(points[i, 1]):
                 constraint = np.zeros((1, order + 1))
                 for j in range(order, -1, -1):
-                    constraint[0, order - j] = points[i, 0] ** j
+                    constraint[0, order - j] = points[i, 0]**j
                 A = np.append(A, constraint, 0)
                 b = np.append(b, points[i, 1])
 
@@ -134,14 +137,14 @@ def polyinterp(points, x_min_bound=None, x_max_bound=None, plot=False):
             if not np.isnan(points[i, 2]):
                 constraint = np.zeros((1, order + 1))
                 for j in range(order):
-                    constraint[0, j] = (order - j) * points[i, 0] ** (
-                        order - j - 1)
+                    constraint[0,
+                               j] = (order-j) * points[i, 0]**(order - j - 1)
                 A = np.append(A, constraint, 0)
                 b = np.append(b, points[i, 2])
 
         # check if system is solvable
         if A.shape[0] != A.shape[1] or np.linalg.matrix_rank(A) != A.shape[0]:
-            x_sol = (x_min_bound + x_max_bound) / 2
+            x_sol = (x_min_bound+x_max_bound) / 2
             f_min = np.Inf
         else:
             # solve linear system for interpolating polynomial
@@ -150,7 +153,7 @@ def polyinterp(points, x_min_bound=None, x_max_bound=None, plot=False):
             # compute critical points
             dcoeff = np.zeros(order)
             for i in range(len(coeff) - 1):
-                dcoeff[i] = coeff[i] * (order - i)
+                dcoeff[i] = coeff[i] * (order-i)
 
             crit_pts = np.array([x_min_bound, x_max_bound])
             crit_pts = np.append(crit_pts, points[:, 0])
@@ -161,7 +164,7 @@ def polyinterp(points, x_min_bound=None, x_max_bound=None, plot=False):
 
             # test critical points
             f_min = np.Inf
-            x_sol = (x_min_bound + x_max_bound) / 2  # defaults to bisection
+            x_sol = (x_min_bound+x_max_bound) / 2  # defaults to bisection
             for crit_pt in crit_pts:
                 if np.isreal(crit_pt) and \
                         x_min_bound <= crit_pt <= x_max_bound:
@@ -239,8 +242,10 @@ class LBFGS(Optimizer):
         27.2 (2017): 927-956.
     """
 
-    def __init__(self, params, lr=1, history_size=10, line_search='Wolfe',
-                 dtype=torch.float, debug=False):
+    def __init__(
+            self, params, lr=1, history_size=10, line_search='Wolfe',
+            dtype=torch.float, debug=False
+            ):
         """Initialize LBFGS optimizer."""
         # Ensure inputs are valid
         if lr < 0.0:
@@ -250,14 +255,17 @@ class LBFGS(Optimizer):
         if line_search not in ['Armijo', 'Wolfe', 'None']:
             raise ValueError(f"Invalid line search: {line_search}")
 
-        defaults = dict(lr=lr, history_size=history_size,
-                        line_search=line_search,
-                        dtype=dtype, debug=debug)
+        defaults = dict(
+                lr=lr, history_size=history_size, line_search=line_search,
+                dtype=dtype, debug=debug
+                )
         super().__init__(params, defaults)
 
         if len(self.param_groups) != 1:
-            raise ValueError("L-BFGS doesn't support per-parameter options "
-                             "(parameter groups)")
+            raise ValueError(
+                    "L-BFGS doesn't support per-parameter options "
+                    "(parameter groups)"
+                    )
 
         self._params = self.param_groups[0]['params']
         self._numel_cache = None
@@ -275,8 +283,9 @@ class LBFGS(Optimizer):
     def _numel(self):
         """Count number of elements in parameters."""
         if self._numel_cache is None:
-            self._numel_cache = reduce(lambda total, p: total + p.numel(),
-                                       self._params, 0)
+            self._numel_cache = reduce(
+                    lambda total, p: total + p.numel(), self._params, 0
+                    )
         return self._numel_cache
 
     def _gather_flat_grad(self):
@@ -298,8 +307,10 @@ class LBFGS(Optimizer):
         for param in self._params:
             numel = param.numel()
             # view as to avoid deprecated pointwise semantics
-            param.data.add_(update[offset:offset + numel].view_as(param.data),
-                            alpha=step_size)
+            param.data.add_(
+                    update[offset:offset + numel].view_as(param.data),
+                    alpha=step_size
+                    )
             offset += numel
         assert offset == self._numel()
 
@@ -432,8 +443,8 @@ class LBFGS(Optimizer):
                 if damping and ys < eps * sBs:
                     if debug:
                         print('Applying Powell damping...')
-                    theta = ((1 - eps) * sBs) / (sBs - ys)
-                    y = theta * y + (1 - theta) * Bs
+                    theta = ((1-eps) * sBs) / (sBs-ys)
+                    y = theta*y + (1-theta) * Bs
 
                 # updating memory
                 if len(old_dirs) == history_size:
@@ -642,8 +653,10 @@ class LBFGS(Optimizer):
                 if 'c1' not in options.keys():
                     c1 = 1e-4
                 elif options['c1'] >= 1 or options['c1'] <= 0:
-                    raise ValueError('Invalid c1; must be strictly between '
-                                     '0 and 1.')
+                    raise ValueError(
+                            'Invalid c1; must be strictly between '
+                            '0 and 1.'
+                            )
                 else:
                     c1 = options['c1']
 
@@ -670,8 +683,12 @@ class LBFGS(Optimizer):
                     ls_debug = options['ls_debug']
 
             else:
-                raise (ValueError('Options are not specified; need closure '
-                                  'evaluating function.'))
+                raise (
+                        ValueError(
+                                'Options are not specified; need closure '
+                                'evaluating function.'
+                                )
+                        )
 
             # initialize values
             if interpolate:
@@ -686,9 +703,11 @@ class LBFGS(Optimizer):
 
             # begin print for debug mode
             if ls_debug:
-                print('===================================='
-                      ' Begin Armijo line search '
-                      '===================================')
+                print(
+                        '===================================='
+                        ' Begin Armijo line search '
+                        '==================================='
+                        )
                 print('F(x): %.8e  g*d: %.8e' % (F_k, gtd))
 
             # check if search direction is descent direction
@@ -710,12 +729,14 @@ class LBFGS(Optimizer):
 
             # print info if debugging
             if ls_debug:
-                print(f'LS Step: {ls_step}  t: {t:.8e}  F(x+td): {F_new:.8e} '
-                      f' F-c1*t*g*d: {F_k + c1 * t * gtd:.8e} '
-                      'F(x): {F_k:.8e}')
+                print(
+                        f'LS Step: {ls_step}  t: {t:.8e}  F(x+td): {F_new:.8e}'
+                        f'  F-c1*t*g*d: {F_k + c1 * t * gtd:.8e} '
+                        'F(x): {F_k:.8e}'
+                        )
 
             # check Armijo condition
-            while F_new > F_k + c1 * t * gtd or not is_legal(F_new):
+            while F_new > F_k + c1*t*gtd or not is_legal(F_new):
 
                 # check if maximum number of iterations reached
                 if ls_step >= max_ls:
@@ -744,16 +765,22 @@ class LBFGS(Optimizer):
                 # along with gradient and function at current
                 # iterate
                 elif ls_step == 1 or not is_legal(F_prev):
-                    t = polyinterp(np.array([[0, F_k.item(), gtd.item()],
-                                             [t_new, F_new.item(), np.nan]]))
+                    t = polyinterp(
+                            np.array([[0, F_k.item(),
+                                       gtd.item()],
+                                      [t_new, F_new.item(), np.nan]])
+                            )
 
                 # otherwise, use function values at new point,
                 # previous point, and gradient and function at
                 # current iterate
                 else:
-                    t = polyinterp(np.array([[0, F_k.item(), gtd.item()],
-                                             [t_new, F_new.item(), np.nan],
-                                             [t_prev, F_prev.item(), np.nan]]))
+                    t = polyinterp(
+                            np.array([[0, F_k.item(),
+                                       gtd.item()],
+                                      [t_new, F_new.item(), np.nan],
+                                      [t_prev, F_prev.item(), np.nan]])
+                            )
 
                 # if values are too extreme, adjust t
                 if interpolate:
@@ -779,9 +806,11 @@ class LBFGS(Optimizer):
 
                 # print info if debugging
                 if ls_debug:
-                    print(f'LS Step: {ls_step}  t: {t:.8e}  F(x+td):  '
-                          f'{F_new:.8e}  F-c1*t*g*d: '
-                          f'{F_k + c1 * t * gtd:.8e}  F(x): {F_k:.8e}')
+                    print(
+                            f'LS Step: {ls_step}  t: {t:.8e}  F(x+td):  '
+                            f'{F_new:.8e}  F-c1*t*g*d: '
+                            f'{F_k + c1 * t * gtd:.8e}  F(x): {F_k:.8e}'
+                            )
 
             # store Bs
             if Bs is None:
@@ -792,9 +821,11 @@ class LBFGS(Optimizer):
             # print final steplength
             if ls_debug:
                 print('Final Steplength:', t)
-                print('====================================='
-                      ' End Armijo line search '
-                      '====================================')
+                print(
+                        '====================================='
+                        ' End Armijo line search '
+                        '===================================='
+                        )
 
             state['d'] = d
             state['prev_flat_grad'] = prev_flat_grad
@@ -834,19 +865,25 @@ class LBFGS(Optimizer):
                 if 'c1' not in options.keys():
                     c1 = 1e-4
                 elif options['c1'] >= 1 or options['c1'] <= 0:
-                    raise ValueError('Invalid c1; must be strictly between '
-                                     '0 and 1.')
+                    raise ValueError(
+                            'Invalid c1; must be strictly between '
+                            '0 and 1.'
+                            )
                 else:
                     c1 = options['c1']
 
                 if 'c2' not in options.keys():
                     c2 = 0.9
                 elif options['c2'] >= 1 or options['c2'] <= 0:
-                    raise ValueError('Invalid c2; must be strictly between '
-                                     '0 and 1.')
+                    raise ValueError(
+                            'Invalid c2; must be strictly between '
+                            '0 and 1.'
+                            )
                 elif options['c2'] <= c1:
-                    raise ValueError('Invalid c2; must be strictly larger '
-                                     'than c1.')
+                    raise ValueError(
+                            'Invalid c2; must be strictly larger '
+                            'than c1.'
+                            )
                 else:
                     c2 = options['c2']
 
@@ -873,8 +910,10 @@ class LBFGS(Optimizer):
                     ls_debug = options['ls_debug']
 
             else:
-                raise ValueError('Options are not specified; need closure '
-                                 'evaluating function.')
+                raise ValueError(
+                        'Options are not specified; need closure '
+                        'evaluating function.'
+                        )
 
             # initialize counters
             ls_step = 0
@@ -900,9 +939,11 @@ class LBFGS(Optimizer):
 
             # begin print for debug mode
             if ls_debug:
-                print('===================================='
-                      ' Begin Wolfe line search '
-                      '====================================')
+                print(
+                        '===================================='
+                        ' Begin Wolfe line search '
+                        '===================================='
+                        )
                 print('F(x): %.8e  g*d: %.8e' % (F_k, gtd))
 
             # check if search direction is descent direction
@@ -944,13 +985,17 @@ class LBFGS(Optimizer):
 
                 # print info if debugging
                 if ls_debug:
-                    print(f'LS Step: {ls_step}  t: {t:.8e}  '
-                          f'alpha: {alpha:.8e}  beta: {beta:.8e}')
-                    print(f'Armijo:  F(x+td): {F_new:.8e}  F-c1*t*g*d: '
-                          f'{F_k + c1 * t * gtd:.8e} F(x): {F_k:.8e}')
+                    print(
+                            f'LS Step: {ls_step}  t: {t:.8e}  '
+                            f'alpha: {alpha:.8e}  beta: {beta:.8e}'
+                            )
+                    print(
+                            f'Armijo:  F(x+td): {F_new:.8e}  F-c1*t*g*d: '
+                            f'{F_k + c1 * t * gtd:.8e} F(x): {F_k:.8e}'
+                            )
 
                 # check Armijo condition
-                if F_new > F_k + c1 * t * gtd:
+                if F_new > F_k + c1*t*gtd:
 
                     # set upper bound
                     beta = t
@@ -974,8 +1019,10 @@ class LBFGS(Optimizer):
 
                     # print info if debugging
                     if ls_debug:
-                        print(f'Wolfe: g(x+td)*d: {gtd_new:.8e}  c2*g*d: '
-                              f'{c2 * gtd:.8e}  gtd: {gtd:.8e}')
+                        print(
+                                f'Wolfe: g(x+td)*d: {gtd_new:.8e}  c2*g*d: '
+                                f'{c2 * gtd:.8e}  gtd: {gtd:.8e}'
+                                )
 
                     # check curvature condition
                     if gtd_new < c2 * gtd:
@@ -1000,12 +1047,16 @@ class LBFGS(Optimizer):
                     if beta == float('Inf'):
                         t = eta * t
                     else:
-                        t = (alpha + beta) / 2.0
+                        t = (alpha+beta) / 2.0
 
                 # otherwise interpolate between a and b
                 else:
-                    t = polyinterp(np.array([[alpha, F_a.item(), g_a.item()],
-                                             [beta, F_b.item(), g_b.item()]]))
+                    t = polyinterp(
+                            np.array([[alpha, F_a.item(),
+                                       g_a.item()],
+                                      [beta, F_b.item(),
+                                       g_b.item()]])
+                            )
 
                     # if values are too extreme, adjust t
                     if beta == float('Inf'):
@@ -1014,14 +1065,14 @@ class LBFGS(Optimizer):
                         elif t < eta * t_prev:
                             t = eta * t_prev
                     else:
-                        if t < alpha + 0.2 * (beta - alpha):
-                            t = alpha + 0.2 * (beta - alpha)
-                        elif t > (beta - alpha) / 2.0:
-                            t = (beta - alpha) / 2.0
+                        if t < alpha + 0.2 * (beta-alpha):
+                            t = alpha + 0.2 * (beta-alpha)
+                        elif t > (beta-alpha) / 2.0:
+                            t = (beta-alpha) / 2.0
 
                     # if we obtain nonsensical value from interpolation
                     if t <= 0:
-                        t = (beta - alpha) / 2.0
+                        t = (beta-alpha) / 2.0
 
                 # update parameters
                 if inplace:
@@ -1044,9 +1095,11 @@ class LBFGS(Optimizer):
             # print final steplength
             if ls_debug:
                 print('Final Steplength:', t)
-                print('====================================='
-                      ' End Wolfe line search '
-                      '=====================================')
+                print(
+                        '====================================='
+                        ' End Wolfe line search '
+                        '====================================='
+                        )
 
             state['d'] = d
             state['prev_flat_grad'] = prev_flat_grad
@@ -1054,8 +1107,10 @@ class LBFGS(Optimizer):
             state['Bs'] = Bs
             state['fail'] = fail
 
-            return (F_new, g_new, t, ls_step, closure_eval, grad_eval,
-                    desc_dir, fail)
+            return (
+                    F_new, g_new, t, ls_step, closure_eval, grad_eval,
+                    desc_dir, fail
+                    )
 
         # perform update
         self._add_update(t, d)
@@ -1116,8 +1171,10 @@ class FullBatchLBFGS(LBFGS):
 
     """
 
-    def __init__(self, params, lr=1, history_size=10, line_search='Wolfe',
-                 dtype=torch.float, debug=False):
+    def __init__(
+            self, params, lr=1, history_size=10, line_search='Wolfe',
+            dtype=torch.float, debug=False
+            ):
         """Initialize FullBatchLBFGS."""
         super().__init__(params, lr, history_size, line_search, dtype, debug)
 

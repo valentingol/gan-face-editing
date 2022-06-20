@@ -15,8 +15,9 @@ from torchvision import transforms
 from pipeline.utils.depth_segmentation.model import DPTDepthModel
 
 
-def depth_estimation_mix(data_dir, input_path, output_path, model_path,
-                         configs):
+def depth_estimation_mix(
+        data_dir, input_path, output_path, model_path, configs
+        ):
     """Depth estimation mixup.
 
     Perform background correction of original
@@ -42,19 +43,17 @@ def depth_estimation_mix(data_dir, input_path, output_path, model_path,
 
     # Load depth estimation model. Input needs to be (1, 3, 384, 384)
     net = DPTDepthModel(
-        path=model_path,
-        backbone="vitl16_384",
-        non_negative=True,
-        enable_attention_hooks=False,
-        )
+            path=model_path, backbone="vitl16_384", non_negative=True,
+            enable_attention_hooks=False,
+            )
 
     net.to(device)
     net.eval()
 
     to_tensor = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
-        ])
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+            ])
     with torch.no_grad():
         # Original images
         depth_original, original_imgs = {}, {}
@@ -69,8 +68,9 @@ def depth_estimation_mix(data_dir, input_path, output_path, model_path,
             image = image.resize((384, 384), Image.BILINEAR)
             image_tsr = to_tensor(image)
             depth = depth_estimation(image_tsr, net, device)
-            depth = cv2.resize(depth, (512, 512),
-                               interpolation=cv2.INTER_NEAREST)
+            depth = cv2.resize(
+                    depth, (512, 512), interpolation=cv2.INTER_NEAREST
+                    )
             depth_original[base_image_name] = depth
         print('Original images depth estimation done')
         n_images = len(os.listdir(input_path))
@@ -87,8 +87,9 @@ def depth_estimation_mix(data_dir, input_path, output_path, model_path,
                     image = np.array(image)
                     image = image.astype(np.uint8)
                     image = cvtColor(image, cv2.COLOR_RGB2BGR)
-                    cv2.imwrite(osp.join(output_path, image_dir, file_name),
-                                image)
+                    cv2.imwrite(
+                            osp.join(output_path, image_dir, file_name), image
+                            )
                     print(f'image {i+1}/{n_images} done  ', end='\r')
                     continue
 
@@ -96,19 +97,22 @@ def depth_estimation_mix(data_dir, input_path, output_path, model_path,
                 image_resized = image.resize((384, 384), Image.BILINEAR)
                 image_tsr = to_tensor(image_resized)
                 depth = depth_estimation(image_tsr, net, device)
-                depth = cv2.resize(depth, (512, 512),
-                                   interpolation=cv2.INTER_NEAREST)
+                depth = cv2.resize(
+                        depth, (512, 512), interpolation=cv2.INTER_NEAREST
+                        )
                 image = np.array(image)
 
                 # Add Foreground of the original image
                 img_final = fix_background(
-                    depth_org, depth, img_org, image,
-                    foreground_coef=configs['foreground_coef'])
+                        depth_org, depth, img_org, image,
+                        foreground_coef=configs['foreground_coef']
+                        )
                 img_final = img_final.astype(np.uint8)
                 img_final = cvtColor(img_final, cv2.COLOR_RGB2BGR)
                 # Save image
-                cv2.imwrite(osp.join(output_path, image_dir, file_name),
-                            img_final)
+                cv2.imwrite(
+                        osp.join(output_path, image_dir, file_name), img_final
+                        )
             print(f'image {i+1}/{n_images} done  ', end='\r')
     print()
 
@@ -194,13 +198,14 @@ def fix_background(depth_org, depth_img, img_org, img, foreground_coef):
         mask = mask_target
 
     # Smooth foreground mask
-    mask_background = dist_edt(1-mask)
-    mask_background = mask_background/mask_background.max()
-    mask_background = np.multiply(mask_background, 1-mask)
+    mask_background = dist_edt(1 - mask)
+    mask_background = mask_background / mask_background.max()
+    mask_background = np.multiply(mask_background, 1 - mask)
 
     # Foreground coefficients
-    mask_foreground_smooth = np.exp(-foreground_coef
-                                    * mask_background[:, :, None])
+    mask_foreground_smooth = np.exp(
+            -foreground_coef * mask_background[:, :, None]
+            )
 
     # Background coefficients
     mask_background_smooth = mask_background[:, :, None]
@@ -253,12 +258,13 @@ if __name__ == "__main__":
     # Path to the segmented edited images
     OUTPUT_PATH = 'res/run1/images_post_depth_segmentation'
     # Path to the model
-    MODEL_PATH = ('postprocess/depth_segmentation/model/'
-                  'dpt_large-midas-2f21e586.pt')
-    CONFIGS = {
-        'foreground_coef': 8.0,
-        }
+    MODEL_PATH = (
+            'postprocess/depth_segmentation/model/'
+            'dpt_large-midas-2f21e586.pt'
+            )
+    CONFIGS = {'foreground_coef': 8.0, }
 
-    depth_estimation_mix(data_dir=DATA_DIR, input_path=INPUT_PATH,
-                         output_path=OUTPUT_PATH, model_path=MODEL_PATH,
-                         configs=CONFIGS)
+    depth_estimation_mix(
+            data_dir=DATA_DIR, input_path=INPUT_PATH, output_path=OUTPUT_PATH,
+            model_path=MODEL_PATH, configs=CONFIGS
+            )
