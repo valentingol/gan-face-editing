@@ -1,5 +1,4 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
-
 """Utility functions for training the GAN."""
 
 import random
@@ -9,10 +8,11 @@ import torch
 import torch.nn.functional as F
 from models.dynamic_channel import CHANNEL_CONFIGS, sample_random_sub_channel
 
-__all__ = ['requires_grad', 'accumulate', 'get_mixing_z', 'get_g_arch',
-           'adaptive_downsample256', 'get_teacher_multi_res',
-           'get_random_g_arch', 'partially_load_d_for_multi_res',
-           'partially_load_d_for_ada_ch']
+__all__ = [
+        'requires_grad', 'accumulate', 'get_mixing_z', 'get_g_arch',
+        'adaptive_downsample256', 'get_teacher_multi_res', 'get_random_g_arch',
+        'partially_load_d_for_multi_res', 'partially_load_d_for_ada_ch'
+        ]
 
 
 def requires_grad(model, flag=True):
@@ -27,7 +27,7 @@ def accumulate(model1, model2, decay=0.999):
     params2 = dict(model2.named_parameters())
 
     for k, param1 in params1.keys():
-        param1.data.mul_(decay).add_((1 - decay) * params2[k].data)
+        param1.data.mul_(decay).add_((1-decay) * params2[k].data)
 
 
 def get_mixing_z(batch_size, latent_dim, prob, device):
@@ -52,8 +52,9 @@ def adaptive_downsample256(img):
     """Adaptive downsample to 256x256."""
     img = img.clamp(-1, 1)
     if img.shape[-1] > 256:
-        return F.interpolate(img, size=(256, 256), mode='bilinear',
-                             align_corners=True)
+        return F.interpolate(
+                img, size=(256, 256), mode='bilinear', align_corners=True
+                )
     return img
 
 
@@ -63,24 +64,25 @@ def get_teacher_multi_res(teacher_out, n_res):
     cur_res = teacher_out.shape[-1] // 2
     for _ in range(n_res - 1):
         # for simplicity, we use F.interpolate. Be sure to always use this.
-        teacher_rgbs.insert(0, F.interpolate(teacher_out, size=cur_res,
-                                             mode='bilinear',
-                                             align_corners=True))
+        teacher_rgbs.insert(
+                0,
+                F.interpolate(
+                        teacher_out, size=cur_res, mode='bilinear',
+                        align_corners=True
+                        )
+                )
         cur_res = cur_res // 2
     return teacher_rgbs
 
 
-def get_random_g_arch(generator, min_channel, divided_by, dynamic_channel_mode,
-                      seed=None):
+def get_random_g_arch(
+        generator, min_channel, divided_by, dynamic_channel_mode, seed=None
+        ):
     """Get a random architecture for the generator."""
     rand_ratio = sample_random_sub_channel(
-        generator,
-        min_channel=min_channel,
-        divided_by=divided_by,
-        seed=seed,
-        mode=dynamic_channel_mode,
-        set_channels=False
-    )
+            generator, min_channel=min_channel, divided_by=divided_by,
+            seed=seed, mode=dynamic_channel_mode, set_channels=False
+            )
     return get_g_arch(rand_ratio)
 
 
@@ -97,9 +99,9 @@ def partially_load_d_for_multi_res(d, sd, n_res=4):
             new_sd[key] = value
     for i_res in range(1, n_res):  # just retain the weights
         new_sd[f'convs.{i_res}.0.weight'] = d.state_dict(
-            )[f'convs.{i_res}.0.weight']
+        )[f'convs.{i_res}.0.weight']
         new_sd[f'convs.{i_res}.1.bias'] = d.state_dict(
-            )[f'convs.{i_res}.1.bias']
+        )[f'convs.{i_res}.1.bias']
     d.load_state_dict(new_sd)
 
 

@@ -9,11 +9,10 @@ from sklearn import svm
 __all__ = ['train_boundary', 'project_boundary', 'linear_interpolate']
 
 
-def train_boundary(latent_codes,
-                   scores,
-                   chosen_num_or_ratio=0.02,
-                   split_ratio=0.7,
-                   invalid_value=None):
+def train_boundary(
+        latent_codes, scores, chosen_num_or_ratio=0.02, split_ratio=0.7,
+        invalid_value=None
+        ):
     """Trains boundary with offline predicted attribute scores.
 
     Given a collection of latent codes and the attribute scores
@@ -54,24 +53,32 @@ def train_boundary(latent_codes,
     ValueError:
         The input `latent_codes` or `scores` are with invalid format.
     """
-    if (not isinstance(latent_codes, np.ndarray) or
-            not len(latent_codes.shape) == 2):
-        raise ValueError('Input `latent_codes` should be with type'
-                         '`numpy.ndarray`, and shape [num_samples, '
-                         'latent_space_dim]!')
+    if (
+            not isinstance(latent_codes, np.ndarray)
+            or not len(latent_codes.shape) == 2
+            ):
+        raise ValueError(
+                'Input `latent_codes` should be with type'
+                '`numpy.ndarray`, and shape [num_samples, '
+                'latent_space_dim]!'
+                )
     num_samples = latent_codes.shape[0]
     latent_space_dim = latent_codes.shape[1]
-    if (not isinstance(scores, np.ndarray)
-            or not len(scores.shape) == 2
-            or not scores.shape[0] == num_samples
-            or not scores.shape[1] == 1):
-        raise ValueError('Input `scores` should be with type `numpy.ndarray`,'
-                         ' and shape [num_samples, 1], where `num_samples` '
-                         'should be exactly same as that of input '
-                         '`latent_codes`!')
+    if (
+            not isinstance(scores, np.ndarray) or not len(scores.shape) == 2
+            or not scores.shape[0] == num_samples or not scores.shape[1] == 1
+            ):
+        raise ValueError(
+                'Input `scores` should be with type `numpy.ndarray`,'
+                ' and shape [num_samples, 1], where `num_samples` '
+                'should be exactly same as that of input '
+                '`latent_codes`!'
+                )
     if chosen_num_or_ratio <= 0:
-        raise ValueError('Input `chosen_num_or_ratio` should be positive, '
-                         f'but {chosen_num_or_ratio} received!')
+        raise ValueError(
+                'Input `chosen_num_or_ratio` should be positive, '
+                f'but {chosen_num_or_ratio} received!'
+                )
 
     # print(f'Filtering training data.')
     if invalid_value is not None:
@@ -104,13 +111,17 @@ def train_boundary(latent_codes,
     negative_val = latent_codes[-chosen_num:][negative_idx[train_num:]]
     # Training set.
     train_data = np.concatenate([positive_train, negative_train], axis=0)
-    train_label = np.concatenate([np.ones(train_num, dtype=np.int),
-                                  np.zeros(train_num, dtype=np.int)], axis=0)
+    train_label = np.concatenate([
+            np.ones(train_num, dtype=np.int),
+            np.zeros(train_num, dtype=np.int)
+            ], axis=0)
     print(f'  Training: {train_num} positive, {train_num} negative.')
     # Validation set.
     val_data = np.concatenate([positive_val, negative_val], axis=0)
-    val_label = np.concatenate([np.ones(val_num, dtype=np.int),
-                                np.zeros(val_num, dtype=np.int)], axis=0)
+    val_label = np.concatenate([
+            np.ones(val_num, dtype=np.int),
+            np.zeros(val_num, dtype=np.int)
+            ], axis=0)
     print(f'  Validation: {val_num} positive, {val_num} negative.')
     # Remaining set.
     # remaining_num = num_samples - chosen_num * 2
@@ -132,9 +143,11 @@ def train_boundary(latent_codes,
     if val_num:
         val_prediction = classifier.predict(val_data)
         correct_num = np.sum(val_label == val_prediction)
-        print(f'Accuracy for validation set: '
-              f'{correct_num} / {val_num * 2} = '
-              f'{correct_num / (val_num * 2):.6f}')
+        print(
+                f'Accuracy for validation set: '
+                f'{correct_num} / {val_num * 2} = '
+                f'{correct_num / (val_num * 2):.6f}'
+                )
 
     val = classifier.coef_.reshape(1, latent_space_dim).astype(np.float32)
     return val / np.linalg.norm(val)
@@ -170,43 +183,49 @@ def project_boundary(primal, *args):
         There are more than two condition boundaries.
     """
     if len(args) > 2:
-        raise NotImplementedError('This function supports projecting with '
-                                  'at most two conditions.')
+        raise NotImplementedError(
+                'This function supports projecting with '
+                'at most two conditions.'
+                )
     assert len(primal.shape) == 2 and primal.shape[0] == 1
 
     if not args:
         return primal
     if len(args) == 1:
         cond = args[0]
-        assert (len(cond.shape) == 2 and cond.shape[0] == 1 and
-                cond.shape[1] == primal.shape[1])
+        assert (
+                len(cond.shape) == 2 and cond.shape[0] == 1
+                and cond.shape[1] == primal.shape[1]
+                )
         new = primal - primal.dot(cond.T) * cond
         return new / np.linalg.norm(new)
     if len(args) == 2:
         cond_1 = args[0]
         cond_2 = args[1]
-        assert (len(cond_1.shape) == 2 and cond_1.shape[0] == 1 and
-                cond_1.shape[1] == primal.shape[1])
-        assert (len(cond_2.shape) == 2 and cond_2.shape[0] == 1 and
-                cond_2.shape[1] == primal.shape[1])
+        assert (
+                len(cond_1.shape) == 2 and cond_1.shape[0] == 1
+                and cond_1.shape[1] == primal.shape[1]
+                )
+        assert (
+                len(cond_2.shape) == 2 and cond_2.shape[0] == 1
+                and cond_2.shape[1] == primal.shape[1]
+                )
         primal_cond_1 = primal.dot(cond_1.T)
         primal_cond_2 = primal.dot(cond_2.T)
         cond_1_cond_2 = cond_1.dot(cond_2.T)
-        alpha = (primal_cond_1 - primal_cond_2 * cond_1_cond_2) / (
-            1 - cond_1_cond_2 ** 2 + 1e-8)
-        beta = (primal_cond_2 - primal_cond_1 * cond_1_cond_2) / (
-            1 - cond_1_cond_2 ** 2 + 1e-8)
-        new = primal - alpha * cond_1 - beta * cond_2
+        alpha = (primal_cond_1 -
+                 primal_cond_2*cond_1_cond_2) / (1 - cond_1_cond_2**2 + 1e-8)
+        beta = (primal_cond_2
+                - primal_cond_1*cond_1_cond_2) / (1 - cond_1_cond_2**2 + 1e-8)
+        new = primal - alpha*cond_1 - beta*cond_2
         return new / np.linalg.norm(new)
 
     raise NotImplementedError
 
 
-def linear_interpolate(latent_code,
-                       boundary,
-                       start_distance=-3.0,
-                       end_distance=3.0,
-                       steps=10):
+def linear_interpolate(
+        latent_code, boundary, start_distance=-3.0, end_distance=3.0, steps=10
+        ):
     """Manipulate the latent code with respect to boundary.
 
     Basically, this function takes a latent code and a boundary as
@@ -243,19 +262,23 @@ def linear_interpolate(latent_code,
         Number of steps to move the latent code from start position
         to end position. By default: 10
     """
-    assert (latent_code.shape[0] == 1 and boundary.shape[0] == 1 and
-            len(boundary.shape) == 2 and
-            boundary.shape[1] == latent_code.shape[-1])
+    assert (
+            latent_code.shape[0] == 1 and boundary.shape[0] == 1
+            and len(boundary.shape) == 2
+            and boundary.shape[1] == latent_code.shape[-1]
+            )
 
     linspace = np.linspace(start_distance, end_distance, steps)
     if len(latent_code.shape) == 2:
         linspace = linspace - latent_code.dot(boundary.T)
         linspace = linspace.reshape(-1, 1).astype(np.float32)
-        return latent_code + linspace * boundary
+        return latent_code + linspace*boundary
     if len(latent_code.shape) == 3:
         linspace = linspace.reshape(-1, 1, 1).astype(np.float32)
         return latent_code + linspace * boundary.reshape(1, 1, -1)
-    raise ValueError(f'Input `latent_code` should be with shape '
-                     f'[1, latent_space_dim] or [1, N, latent_space_dim] for '
-                     f'W+ space in Style GAN!\n'
-                     f'But {latent_code.shape} is received.')
+    raise ValueError(
+            f'Input `latent_code` should be with shape '
+            f'[1, latent_space_dim] or [1, N, latent_space_dim] for '
+            f'W+ space in Style GAN!\n'
+            f'But {latent_code.shape} is received.'
+            )

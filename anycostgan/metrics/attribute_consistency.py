@@ -27,8 +27,10 @@ def compute_attribute_consistency(g, sub_g, n_sample, batch_size):
             noise = g.make_noise()
 
             latent = torch.randn(args.batch_size, 1, 512, device=DEVICE)
-            kwargs = {'styles': latent, 'truncation': 0.5,
-                      'truncation_style': mean_style, 'noise': noise}
+            kwargs = {
+                    'styles': latent, 'truncation': 0.5,
+                    'truncation_style': mean_style, 'noise': noise
+                    }
             img = g(**kwargs)[0].clamp(min=-1., max=1.)
             sub_img = sub_g(**kwargs)[0].clamp(min=-1., max=1.)
             img = adaptive_resize(img, 256)
@@ -40,7 +42,7 @@ def compute_attribute_consistency(g, sub_g, n_sample, batch_size):
             attr = torch.argmax(attr, dim=2)
             sub_attr = torch.argmax(sub_attr, dim=2)
             this_acc = (attr == sub_attr).float().mean(0)
-            accs = accs + this_acc / n_batch
+            accs = accs + this_acc/n_batch
     accs = hvd.allreduce(accs)
     return accs
 
@@ -49,63 +51,63 @@ if __name__ == "__main__":
     DEVICE = "cuda"
 
     parser = argparse.ArgumentParser(
-        description="Computing attribute consistency between generators"
-        )
+            description="Computing attribute consistency between generators"
+            )
     parser.add_argument(
-        "--config", type=str, help='config name of the pretrained generator'
-        )
+            "--config", type=str,
+            help='config name of the pretrained generator'
+            )
     parser.add_argument(
-        '--channel_ratio', type=float, default=None,
-        help='channel ratio for the sub-generator'
-        )
+            '--channel_ratio', type=float, default=None,
+            help='channel ratio for the sub-generator'
+            )
     parser.add_argument(
-        '--target_res', type=int, default=None,
-        help='resolution used for the sub-generator'
-        )
+            '--target_res', type=int, default=None,
+            help='resolution used for the sub-generator'
+            )
 
     parser.add_argument(
-        "--n_sample", type=int, default=10000,
-        help="number of the samples for calculating PPL"
-        )
+            "--n_sample", type=int, default=10000,
+            help="number of the samples for calculating PPL"
+            )
     parser.add_argument(
-        "--batch_size", type=int, default=16,
-        help="batch size for the models (per gpu)"
-        )
+            "--batch_size", type=int, default=16,
+            help="batch size for the models (per gpu)"
+            )
 
     args = parser.parse_args()
 
     hvd.init()
     torch.cuda.set_device(hvd.local_rank())
 
-    generator = models.get_pretrained(
-        'generator', args.config
-        ).to(DEVICE).eval()
+    generator = models.get_pretrained('generator',
+                                      args.config).to(DEVICE).eval()
 
-    sub_generator = models.get_pretrained(
-        'generator', args.config
-        ).to(DEVICE).eval()
+    sub_generator = models.get_pretrained('generator',
+                                          args.config).to(DEVICE).eval()
     if args.channel_ratio:
         set_uniform_channel_ratio(sub_generator, args.channel_ratio)
 
     if args.target_res is not None:
         sub_generator.target_res = args.target_res
 
-    acc_list = compute_attribute_consistency(generator, sub_generator,
-                                             n_sample=args.n_sample,
-                                             batch_size=args.batch_size)
+    acc_list = compute_attribute_consistency(
+            generator, sub_generator, n_sample=args.n_sample,
+            batch_size=args.batch_size
+            )
     acc_list = list(acc_list.to('cpu').numpy())
-    attr_list = ['5_o_Clock_Shadow', 'Arched_Eyebrows', 'Attractive',
-                 'Bags_Under_Eyes', 'Bald', 'Bangs', 'Big_Lips',
-                 'Big_Nose', 'Black_Hair', 'Blond_Hair', 'Blurry',
-                 'Brown_Hair', 'Bushy_Eyebrows', 'Chubby',
-                 'Double_Chin', 'Eyeglasses', 'Goatee', 'Gray_Hair',
-                 'Heavy_Makeup', 'High_Cheekbones', 'Male',
-                 'Mouth_Slightly_Open', 'Mustache', 'Narrow_Eyes', 'No_Beard',
-                 'Oval_Face', 'Pale_Skin', 'Pointy_Nose',
-                 'Receding_Hairline', 'Rosy_Cheeks', 'Sideburns', 'Smiling',
-                 'Straight_Hair', 'Wavy_Hair',
-                 'Wearing_Earrings', 'Wearing_Hat', 'Wearing_Lipstick',
-                 'Wearing_Necklace', 'Wearing_Necktie', 'Young']
+    attr_list = [
+            '5_o_Clock_Shadow', 'Arched_Eyebrows', 'Attractive',
+            'Bags_Under_Eyes', 'Bald', 'Bangs', 'Big_Lips', 'Big_Nose',
+            'Black_Hair', 'Blond_Hair', 'Blurry', 'Brown_Hair',
+            'Bushy_Eyebrows', 'Chubby', 'Double_Chin', 'Eyeglasses', 'Goatee',
+            'Gray_Hair', 'Heavy_Makeup', 'High_Cheekbones', 'Male',
+            'Mouth_Slightly_Open', 'Mustache', 'Narrow_Eyes', 'No_Beard',
+            'Oval_Face', 'Pale_Skin', 'Pointy_Nose', 'Receding_Hairline',
+            'Rosy_Cheeks', 'Sideburns', 'Smiling', 'Straight_Hair',
+            'Wavy_Hair', 'Wearing_Earrings', 'Wearing_Hat', 'Wearing_Lipstick',
+            'Wearing_Necklace', 'Wearing_Necktie', 'Young'
+            ]
 
     if hvd.rank() == 0:
         for at, ac in zip(attr_list, acc_list):

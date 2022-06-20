@@ -7,8 +7,9 @@ def get_celeba_hq_split():
     test_idx = []
     val_idx = []
 
-    with open('thirdparty/CelebA-HQ-to-CelebA-mapping.txt',
-              encoding='utf-8') as f:
+    with open(
+            'thirdparty/CelebA-HQ-to-CelebA-mapping.txt', encoding='utf-8'
+            ) as f:
         lines = f.readlines()
     celeba_ids = [int(line.strip().split()[1]) for line in lines]
 

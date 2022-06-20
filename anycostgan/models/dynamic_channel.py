@@ -1,5 +1,4 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
-
 """Dynamic channel utility functions."""
 
 import math
@@ -49,8 +48,10 @@ def set_uniform_channel_ratio(model, ratio):
     org_channel_mult = full_channels[-1] * 1. / G_CHANNEL_CONFIG[resolution]
 
     channel_max = model.channel_max
-    channels = {k: min(channel_max, int(v * ratio * org_channel_mult))
-                for k, v in G_CHANNEL_CONFIG.items()}
+    channels = {
+            k: min(channel_max, int(v * ratio * org_channel_mult))
+            for k, v in G_CHANNEL_CONFIG.items()
+            }
     channel_config = [v for k, v in channels.items() if k <= resolution]
     channel_config2 = []  # duplicate the config
     for channel in channel_config:
@@ -89,8 +90,10 @@ def _get_offical_sub_channel_config(ratio, org_channel_mult):
     channel_max = 512
     # NOTE: in Python 3.6 onwards,
     # the order of dictionary insertion is preserved
-    channel_config = [min(channel_max, int(v * ratio * org_channel_mult))
-                      for _, v in G_CHANNEL_CONFIG.items()]
+    channel_config = [
+            min(channel_max, int(v * ratio * org_channel_mult))
+            for _, v in G_CHANNEL_CONFIG.items()
+            ]
     channel_config2 = []  # duplicate the config
     for channel in channel_config:
         channel_config2.append(channel)
@@ -98,20 +101,23 @@ def _get_offical_sub_channel_config(ratio, org_channel_mult):
     return channel_config2
 
 
-def get_random_channel_config(full_channels, org_channel_mult,
-                              min_channel=8, divided_by=1):
+def get_random_channel_config(
+        full_channels, org_channel_mult, min_channel=8, divided_by=1
+        ):
     """Get the random channel configuration of the model."""
     # Use the official config as the smallest number here
     # (so that we can better compare the computation)
-    bottom_line = _get_offical_sub_channel_config(CHANNEL_CONFIGS[0],
-                                                  org_channel_mult)
+    bottom_line = _get_offical_sub_channel_config(
+            CHANNEL_CONFIGS[0], org_channel_mult
+            )
     bottom_line = bottom_line[:len(full_channels)]
 
     new_channels = []
     ratios = []
     for full_c, bottom in zip(full_channels, bottom_line):
-        valid_channel_configs = [a for a in CHANNEL_CONFIGS
-                                 if a * full_c >= bottom]
+        valid_channel_configs = [
+                a for a in CHANNEL_CONFIGS if a * full_c >= bottom
+                ]
         # (if too small, discard the ratio)
         ratio = random.choice(valid_channel_configs)
         ratios.append(ratio)
@@ -122,8 +128,10 @@ def get_random_channel_config(full_channels, org_channel_mult,
     return new_channels, ratios
 
 
-def sample_random_sub_channel(model, min_channel=8, divided_by=1, seed=None,
-                              mode='uniform', set_channels=True):
+def sample_random_sub_channel(
+        model, min_channel=8, divided_by=1, seed=None, mode='uniform',
+        set_channels=True
+        ):
     """Sample the random sub channel configuration of the model."""
     if seed is not None:  # whether to sync between workers
         random.seed(seed)
@@ -140,8 +148,8 @@ def sample_random_sub_channel(model, min_channel=8, divided_by=1, seed=None,
         org_channel_mult = full_channels[-1] \
             / G_CHANNEL_CONFIG[model.resolution]
         rand_channels, rand_ratios = get_random_channel_config(
-            full_channels, org_channel_mult, min_channel, divided_by
-            )
+                full_channels, org_channel_mult, min_channel, divided_by
+                )
         if set_channels:
             set_sub_channel_config(model, rand_channels)
         return rand_ratios
@@ -161,21 +169,25 @@ def sample_random_sub_channel(model, min_channel=8, divided_by=1, seed=None,
         org_channel_mult = full_channels[-1] \
             / G_CHANNEL_CONFIG[model.resolution]
         rand_channels, rand_ratios = get_random_channel_config(
-            full_channels, org_channel_mult, min_channel, divided_by
-            )
+                full_channels, org_channel_mult, min_channel, divided_by
+                )
         if set_channels:
             set_sub_channel_config(model, rand_channels)
         return rand_ratios
-    raise NotImplementedError(f"Unknown mode: {mode}, expected one of "
-                              "'uniform', 'flexible', 'sandwich'.")
+    raise NotImplementedError(
+            f"Unknown mode: {mode}, expected one of "
+            "'uniform', 'flexible', 'sandwich'."
+            )
 
 
 def sort_channel(g):
     """Sort the channel configuration of the model."""
+
     def _get_sorted_input_idx(style_conv, sample_latents):
         assert isinstance(style_conv, (StyledConv, ToRGB)), type(style_conv)
-        importance = torch.sum(torch.abs(style_conv.conv.weight.data),
-                               dim=(0, 1, 3, 4))
+        importance = torch.sum(
+                torch.abs(style_conv.conv.weight.data), dim=(0, 1, 3, 4)
+                )
         # We consider the modulated weights
         style = style_conv.conv.modulation(sample_latents).abs().mean(0)
 
@@ -187,11 +199,11 @@ def sort_channel(g):
         """Reorganize the input channel of the style conv."""
         assert idx.numel() == style_conv.conv.weight.data.shape[2]
         style_conv.conv.weight.data = torch.index_select(
-            style_conv.conv.weight.data, 2, idx
-            )  # inp
+                style_conv.conv.weight.data, 2, idx
+                )  # inp
         style_conv.conv.modulation.weight.data = torch.index_select(
-            style_conv.conv.modulation.weight.data, 0, idx
-            )
+                style_conv.conv.modulation.weight.data, 0, idx
+                )
         style_conv_bias_idx = style_conv.conv.modulation.bias.data[idx]
         style_conv.conv.modulation.bias.data = style_conv_bias_idx
 
@@ -199,8 +211,8 @@ def sort_channel(g):
         """Reorganize the output channel of the style conv."""
         assert idx.numel() == style_conv.conv.weight.data.shape[1]
         style_conv.conv.weight.data = torch.index_select(
-            style_conv.conv.weight.data, 1, idx
-            )  # oup
+                style_conv.conv.weight.data, 1, idx
+                )  # oup
         style_conv.activate.bias.data = style_conv.activate.bias.data[idx]
 
     # NOTE:
@@ -210,8 +222,9 @@ def sort_channel(g):
     latent_in = torch.randn(100000, 512, device=next(g.parameters()).device)
     latents = g.style(latent_in)  # get the input latents
 
-    for conv1, conv2, to_rgb in zip(g.convs[::2][::-1], g.convs[1::2][::-1],
-                                    g.to_rgbs[::-1]):
+    for conv1, conv2, to_rgb in zip(
+            g.convs[::2][::-1], g.convs[1::2][::-1], g.to_rgbs[::-1]
+            ):
         # Modulate conv weight shape: [1, oup, inp, h, w]
         # Modulation linear shape: [style_dim, inp]
         if sorted_idx is None:

@@ -24,7 +24,7 @@ def slerp(a, b, t):
     b = normalize(b)
     d = (a * b).sum(-1, keepdim=True)
     p = t * torch.acos(d)
-    c = normalize(b - d * a)
+    c = normalize(b - d*a)
     d = a * torch.cos(p) + c * torch.sin(p)
 
     return normalize(d)
@@ -32,11 +32,13 @@ def slerp(a, b, t):
 
 def lerp(a, b, t):
     """Linear interpolation."""
-    return a + (b - a) * t
+    return a + (b-a) * t
 
 
-def compute_ppl(g, n_sample, batch_size, space='w', sampling='end',
-                eps=1e-4, crop=False):
+def compute_ppl(
+        g, n_sample, batch_size, space='w', sampling='end', eps=1e-4,
+        crop=False
+        ):
     """Compute perceptual path length."""
     percept = lpips.LPIPS(net='vgg', verbose=False).to(device)
 
@@ -61,9 +63,8 @@ def compute_ppl(g, n_sample, batch_size, space='w', sampling='end',
                 latent_t0, latent_t1 = latent[::2], latent[1::2]
                 latent_e0 = lerp(latent_t0, latent_t1, lerp_t[:, None])
                 latent_e1 = lerp(latent_t0, latent_t1, lerp_t[:, None] + eps)
-                latent_e = torch.stack(
-                    [latent_e0, latent_e1], 1
-                    ).view(*latent.shape)
+                latent_e = torch.stack([latent_e0, latent_e1],
+                                       1).view(*latent.shape)
 
             latent_e = latent_e.unsqueeze(1)
             image, _ = g(latent_e, input_is_style=True, noise=noise)
@@ -71,8 +72,8 @@ def compute_ppl(g, n_sample, batch_size, space='w', sampling='end',
 
             if crop:
                 factor = image.shape[2] // 8
-                image = image[:, :, factor * 3: factor * 7,
-                              factor * 2: factor * 6]
+                image = image[:, :, factor * 3:factor * 7,
+                              factor * 2:factor * 6]
 
             factor = image.shape[2] // 256
 
@@ -82,11 +83,12 @@ def compute_ppl(g, n_sample, batch_size, space='w', sampling='end',
                 # it will make a difference for 1024 resolution.
                 batch, channels, h, w = image.shape
                 image = image.view(
-                    batch, channels, h // factor, factor, w // factor, factor
-                    ).mean([3, 5])
+                        batch, channels, h // factor, factor, w // factor,
+                        factor
+                        ).mean([3, 5])
 
-            dist = percept(image[::2], image[1::2]
-                           ).view(image.shape[0] // 2) / (eps ** 2)
+            dist = percept(image[::2], image[1::2]).view(image.shape[0] // 2
+                                                         ) / (eps**2)
             distances.append(dist.to("cpu"))
 
     distances = torch.cat(distances, 0)
@@ -96,8 +98,8 @@ def compute_ppl(g, n_sample, batch_size, space='w', sampling='end',
     lo = np.percentile(distances, 1, interpolation="lower")
     hi = np.percentile(distances, 99, interpolation="higher")
     filtered_dist = np.extract(
-        np.logical_and(lo <= distances, distances <= hi), distances
-    )
+            np.logical_and(lo <= distances, distances <= hi), distances
+            )
     return filtered_dist.mean()
 
 
@@ -105,25 +107,39 @@ if __name__ == "__main__":
     device = "cuda"
 
     parser = argparse.ArgumentParser(
-        description="Perceptual Path Length calculator"
-        )
-    parser.add_argument("--config", type=str,
-                        help='config name of the pretrained generator')
+            description="Perceptual Path Length calculator"
+            )
+    parser.add_argument(
+            "--config", type=str,
+            help='config name of the pretrained generator'
+            )
     parser.add_argument('--channel_ratio', type=float, default=None)
     parser.add_argument('--target_res', type=int, default=None)
 
-    parser.add_argument("--n_sample", type=int, default=100000,
-                        help="number of the samples for calculating PPL")
-    parser.add_argument("--batch_size", type=int, default=16,
-                        help="batch size for the models (per gpu)")
-    parser.add_argument("--space", default='w', choices=["z", "w"],
-                        help="space that PPL calculated with")
-    parser.add_argument("--eps", type=float, default=1e-4,
-                        help="epsilon for numerical stability")
-    parser.add_argument("--crop", action="store_true",
-                        help="apply center crop to the images")
-    parser.add_argument("--sampling", default="end", choices=["end", "full"],
-                        help="set endpoint sampling method")
+    parser.add_argument(
+            "--n_sample", type=int, default=100000,
+            help="number of the samples for calculating PPL"
+            )
+    parser.add_argument(
+            "--batch_size", type=int, default=16,
+            help="batch size for the models (per gpu)"
+            )
+    parser.add_argument(
+            "--space", default='w', choices=["z", "w"],
+            help="space that PPL calculated with"
+            )
+    parser.add_argument(
+            "--eps", type=float, default=1e-4,
+            help="epsilon for numerical stability"
+            )
+    parser.add_argument(
+            "--crop", action="store_true",
+            help="apply center crop to the images"
+            )
+    parser.add_argument(
+            "--sampling", default="end", choices=["end", "full"],
+            help="set endpoint sampling method"
+            )
 
     args = parser.parse_args()
 
@@ -140,12 +156,10 @@ if __name__ == "__main__":
     if args.target_res is not None:
         generator.target_res = args.target_res
 
-    ppl = compute_ppl(generator,
-                      n_sample=args.n_sample,
-                      batch_size=args.batch_size,
-                      space=args.space,
-                      sampling=args.sampling,
-                      eps=args.eps,
-                      crop=args.crop)
+    ppl = compute_ppl(
+            generator, n_sample=args.n_sample, batch_size=args.batch_size,
+            space=args.space, sampling=args.sampling, eps=args.eps,
+            crop=args.crop
+            )
     if hvd.rank() == 0:
         print(' * PPL: {}'.format(ppl))

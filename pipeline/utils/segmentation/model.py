@@ -11,13 +11,15 @@ from pipeline.utils.segmentation.resnet import Resnet18
 class ConvBNReLU(nn.Module):
     """Convolutional block with batch normalization and ReLU."""
 
-    def __init__(self, in_chan, out_chan, *args, ks=3, stride=1, padding=1,
-                 **kwargs):
+    def __init__(
+            self, in_chan, out_chan, *args, ks=3, stride=1, padding=1, **kwargs
+            ):
         """Initialize ConvBNReLU."""
         super().__init__()
-        self.conv = nn.Conv2d(in_chan, out_chan, kernel_size=ks,
-                              stride=stride, padding=padding,
-                              bias=False)
+        self.conv = nn.Conv2d(
+                in_chan, out_chan, kernel_size=ks, stride=stride,
+                padding=padding, bias=False
+                )
         self.bn = nn.BatchNorm2d(out_chan)
         self.init_weight()
 
@@ -43,8 +45,9 @@ class BiSeNetOutput(nn.Module):
         """Initialize BiSeNet output layer."""
         super().__init__()
         self.conv = ConvBNReLU(in_chan, mid_chan, ks=3, stride=1, padding=1)
-        self.conv_out = nn.Conv2d(mid_chan, n_classes, kernel_size=1,
-                                  bias=False)
+        self.conv_out = nn.Conv2d(
+                mid_chan, n_classes, kernel_size=1, bias=False
+                )
         self.init_weight()
 
     def forward(self, x):
@@ -81,8 +84,9 @@ class AttentionRefinementModule(nn.Module):
         """Initialize module."""
         super().__init__()
         self.conv = ConvBNReLU(in_chan, out_chan, ks=3, stride=1, padding=1)
-        self.conv_atten = nn.Conv2d(out_chan, out_chan, kernel_size=1,
-                                    bias=False)
+        self.conv_atten = nn.Conv2d(
+                out_chan, out_chan, kernel_size=1, bias=False
+                )
         self.bn_atten = nn.BatchNorm2d(out_chan)
         self.sigmoid_atten = nn.Sigmoid()
         self.init_weight()
@@ -134,14 +138,16 @@ class ContextPath(nn.Module):
 
         feat32_arm = self.arm32(feat32)
         feat32_sum = feat32_arm + avg_up
-        feat32_up = F.interpolate(feat32_sum, (height16, width16),
-                                  mode='nearest')
+        feat32_up = F.interpolate(
+                feat32_sum, (height16, width16), mode='nearest'
+                )
         feat32_up = self.conv_head32(feat32_up)
 
         feat16_arm = self.arm16(feat16)
         feat16_sum = feat16_arm + feat32_up
-        feat16_up = F.interpolate(feat16_sum, (height8, width8),
-                                  mode='nearest')
+        feat16_up = F.interpolate(
+                feat16_sum, (height8, width8), mode='nearest'
+                )
         feat16_up = self.conv_head16(feat16_up)
 
         return feat8, feat16_up, feat32_up  # x8, x8, x16
@@ -217,10 +223,14 @@ class FeatureFusionModule(nn.Module):
         """Initialize module."""
         super().__init__()
         self.convblk = ConvBNReLU(in_chan, out_chan, ks=1, stride=1, padding=0)
-        self.conv1 = nn.Conv2d(out_chan, out_chan//4, kernel_size=1,
-                               stride=1, padding=0, bias=False)
-        self.conv2 = nn.Conv2d(out_chan//4, out_chan, kernel_size=1,
-                               stride=1, padding=0, bias=False)
+        self.conv1 = nn.Conv2d(
+                out_chan, out_chan // 4, kernel_size=1, stride=1, padding=0,
+                bias=False
+                )
+        self.conv2 = nn.Conv2d(
+                out_chan // 4, out_chan, kernel_size=1, stride=1, padding=0,
+                bias=False
+                )
         self.relu = nn.ReLU(inplace=True)
         self.sigmoid = nn.Sigmoid()
         self.init_weight()
@@ -286,12 +296,15 @@ class BiSeNet(nn.Module):
         feat_out16 = self.conv_out16(feat_cp8)
         feat_out32 = self.conv_out32(feat_cp16)
 
-        feat_out = F.interpolate(feat_out, (h, w), mode='bilinear',
-                                 align_corners=True)
-        feat_out16 = F.interpolate(feat_out16, (h, w), mode='bilinear',
-                                   align_corners=True)
-        feat_out32 = F.interpolate(feat_out32, (h, w), mode='bilinear',
-                                   align_corners=True)
+        feat_out = F.interpolate(
+                feat_out, (h, w), mode='bilinear', align_corners=True
+                )
+        feat_out16 = F.interpolate(
+                feat_out16, (h, w), mode='bilinear', align_corners=True
+                )
+        feat_out32 = F.interpolate(
+                feat_out32, (h, w), mode='bilinear', align_corners=True
+                )
         return feat_out, feat_out16, feat_out32
 
     def init_weight(self):

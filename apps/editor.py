@@ -104,11 +104,12 @@ class FaceEditor(QMainWindow):
                 tick_label = QLabel(self)
                 tick_label.setText('|')
                 self.set_text_format(tick_label, 'center', 10)
-                tick_label.setGeometry(700 + 175, 470 + i_slider * 30 + 9,
-                                       50, 20)
+                tick_label.setGeometry(
+                        700 + 175, 470 + i_slider*30 + 9, 50, 20
+                        )
 
                 this_slider = QSlider(Qt.Horizontal, self)
-                this_slider.setGeometry(700, 470 + i_slider * 30, 400, 30)
+                this_slider.setGeometry(700, 470 + i_slider*30, 400, 30)
                 this_slider.sliderReleased.connect(self.slider_update)
                 this_slider.setMinimum(-100)
                 this_slider.setMaximum(100)
@@ -118,17 +119,19 @@ class FaceEditor(QMainWindow):
                 attr_label = QLabel(self)
                 attr_label.setText(key)
                 self.set_text_format(attr_label, 'right', 13)
-                attr_label.move(700 - 110, 470 + i_slider * 30 + 2)
+                attr_label.move(700 - 110, 470 + i_slider*30 + 2)
             else:
                 tick_label = QLabel(self)
                 tick_label.setText('|')
                 self.set_text_format(tick_label, 'center', 10)
-                tick_label.setGeometry(1300 + 175,
-                                       470 + (i_slider - 18) * 30 + 9, 50, 20)
+                tick_label.setGeometry(
+                        1300 + 175, 470 + (i_slider-18) * 30 + 9, 50, 20
+                        )
 
                 this_slider = QSlider(Qt.Horizontal, self)
-                this_slider.setGeometry(1300, 470 + (i_slider - 18) * 30,
-                                        400, 30)
+                this_slider.setGeometry(
+                        1300, 470 + (i_slider-18) * 30, 400, 30
+                        )
                 this_slider.sliderReleased.connect(self.slider_update)
                 this_slider.setMinimum(-100)
                 this_slider.setMaximum(100)
@@ -138,7 +141,7 @@ class FaceEditor(QMainWindow):
                 attr_label = QLabel(self)
                 attr_label.setText(key)
                 self.set_text_format(attr_label, 'right', 13)
-                attr_label.move(1300 - 110, 470 + (i_slider - 18) * 30 + 2)
+                attr_label.move(1300 - 110, 470 + (i_slider-18) * 30 + 2)
 
         # Build models sliders
         base_h = 560
@@ -157,8 +160,9 @@ class FaceEditor(QMainWindow):
             channel_label = QLabel(self)
             channel_label.setText(text)
             self.set_text_format(channel_label, 'center', 13)
-            channel_label.setGeometry(190 + i * 63 - 50 // 2 + 10, base_h + 20,
-                                      50, 20)
+            channel_label.setGeometry(
+                    190 + i*63 - 50//2 + 10, base_h + 20, 50, 20
+                    )
 
         resolution_label = QLabel(self)
         resolution_label.setText('resolution:')
@@ -175,8 +179,9 @@ class FaceEditor(QMainWindow):
             resolution_label = QLabel(self)
             resolution_label.setText(text)
             self.set_text_format(resolution_label, 'center', 10)
-            resolution_label.setGeometry(190 + i * 63 - 50 // 2 + 10,
-                                         base_h + 70, 50, 20)
+            resolution_label.setGeometry(
+                    190 + i*63 - 50//2 + 10, base_h + 70, 50, 20
+                    )
 
         # Build button slider
         self.reset_button = QPushButton('Reset', self)
@@ -186,18 +191,22 @@ class FaceEditor(QMainWindow):
         # Build button slider
         self.save_button = QPushButton('Save trans', self)
         self.save_button.move(280, 700)
-        self.save_button.clicked.connect(partial(self.slider_update,
-                                                 force_full_g=True,
-                                                 save_trans=True,
-                                                 save_img=False))
+        self.save_button.clicked.connect(
+                partial(
+                        self.slider_update, force_full_g=True, save_trans=True,
+                        save_img=False
+                        )
+                )
 
         # Button for saving image
         self.save_img_button = QPushButton('Save img', self)
         self.save_img_button.move(280, 760)
-        self.save_img_button.clicked.connect(partial(self.slider_update,
-                                                     force_full_g=True,
-                                                     save_trans=False,
-                                                     save_img=True))
+        self.save_img_button.clicked.connect(
+                partial(
+                        self.slider_update, force_full_g=True,
+                        save_trans=False, save_img=True
+                        )
+                )
 
         # Add loading gif
         # Create label
@@ -228,8 +237,9 @@ class FaceEditor(QMainWindow):
     def load_assets(self, default_max_value, custom_max_values):
         """Load assets from the configs."""
         # Build the generator
-        self.generator = models.get_pretrained('generator',
-                                               self.anycost_config).to('cpu')
+        self.generator = models.get_pretrained(
+                'generator', self.anycost_config
+                ).to('cpu')
         self.generator.eval()
         self.mean_latent = self.generator.mean_style(10000)
 
@@ -249,40 +259,27 @@ class FaceEditor(QMainWindow):
         #  '38_Wearing_Necktie', '39_Young']
 
         direction_map = {
-            'skin': '26_Pale_Skin',
-            'age': '39_Young',
-            'sexe': '20_Male',
-            'bangs': '05_Bangs',
-            'pointy nose': '27_Pointy_Nose',
-            'black hair': '08_Black_Hair',
-            'blond hair': '09_Blond_Hair',
-            'brown hair': '11_Brown_Hair',
-            'gray hair': '17_Gray_Hair',
-            'bald': '04_Bald',
-            'double chin': '14_Double_Chin',
-            'straight hair': '32_Straight_Hair',
-            'curly hair': '33_Wavy_Hair',
-            'eyes bags': '03_Bags_Under_Eyes',
-            'narrow eyes': '23_Narrow_Eyes',
-            'lips size': '06_Big_Lips',
-            'nose_size': '07_Big_Nose',
-            'chubby': '13_Chubby',
-            'attractive': '02_Attractive',
-            'blurry': '10_Blurry',
-            'eyebrows': '12_Bushy_Eyebrows',
-            'eyeglasses': '15_Eyeglasses',
-            'goatee': '16_Goatee',
-            'makup': '18_Heavy_Makeup',
-            'mouth open': '21_Mouth_Slightly_Open',
-            'mustache': '22_Mustache',
-            'no beard': '24_No_Beard',
-            'oval face': '25_Oval_Face',
-            'hairline': '28_Receding_Hairline',
-            'sideburns': '30_Sideburns',
-            'smile': '31_Smiling',
-            'lipstick': '36_Wearing_Lipstick',
-            'rosy cheeks': '29_Rosy_Cheeks',
-        }
+                'skin': '26_Pale_Skin', 'age': '39_Young', 'sexe': '20_Male',
+                'bangs': '05_Bangs', 'pointy nose': '27_Pointy_Nose',
+                'black hair': '08_Black_Hair', 'blond hair': '09_Blond_Hair',
+                'brown hair': '11_Brown_Hair', 'gray hair': '17_Gray_Hair',
+                'bald': '04_Bald', 'double chin': '14_Double_Chin',
+                'straight hair': '32_Straight_Hair',
+                'curly hair': '33_Wavy_Hair',
+                'eyes bags': '03_Bags_Under_Eyes',
+                'narrow eyes': '23_Narrow_Eyes', 'lips size': '06_Big_Lips',
+                'nose_size': '07_Big_Nose', 'chubby': '13_Chubby',
+                'attractive': '02_Attractive', 'blurry': '10_Blurry',
+                'eyebrows': '12_Bushy_Eyebrows', 'eyeglasses': '15_Eyeglasses',
+                'goatee': '16_Goatee', 'makup': '18_Heavy_Makeup',
+                'mouth open': '21_Mouth_Slightly_Open',
+                'mustache': '22_Mustache', 'no beard': '24_No_Beard',
+                'oval face': '25_Oval_Face',
+                'hairline': '28_Receding_Hairline',
+                'sideburns': '30_Sideburns', 'smile': '31_Smiling',
+                'lipstick': '36_Wearing_Lipstick',
+                'rosy cheeks': '29_Rosy_Cheeks',
+                }
         max_values = {k: default_max_value for k in direction_map}
         max_values = {**max_values, **custom_max_values}
         self.max_values = max_values
@@ -294,24 +291,32 @@ class FaceEditor(QMainWindow):
 
         # 3. Prepare the latent code and original images
         file_names = sorted(os.listdir(DATA_DIR))
-        self.file_names = [f for f in file_names
-                           if f.endswith('.png') or f.endswith('.jpg')]
+        self.file_names = [
+                f for f in file_names
+                if f.endswith('.png') or f.endswith('.jpg')
+                ]
         self.latent_code_list = []
         self.org_image_list = []
 
         for fname in self.file_names:
-            org_image = np.asarray(Image.open(
-                os.path.join(DATA_DIR, fname)
-                ).convert('RGB'))
+            org_image = np.asarray(
+                    Image.open(os.path.join(DATA_DIR, fname)).convert('RGB')
+                    )
             npy_name = fname.replace('.jpg', '.npy').replace('.png', '.npy')
             try:
                 latent_code = torch.from_numpy(
-                    np.load(os.path.join(PROJECTION_DIR, 'projected_latents',
-                                         npy_name)))
+                        np.load(
+                                os.path.join(
+                                        PROJECTION_DIR, 'projected_latents',
+                                        npy_name
+                                        )
+                                )
+                        )
             except FileNotFoundError as exc:
                 raise FileNotFoundError(
-                    'Please compute the projected latent vector first by '
-                    'running `python apps/project_images.py`') from exc
+                        'Please compute the projected latent vector first by '
+                        'running `python apps/project_images.py`'
+                        ) from exc
 
             self.org_image_list.append(org_image)
             self.latent_code_list.append(latent_code.view(1, -1, 512))
@@ -319,16 +324,18 @@ class FaceEditor(QMainWindow):
         self.sample_idx = 0
         self.org_latent_code = self.latent_code_list[self.sample_idx]
         # Input kwargs for the generator
-        self.input_kwargs = {'styles': self.org_latent_code, 'noise': None,
-                             'randomize_noise': False,
-                             'input_is_style': True}
+        self.input_kwargs = {
+                'styles': self.org_latent_code, 'noise': None,
+                'randomize_noise': False, 'input_is_style': True
+                }
 
     @staticmethod
     def np2pixmap(np_arr):
         """Convert a numpy array to a QPixmap."""
         height, width, _ = np_arr.shape
-        q_image = QImage(np_arr.data, width, height, 3 * width,
-                         QImage.Format_RGB888)
+        q_image = QImage(
+                np_arr.data, width, height, 3 * width, QImage.Format_RGB888
+                )
         return QPixmap(q_image)
 
     @staticmethod
@@ -378,7 +385,7 @@ class FaceEditor(QMainWindow):
             """Convert a torch tensor to a numpy array."""
             assert x.shape[0] == 1
             x = x.squeeze(0).permute(1, 2, 0)
-            x = (x + 1) * 0.5  # 0-1
+            x = (x+1) * 0.5  # 0-1
             x = (x * 255).cpu().numpy().astype('uint8')
             return x
 
@@ -395,8 +402,9 @@ class FaceEditor(QMainWindow):
         for slider in self.attr_sliders.values():
             slider.setEnabled(active)
 
-    def slider_update(self, force_full_g=True, save_trans=False,
-                      save_img=False):
+    def slider_update(
+            self, force_full_g=True, save_trans=False, save_img=False
+            ):
         """Update the sliders."""
         self.set_sliders_status(False)
         self.statusBar().showMessage('Running...')
@@ -413,11 +421,12 @@ class FaceEditor(QMainWindow):
 
         if save_trans:
             translation = edited_code - self.org_latent_code
-            text, _ = QInputDialog.getText(self, "Name of translation",
-                                           "Name:",
-                                           QLineEdit.Normal, "")
-            path = os.path.join(PROJECTION_DIR, 'translations_vect',
-                                text + '.npy')
+            text, _ = QInputDialog.getText(
+                    self, "Name of translation", "Name:", QLineEdit.Normal, ""
+                    )
+            path = os.path.join(
+                    PROJECTION_DIR, 'translations_vect', text + '.npy'
+                    )
             if not os.path.exists(os.path.dirname(path)):
                 os.makedirs(os.path.dirname(path))
             np.save(path, translation.cpu().numpy())
@@ -427,11 +436,13 @@ class FaceEditor(QMainWindow):
             image = self.generate_image(pixmap=False)
             image = Image.fromarray(image)
             image = image.resize((512, 512), Image.ANTIALIAS)
-            text, _ = QInputDialog.getText(self, "Name of image", "Name:",
-                                           QLineEdit.Normal, "")
+            text, _ = QInputDialog.getText(
+                    self, "Name of image", "Name:", QLineEdit.Normal, ""
+                    )
             base_name = self.file_names[self.sample_idx].split('.')[0]
-            dir_path = os.path.join(PROJECTION_DIR, 'manual_edited_images',
-                                    base_name)
+            dir_path = os.path.join(
+                    PROJECTION_DIR, 'manual_edited_images', base_name
+                    )
             path = os.path.join(dir_path, text + '.png')
             if not os.path.exists(dir_path):
                 os.makedirs(dir_path)
@@ -483,8 +494,10 @@ if __name__ == '__main__':
     custom_max_val = config.editor.custom_max_value
 
     flexible_config = config.anycost_config_flexible
-    ANYCOST_CONFIG = ('anycost-ffhq-config-f-flexible'
-                      if flexible_config else 'anycost-ffhq-config-f')
+    ANYCOST_CONFIG = (
+            'anycost-ffhq-config-f-flexible'
+            if flexible_config else 'anycost-ffhq-config-f'
+            )
 
     # Run the editor
     app = QApplication(sys.argv[0:1])
