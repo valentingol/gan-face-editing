@@ -189,13 +189,7 @@ def fix_background(depth_org, depth_img, img_org, img, foreground_coef):
     mask_target = get_foreground_mask(depth_img)
     mask_base = get_foreground_mask(depth_org)
 
-    if np.sum(mask_target) > np.sum(mask_base):
-        # If the target image has more foreground pixels than the
-        # original image take the original image foregroud mask
-        mask = mask_base
-    else:
-        # Else take the target image foreground mask
-        mask = mask_target
+    mask = np.maximum(mask_target + mask_base, 1)
 
     # Smooth foreground mask
     mask_background = dist_edt(1 - mask)
