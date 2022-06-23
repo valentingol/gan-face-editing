@@ -9,63 +9,32 @@ from basicsr.utils import imwrite
 from gfpgan import GFPGANer
 
 
-def apply_gfp_gan(input_path : str, output_path : str, model_path : str, configs : dict):
-    """Inference demo for GFPGAN (for users).
-    configs = 
-    {
-    "version" : "1.3",
-    "upscale" : 2,
-    "bg_upsampler" : "realesrgan",
-    "bg_tile" : 400, #0 during testing
-    "suffix":  None,
-    "align_center_face" : "store_true",
-    "aligned" : "store_true", #action
-    "ext" : "auto"
+def apply_gfp_gan(input_path : str, output_path : str, model_path : str, new_config = {}):
+
+    # ------------------------ update configs ------------------------
+    configs = { 
+        "version" : "1.3",
+        "upscale" : 2,
+        "bg_upsampler" : "realesrgan",
+        "bg_tile" : 400, #0 during testing
+        "suffix":  None,
+        "only_center_face" : "store_true",
+        "aligned" : "store_true", #action
+        "ext" : "auto"
     }
-    """
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument(
-    #     '-i',
-    #     '--input',
-    #     type=str,
-    #     default='inputs/whole_imgs',
-    #     help='Input image or folder. Default: inputs/whole_imgs')
-    # parser.add_argument('-o', '--output', type=str, default='results', help='Output folder. Default: results')
-    # # we use version to select models, which is more user-friendly
-    # parser.add_argument(
-    #     '-v', '--version', type=str, default='1.3', help='GFPGAN model version. Option: 1 | 1.2 | 1.3. Default: 1.3')
-    # parser.add_argument(
-    #     '-s', '--upscale', type=int, default=2, help='The final upsampling scale of the image. Default: 2')
 
-    # parser.add_argument(
-    #     '--bg_upsampler', type=str, default='realesrgan', help='background upsampler. Default: realesrgan')
-    # parser.add_argument(
-    #     '--bg_tile',
-    #     type=int,
-    #     default=400,
-    #     help='Tile size for background sampler, 0 for no tile during testing. Default: 400')
-    # parser.add_argument('--suffix', type=str, default=None, help='Suffix of the restored faces')
-    # parser.add_argument('--only_center_face', action='store_true', help='Only restore the center face')
-    # parser.add_argument('--aligned', action='store_true', help='Input are aligned faces')
-    # parser.add_argument(
-    #     '--ext',
-    #     type=str,
-    #     default='auto',
-    #     help='Image extension. Options: auto | jpg | png, auto means using the same extension as inputs. Default: auto')
-    # args = parser.parse_args()
-
-    # args = parser.parse_args()
+    configs.update(new_config)
+   
 
     # ------------------------ input & output ------------------------
     if input_path.endswith('/'):
         input_path = input_path[:-1]
     if os.path.isfile(input_path):
-        print("IT IS")
         img_list = [input_path]
     else:
-        print("IT IS NOT")
+        #raise NameError("The input path doesn't exist !")
         img_list = sorted(glob.glob(os.path.join(input_path, '*')))
-    print('IMG_LIST', img_list)
+
     os.makedirs(output_path, exist_ok=True)
 
     # ------------------------ set up background upsampler ------------------------
@@ -91,6 +60,8 @@ def apply_gfp_gan(input_path : str, output_path : str, model_path : str, configs
         bg_upsampler = None
 
     # ------------------------ set up GFPGAN restorer ------------------------
+    # WE DO NOT IMPLEMENT OTHER VERSIONS FOR NOW
+
     # if args.version == '1':
     #     arch = 'original'
     #     channel_multiplier = 1
@@ -99,6 +70,7 @@ def apply_gfp_gan(input_path : str, output_path : str, model_path : str, configs
     #     arch = 'clean'
     #     channel_multiplier = 2
     #     model_name = 'GFPGANCleanv1-NoCE-C2'
+    
     if configs["version"] == '1.3':
         arch = 'clean'
         channel_multiplier = 2
@@ -106,12 +78,12 @@ def apply_gfp_gan(input_path : str, output_path : str, model_path : str, configs
     else:
         raise ValueError(f'Wrong model version {configs["version"]}.')
 
-    # determine model paths
+    # determine model paths : below is useful to handle several models but we only have one and precise it in argument
     #model_path = os.path.join('../models/gfp_gan', model_name + '.pth')
     # if not os.path.isfile(model_path):
     #     model_path = os.path.join('realesrgan/weights', model_name + '.pth')
+
     if not os.path.isfile(model_path):
-        print(model_path)
         raise ValueError(f'Model {model_name} does not exist.')
 
     restorer = GFPGANer(
@@ -121,9 +93,9 @@ def apply_gfp_gan(input_path : str, output_path : str, model_path : str, configs
         channel_multiplier=channel_multiplier,
         bg_upsampler=bg_upsampler)
 
+
     # ------------------------ restore ------------------------
     for img_path in img_list:
-        print("HERE WE GO", img_path)
         # read image
         img_name = os.path.basename(img_path)
         print(f'Processing {img_name} ...')
@@ -168,18 +140,13 @@ def apply_gfp_gan(input_path : str, output_path : str, model_path : str, configs
 
 if __name__ == '__main__':
     print("Applying GFP GAN ...")
-    INPUT_PATH = "../data/input_gfp_gan"
-    OUTPUT_PATH = "../data/output_gfp_gan"
-    MODEL_PATH = "../models/gfp_gan/GFPGANv1.3.pth"
-    CONFIGS = {    
-    "version" : "1.3",
-    "upscale" : 2,
-    "bg_upsampler" : "realesrgan",
-    "bg_tile" : 400, #0 during testing
-    "suffix":  None,
-    "only_center_face" : "store_true",
-    "aligned" : "store_true", #action
-    "ext" : "auto"
-    }
+    INPUT_PATH = "data/input_gfp_gan"
+    OUTPUT_PATH = "data/output_gfp_gan"
+    MODEL_PATH = "models/gfp_gan/GFPGANv1.3.pth"
+    #Precise custom configs if you want to change the default values : empty if no modifications
+    #if not precised, it is empty by default ...
+    MODIF_CONFIG = {}
     
-    apply_gfp_gan(input_path = INPUT_PATH, output_path = OUTPUT_PATH, model_path = MODEL_PATH, configs = CONFIGS)
+    apply_gfp_gan(input_path = INPUT_PATH, output_path = OUTPUT_PATH, model_path = MODEL_PATH, new_config = MODIF_CONFIG)
+
+
