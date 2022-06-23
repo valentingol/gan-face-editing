@@ -129,11 +129,11 @@ As domain mixup shows no significant improvement and can even add some unwanted 
 
 ### GFP-GAN
 
-To enhance the quality of the areas of the face modified, you can incorporate a read-to-use GAN, GFP-GAN. It was specifically trained to restore the quality of ancient images of faces, and is open-sourced : https://github.com/TencentARC/GFPGAN.
+To enhance the quality of the areas of the face modified, you can incorporate a ready-to-use GAN, GFP-GAN. It was specifically trained to restore the quality of ancient images of faces, and is open-sourced : https://github.com/TencentARC/GFPGAN.
 
 However, it only works well on faces, so you might want to use segmentation and use GFP-GAN only on the face part, or even the mask of the area of modifications.
 
-In order to use it, you first have to download a trained model, at https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth, and store it, eg in `models/gpf_gan`. The code that calls it and run this part of the pipeline is in `pipeline/gpf_gan.py`. You will have to specify the paths of the input images, the output images and the model. 
+In order to use it, you first have to download a trained model, at https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth, and store it, eg in `models/gpf_gan`. The code that calls it and runs this part of the pipeline is in `pipeline/gpf_gan.py`. You will have to specify the paths of the input images, the output images and the model. 
 
 ### Segmentation
 
