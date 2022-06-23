@@ -1,9 +1,14 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
 """Pytorch utilities."""
 
-import horovod.torch as hvd
 import torch
 import torch.nn.functional as F
+
+try:
+    import horovod.torch as hvd
+    HOROVOD_ENABLED = True
+except ImportError:
+    HOROVOD_ENABLED = False
 
 
 def safe_load_state_dict_from_url(
@@ -16,10 +21,10 @@ def safe_load_state_dict_from_url(
     distributed environment the main idea is to only download the
     file on worker 0.
     """
-    try:
+    if HOROVOD_ENABLED:
         hvd.init()
         world_size = hvd.size()
-    except ImportError:  # load horovod failed, just normal environment
+    else:  # load horovod failed, just normal environment
         return torch.hub.load_state_dict_from_url(
                 url, model_dir, map_location, progress, check_hash, file_name
                 )
@@ -94,6 +99,12 @@ class DistributedMeter:
 
     def update(self, val):
         """Update the meter."""
+        if not HOROVOD_ENABLED:
+            raise ValueError(
+                    'DistributedMeter is only available when horovod is '
+                    'enabled, please install it or use AverageMeter instead '
+                    '(work on single GPU).'
+                    )
         self.sum += hvd.allreduce(val.detach().cpu(), name=self.name)
         self.n += 1
 
