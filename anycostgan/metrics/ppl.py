@@ -1,5 +1,5 @@
 # Code from https://github.com/mit-han-lab/anycost-gan
-"""Compute perceptual path lenght."""
+"""Compute perceptual path length."""
 
 import argparse
 import math
