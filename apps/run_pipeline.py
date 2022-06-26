@@ -4,6 +4,7 @@ import os
 
 from pipeline.depth_segmentation import depth_estimation_mix
 from pipeline.domain_mixup import domain_mix
+from pipeline.gfp_gan import gfp_gan_mix
 from pipeline.segmentation import segmentation_mix
 from pipeline.translate import apply_translations
 from pipeline.utils.global_config import GlobalConfig
@@ -27,6 +28,10 @@ def run(config):
 
     print('\nApplying translations in latent space...')
     apply_translations(**pipeline_paths['apply_translations'])
+
+    if 'gfp_gan_mix' in pipeline_paths:
+        print('\nApplying GFP GAN restoration...')
+        gfp_gan_mix(**pipeline_paths['gfp_gan_mix'])
 
     if 'domain_mix' in pipeline_paths:
         print('\nApplying domain mixup...')

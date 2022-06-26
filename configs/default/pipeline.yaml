@@ -1,12 +1,19 @@
 --- !pipeline
 save_intermediate: True
+skip_gfp_gan: False
 skip_domain_mixup: True
 skip_segmentation: False
 skip_depth_segmentation: False
 
 --- !translation
 use_precomputed: True
-use_caracs_in_img: False
+use_characs_in_img: False
+
+--- !gfp_gan
+upscale: 2
+realesrgan: True
+bg_tile: 400
+margin: 12
 
 --- !domain_mixup
 recompute_dist: False
