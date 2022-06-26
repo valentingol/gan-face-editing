@@ -66,7 +66,7 @@ def domain_mix(
                     os.path.join(input_path, img_name, edited_name)
                     )
             if carac_name in dists:
-                # Distance between each pixel and the doamin
+                # Distance between each pixel and the domain
                 dist = dists[carac_name]
 
                 # Mixup
@@ -91,8 +91,8 @@ def domain_mix(
 if __name__ == '__main__':
     print('Applying domain mixup...')
     DATA_DIR = 'data/face_challenge'
-    INPUT_PATH = 'res/run1/images_post_translation'
-    OUTPUT_PATH = 'res/run1/images_post_domain_mixup'
+    INPUT_PATH = 'res/run1/output_images'
+    OUTPUT_PATH = 'res/run1/output_images'
     # Distances to domains (computed with `utils/domain_mixup/dist.py`)
     DOMAINS_DIST_PATH = 'postprocess/domain_mixup/distances'
     # Images representing the domains (black and white)

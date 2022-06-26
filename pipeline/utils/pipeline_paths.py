@@ -6,6 +6,7 @@ from os.path import join
 def get_pipeline_paths(config):
     """Get the configs for the pipeline."""
     save_intermediate = config.pipeline.save_intermediate
+    skip_gfp_gan = config.pipeline.skip_gfp_gan
     skip_domain_mixup = config.pipeline.skip_domain_mixup
     skip_segmentation = config.pipeline.skip_segmentation
     skip_depth_segmentation = config.pipeline.skip_depth_segmentation
@@ -19,11 +20,16 @@ def get_pipeline_paths(config):
             )
 
     pipeline_paths = {
-            'data_dir': config.data_dir, 'apply_translations': {
+            'data_dir': config.data_dir,
+            'apply_translations': {
                     'projection_dir': projection_dir,
                     'output_path': join(result_dir, 'images_post_translation'),
                     'anycost_config': anycost_config,
                     'configs': config.translation,
+                    },
+            'gfp_gan_mix': {
+                    'model_path': 'postprocess/gfp_gan/model/GFPGANv1.3.pth',
+                    'configs': config.gfp_gan,
                     },
             'domain_mix': {
                     'domains_dist_path': 'postprocess/domain_mixup/distances',
@@ -34,19 +40,23 @@ def get_pipeline_paths(config):
                     'model_path': ('postprocess/segmentation/model/79999_iter'
                                    '.pth'),
                     'configs': config.segmentation,
-                    }, 'depth_estimation_mix': {
+                    },
+            'depth_estimation_mix': {
                             'model_path': (
                                     'postprocess/depth_segmentation/model/'
                                     'dpt_large-midas-2f21e586.pt'
-                                    ), 'configs': config.depth_segmentation,
+                                    ),
+                            'configs': config.depth_segmentation,
                             },
             }
 
     op_order = [
-            'apply_translations', 'domain_mix', 'segmentation_mix',
-            'depth_estimation_mix'
+            'apply_translations', 'gfp_gan_mix', 'domain_mix',
+            'segmentation_mix', 'depth_estimation_mix'
             ]
 
+    if skip_gfp_gan:
+        op_order.remove('gfp_gan_mix')
     if skip_domain_mixup:
         op_order.remove('domain_mix')
         del pipeline_paths['domain_mix']
@@ -75,6 +85,10 @@ def set_paths(pipeline_paths, op_order, result_dir, save_intermediate):
                     if op_n == 'apply_translations':
                         pipeline_paths[op_name][key_path] = join(
                                 result_dir, 'images_post_translation'
+                                )
+                    if op_n == 'gfp_gan_mix':
+                        pipeline_paths[op_name][key_path] = join(
+                                result_dir, 'images_post_gfp_gan'
                                 )
                     if op_n == 'domain_mix':
                         pipeline_paths[op_name][key_path] = join(

@@ -26,7 +26,7 @@ __all__ = [
 
 
 class PixelNorm(nn.Module):
-    """Pixelwise normalization."""
+    """Pixel wise normalization."""
 
     def forward(self, x):
         """Forward pass."""
@@ -82,7 +82,7 @@ def make_kernel(k):
 
 
 class Upsample(nn.Module):
-    """Upsample the 2D input image with upfirdn2d."""
+    """Up sample the 2D input image with upfirdn2d."""
 
     def __init__(self, kernel, factor=2):
         """Initialize the module."""
@@ -240,7 +240,7 @@ class ModulatedConv2d(nn.Module):
         self.kernel_size = kernel_size
         self.in_channel = in_channel
         self.out_channel = out_channel
-        self.upsample = upsample  # if true, use deconvolution
+        self.upsample = upsample  # if true, use de-convolution
         self.downsample = downsample
         assert not downsample, 'Downsample is not implemented yet!'
         self.modulation = EqualLinear(style_dim, in_channel, bias_init=1)

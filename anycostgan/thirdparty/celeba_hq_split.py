@@ -22,5 +22,5 @@ def get_celeba_hq_split():
             train_idx.append(idx)
 
     # NOTICE: the range of the index is 0-29999
-    # but the range of the celebahq images fname is 1-30000
+    # but the range of the celeba HQ images fname is 1-30000
     return train_idx, val_idx, test_idx

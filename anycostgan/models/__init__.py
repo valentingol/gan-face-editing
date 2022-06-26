@@ -25,8 +25,8 @@ def load_state_dict_from_url(url, key=None):
     return state_dict
 
 
-def get_pretrained(model, config=None):
-    """Get pretrained model."""
+def get_url(model, config):
+    """Get url of model state."""
     if model in ['attribute-predictor', 'inception']:
         assert config is None
         # Not used for inception
@@ -34,6 +34,12 @@ def get_pretrained(model, config=None):
     else:
         assert config is not None
         url = URL_TEMPLATE.format(model, config)
+    return url
+
+
+def get_pretrained(model, config=None):
+    """Get pre trained model."""
+    url = get_url(model, config)
 
     if model == 'generator':
         if config in [

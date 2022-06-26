@@ -3,3 +3,4 @@ n_iter: 200
 enc_reg_weight: 0.0
 mse_weight: 1.0
 optimize_sub_g: False
+segmentation: True

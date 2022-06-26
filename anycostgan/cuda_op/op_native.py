@@ -34,7 +34,7 @@ class FusedLeakyReLU(nn.Module):
 
 
 def upfirdn2d(X, kernel, up=1, down=1, pad=(0, 0)):
-    """Upsample and FIRDN (Fractional Interpolated Directed Neighbor)."""
+    """Up-sample and FIRDN (Fractional Interpolated Directed Neighbor)."""
     out = upfirdn2d_native(
             X, kernel, up, up, down, down, pad[0], pad[1], pad[0], pad[1]
             )
@@ -44,7 +44,7 @@ def upfirdn2d(X, kernel, up=1, down=1, pad=(0, 0)):
 def upfirdn2d_native(
         X, kernel, up_x, up_y, down_x, down_y, pad_x0, pad_x1, pad_y0, pad_y1
         ):
-    """Upsample and FIRDN (Fractional Interpolated Directed Neighbor)."""
+    """Up-sample and FIRDN (Fractional Interpolated Directed Neighbor)."""
     _, chanels, _, _ = X.shape
     kernel_h, kernel_w = kernel.shape
 

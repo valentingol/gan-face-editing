@@ -27,7 +27,7 @@ def d_r1_loss(real_pred, real_img):
 
 
 def g_nonsaturating_loss(fake_pred):
-    """Nonsaturating loss for the generator."""
+    """Non-saturating loss for the generator."""
     loss = F.softplus(-fake_pred).mean()
 
     return loss

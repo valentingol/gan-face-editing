@@ -19,7 +19,7 @@ FID_WEIGHTS_URL = (
 
 
 class InceptionV3(nn.Module):
-    """Pretrained InceptionV3 network returning feature maps."""
+    """Pre trained InceptionV3 network returning feature maps."""
 
     # Index of default block of inception to return,
     # corresponds to output of final average pooling
@@ -28,7 +28,7 @@ class InceptionV3(nn.Module):
     # Maps feature dimensionality to their output blocks indices
     BLOCK_INDEX_BY_DIM = {
             64: 0,  # First max pooling features
-            192: 1,  # Second max pooling featurs
+            192: 1,  # Second max pooling features
             768: 2,  # Pre-aux classifier features
             2048: 3  # Final average pooling features
             }
@@ -40,7 +40,7 @@ class InceptionV3(nn.Module):
             resize_input=False, normalize_input=True, requires_grad=False,
             use_fid_inception=True
             ):
-        """Build pretrained InceptionV3.
+        """Build pre trained InceptionV3.
 
         Parameters
         ----------
@@ -59,14 +59,14 @@ class InceptionV3(nn.Module):
             not be strictly needed
         normalize_input : bool
             If true, scales the input from range (0, 1) to the range the
-            pretrained Inception network expects, namely (-1, 1)
+            pre trained Inception network expects, namely (-1, 1)
         requires_grad : bool
             If true, parameters of the models require gradients.
-            Possibly useful for finetuning the network
+            Possibly useful for fine tuning the network
         use_fid_inception : bool
-            If true, uses the pretrained Inception models used in
+            If true, uses the pre trained Inception models used in
             Tensorflow's FID implementation. If false, uses the
-            pretrained Inception models available in torchvision.
+            pre trained Inception models available in torchvision.
             The FID Inception models has different weights and a
             slightly different structure from torchvision's
             Inception models. If you want to compute FID scores, you
@@ -163,7 +163,7 @@ class InceptionV3(nn.Module):
 
 
 def fid_inception_v3():
-    """Build pretrained Inception models for FID computation.
+    """Build pre trained Inception models for FID computation.
 
     The Inception models for FID computation uses a different set of
     weights and has a slightly different structure than torchvision's

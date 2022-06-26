@@ -43,7 +43,7 @@ def apply_translations(projection_dir, output_path, anycost_config, configs):
     configs : dict or GlobalConfig
         Configurations for the translation
     """
-    use_caracs_in_img = configs['use_caracs_in_img']
+    use_characs_in_img = configs['use_characs_in_img']
     use_precomputed = configs['use_precomputed']
 
     latent_dir = os.path.join(projection_dir, 'projected_latents')
@@ -59,26 +59,26 @@ def apply_translations(projection_dir, output_path, anycost_config, configs):
 
     for i, fname in enumerate(os.listdir(latent_dir)):
         basename = fname.split('.')[0]
-        if use_caracs_in_img:
+        if use_characs_in_img:
             try:
-                carac_list = list(map(int, basename.split('_')))
+                charac_list = list(map(int, basename.split('_')))
             except ValueError as exc:
                 raise ValueError(
-                        'When "use_caracs_in_img" is set to True, the name of '
-                        'images should be like: "%d_%d_%d_%d_%d_%d_%d_%d_%d.'
-                        'png/.jpg" where "%d" are integer cararacteristics ('
+                        'When "use_characs_in_img" is set to True, the name of'
+                        ' images should be like: "%d_%d_%d_%d_%d_%d_%d_%d_%d.'
+                        'png/.jpg" where "%d" are integer chararacteristics ('
                         'see https://transfer-learning.org/rules for details).'
-                        'Otherwise you can set "use_caracs_in_img" to False '
+                        'Otherwise you can set "use_characs_in_img" to False '
                         'to get all translation for all images.'
                         ) from exc
         else:
-            carac_list = None
-        # Get intial projected latent code
+            charac_list = None
+        # Get initial projected latent code
         base_code = np.load(os.path.join(latent_dir, basename + '.npy'))
         base_code = torch.tensor(base_code).float().to(device)
         # Get translations for the image
         translations = get_translations(
-                translation_dir=translation_dir, carac_list=carac_list,
+                translation_dir=translation_dir, charac_list=charac_list,
                 use_precomputed=use_precomputed
                 )
         translations = {k: v.to(device) for k, v in translations.items()}
@@ -101,13 +101,13 @@ def apply_translations(projection_dir, output_path, anycost_config, configs):
 
 if __name__ == '__main__':
     PROJECTION_DIR = 'projection/run1'
-    OUTPUT_PATH = 'res/run1/images_post_translation'
+    OUTPUT_PATH = 'res/run1/output_images'
     FLEXIBLE_CONFIG = False
 
     ANYCOST_CONFIG = 'anycost-ffhq-config-f-flexible' if FLEXIBLE_CONFIG \
         else 'anycost-ffhq-config-f'
     print('Applying translations in latent space...')
 
-    CONFIGS = {'use_caracs_in_img': True, 'use_precomputed': True}
+    CONFIGS = {'use_characs_in_img': True, 'use_precomputed': True}
 
     apply_translations(PROJECTION_DIR, OUTPUT_PATH, ANYCOST_CONFIG, CONFIGS)

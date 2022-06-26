@@ -1,7 +1,7 @@
-# Specific Folders
-**.png
-**.jpg
-test_proj
+# Specific files and folders
+data/
+res/
+projection/run**
 .mypy_cache
 
 # General (Python)

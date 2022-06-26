@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 
-def browse_translation_dir(translation_dir, caracs):
+def browse_translation_dir(translation_dir, characs):
     """Browse the translation directory and get the translations."""
     translations = {}
     translations_default = {}
@@ -15,7 +15,7 @@ def browse_translation_dir(translation_dir, caracs):
     if not os.path.exists(translation_dir):
         return {}
 
-    if caracs is None:  # Apply all transformations
+    if characs is None:  # Apply all transformations
         for fname in os.listdir(translation_dir):
             translation_path = os.path.join(translation_dir, fname)
             transfo = np.load(translation_path)
@@ -30,7 +30,7 @@ def browse_translation_dir(translation_dir, caracs):
             if len(split_name) == 2:
                 if split_name[1] not in {'min', 'max'}:
                     num = int(split_name[1])
-                    if caracs[char] != num:
+                    if characs[char] != num:
                         transfo = np.load(translation_path)
                         translations_default[char + '_' + str(num)] \
                             = torch.tensor(transfo, dtype=torch.float32)
@@ -43,7 +43,7 @@ def browse_translation_dir(translation_dir, caracs):
             else:
                 if split_name[1] not in {'min', 'max'}:
                     num, from_num = int(split_name[1]), int(split_name[3])
-                    if caracs[char] == from_num:
+                    if characs[char] == from_num:
                         transfo = np.load(translation_path)
                         translations[char + '_' + str(num)] = torch.tensor(
                                 transfo, dtype=torch.float32
@@ -56,29 +56,29 @@ def browse_translation_dir(translation_dir, caracs):
                             )
 
         # Overwrite default translations with translations
-        # from specific caracteristics
+        # from specific characteristics
         translations = {**translations_default, **translations}
     return translations
 
 
-def get_translations(translation_dir, carac_list, use_precomputed):
-    """Get translations for a given list of caracteristics.
+def get_translations(translation_dir, charac_list, use_precomputed):
+    """Get translations for a given list of characteristics.
 
     Parameters
     ----------
     translation_dir: str
         Path to the directory containing the translations.
-    carac_list : list[int] or None
-        If not None, carac_list should be aist of caracteristics with 9
+    charac_list : list[int] or None
+        If not None, charac_list should be list of characteristics with 9
         int elements following the convention presented here:
         https://transfer-learning.org/rules. Then, the translations
-        will be based on the caracteristics provided. If None,
-        no caracteristics are taken into account and the translations
+        will be based on the characteristics provided. If None,
+        no characteristics are taken into account and the translations
         will be always the same (unconditional).
     use_precomputed : bool
         If True, use the precomputed translations in
         'projection/default_translations' and overwrite with
-        tranlsations in translation_dir. If False, compute only
+        translations in translation_dir. If False, compute only
         the translations in translation_dir.
 
     Returns
@@ -87,26 +87,26 @@ def get_translations(translation_dir, carac_list, use_precomputed):
         Translations for all the changes that are not in the original image
         (key: 'identifier', value: translation).
     """
-    if carac_list is not None:
-        (
-                skin, age, sex, _, _, bang, haircolor, doublechin, hairstyle
-                ) = carac_list
-        caracs = {
+    if charac_list is not None:
+        (skin, age, sex, _, _, bang, haircolor, doublechin,
+            hairstyle) = charac_list
+        characs = {
                 'Sk': skin, 'A': age, 'Se': sex, 'B': bang, 'Hc': haircolor,
                 'D': doublechin, 'Hs': hairstyle
                 }
     else:
-        caracs = None
+        characs = None
 
     # Get pre-computed translations
     if use_precomputed:
         precomputed_translations = browse_translation_dir(
-                'projection/default_translations/unconditional', caracs
+                'projection/default_translations/unconditional', characs
                 )
-        # Add conditional translations only when caracs are given
-        if caracs is not None:
+        # Add conditional translations only when
+        # characteristics are given
+        if characs is not None:
             precomputed_translations_2 = browse_translation_dir(
-                    'projection/default_translations/conditional', caracs
+                    'projection/default_translations/conditional', characs
                     )
             precomputed_translations = {
                     **precomputed_translations, **precomputed_translations_2
@@ -115,10 +115,10 @@ def get_translations(translation_dir, carac_list, use_precomputed):
         precomputed_translations = {}
 
     # Get custom translations
-    translations = browse_translation_dir(translation_dir, caracs)
+    translations = browse_translation_dir(translation_dir, characs)
     translations = {**precomputed_translations, **translations}
 
-    if caracs is not None:
+    if characs is not None:
         # Replace 'Hc_4' by 'bald':
         if haircolor != 4:
             translation_bald = translations.pop('Hc_4')

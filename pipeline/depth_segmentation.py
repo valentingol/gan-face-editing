@@ -248,9 +248,9 @@ if __name__ == "__main__":
     # Path to the original images
     DATA_DIR = 'data/face-challenge'
     # Path to the edited images
-    INPUT_PATH = 'res/run1/images_post_segmentation'
+    INPUT_PATH = 'res/run1/output_images'
     # Path to the segmented edited images
-    OUTPUT_PATH = 'res/run1/images_post_depth_segmentation'
+    OUTPUT_PATH = 'res/run1/output_images'
     # Path to the model
     MODEL_PATH = (
             'postprocess/depth_segmentation/model/'
