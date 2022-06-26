@@ -1,4 +1,4 @@
-"""Manage Pydocstyle output on worflow."""
+"""Manage Pydocstyle output on workflow."""
 import sys
 
 

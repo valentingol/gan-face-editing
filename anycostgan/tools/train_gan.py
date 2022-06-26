@@ -566,30 +566,23 @@ if __name__ == "__main__":
     g_ema.eval()
 
     if hvd.rank() == 0:  # measure flops and #param
-        print(
-                ' * D Params: {:.2f}M'.format(
-                        sum([p.numel()
-                             for p in discriminator.parameters()]) / 1e6
-                        )
-                )
-        print(
-                ' * G Params: {:.2f}M'.format(
-                        sum([p.numel() for p in generator.parameters()]) / 1e6
-                        )
-                )
+        params_disc = sum(p.numel() for p in discriminator.parameters()) / 1e6
+        params_gen = sum(p.numel() for p in generator.parameters()) / 1e6
+        print(f' * D Params: {params_disc:.2f}M')
+        print(f' * G Params: {params_gen:.2f}M')
         try:
             from torchprofile import profile_macs
 
             generator.eval()
             macs = profile_macs(generator, [torch.rand(1, 512).to(DEVICE)])
-            print(' * G MACs: {:.2f}G'.format(macs / 1e9))
+            print(f' * G MACs: {macs / 1e9:.2f}G')
         except ImportError:
             print(' * Profiling failed. Pass.')
 
     # tune from a previous checkpoint
     if args.tune_from:
         if hvd.rank() == 0:
-            print(' * Tuning from {}'.format(args.tune_from))
+            print(f' * Tuning from {args.tune_from}')
         # 1. load G
         sd = torch.load(args.tune_from, map_location='cpu')
         # the generator arch is not changed over different settings

@@ -362,7 +362,7 @@ class DiscriminatorMultiRes(nn.Module):
 
     @staticmethod
     def minibatch_discrimination(x, stddev_group, stddev_feat):
-        """Minibatch discrimination."""
+        """Mini batch discrimination."""
         out = x
         batch, channel, height, width = out.shape
         group = min(batch, stddev_group)

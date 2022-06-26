@@ -206,7 +206,7 @@ class LBFGS(Optimizer):
     line_search :str
         Designates line search to use.
         Options:
-            'None': uses steplength designated in algorithm
+            'None': uses step length designated in algorithm
             'Armijo': uses Armijo backtracking line search
             'Wolfe': uses Armijo-Wolfe bracketing line search
          By default 'Wolfe'

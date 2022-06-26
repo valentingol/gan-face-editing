@@ -6,7 +6,9 @@ import random
 import numpy as np
 import torch
 import torch.nn.functional as F
-from models.dynamic_channel import CHANNEL_CONFIGS, sample_random_sub_channel
+
+from anycostgan.models.dynamic_channel import (CHANNEL_CONFIGS,
+                                               sample_random_sub_channel)
 
 __all__ = [
         'requires_grad', 'accumulate', 'get_mixing_z', 'get_g_arch',
@@ -16,7 +18,7 @@ __all__ = [
 
 
 def requires_grad(model, flag=True):
-    """Change the requires_grad behaviour of all parameters."""
+    """Change the requires_grad behavior of all parameters."""
     for param in model.parameters():
         param.requires_grad = flag
 
@@ -49,7 +51,7 @@ def get_g_arch(ratios, device='cuda'):
 
 
 def adaptive_downsample256(img):
-    """Adaptive downsample to 256x256."""
+    """Adaptive down sample to 256x256."""
     img = img.clamp(-1, 1)
     if img.shape[-1] > 256:
         return F.interpolate(
@@ -87,7 +89,7 @@ def get_random_g_arch(
 
 
 def partially_load_d_for_multi_res(d, sd, n_res=4):
-    """Load the iscriminator for multi-resolution."""
+    """Load the discriminator for multi-resolution."""
     new_sd = {}
     for key, value in sd.items():
         if key.startswith('convs.') and not key.startswith('convs.0.'):
