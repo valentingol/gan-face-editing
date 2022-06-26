@@ -3,6 +3,7 @@
 import os
 
 from pipeline.utils.global_config import GlobalConfig
+from pipeline.utils.segmentation.tools import init_segmentation
 
 
 def run(config):
@@ -40,6 +41,21 @@ def run(config):
             os.system(command_line)
 
     print('All images projected')
+
+    if config.projection.segmentation:
+        if data_dir[-1] == '/':
+            org_seg_dir = data_dir[:-1] + '_segmented_'
+        else:
+            org_seg_dir = data_dir + '_segmented_'
+
+        if not os.path.exists(org_seg_dir) or not os.listdir(org_seg_dir):
+            print('Apply segmentation on images...', end=' ')
+            init_segmentation(data_dir)
+            print('done')
+        else:
+            print(f'Segmentation already done, please delete {org_seg_dir} if '
+                  'you want to force recomputing it (otherwise, ignore this '
+                  'message).')
 
 
 if __name__ == '__main__':
