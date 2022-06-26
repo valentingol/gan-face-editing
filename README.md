@@ -37,8 +37,11 @@ Licenses are provided in `third_party_licenses`.
 - [x] Resolve some artifacts and background problems with depth estimation
 - [x] Refactor the code to make it more convenient
 - [x] Add a convenient config system
-- [ ] Improve realism with GFP GAN - IN PROGRESS 🚧
-- [ ] Look for other repo to solve skin and age
+- [x] Improve realism with GFP GAN
+- [ ] Look for other repo to solve skin and age in data_challenge branch (IN PROGRESS 🚧)
+- [ ] Fix artifact bugs (IN PROGRESS 🚧)
+- [ ] Allow using GFP GAN and depth estimation on a subset of transformations/images
+- [ ] Improve depth estimation speed with a lighter model
 - [ ] Test GAN retraining and extract direction features
 
 ## Quick Start
@@ -72,7 +75,7 @@ By default, a depth estimation is performed to correct artifacts of the backgrou
 
 ### Compute latent space of images
 
-Once the data are downloaded, you must compute the projected latent vectors of the images. It can take some time to compute as the script optimize the latent vector through multiple gradient descent steps but you can significantly reduce the time by reducing the number of iterations in configurations (0 iteration mean that you get the latent vector computed by the pretrained encoder). By default, it is 200 iterations.
+Once the data are downloaded, you must compute the projected latent vectors of the images. It can take some time to compute as the script optimize the latent vector through multiple gradient descent steps but you can significantly reduce the time by reducing the number of iterations in configurations (0 iteration mean that you get the latent vector computed by the pre trained encoder). By default, it is 200 iterations.
 
 ```bash
 python apps/project_images.py [--projection.n_iter=<n_iter>]
@@ -129,11 +132,11 @@ As domain mixup shows no significant improvement and can even add some unwanted 
 
 ### GFP-GAN
 
-To enhance the quality of the areas of the face modified, you can incorporate a ready-to-use GAN, GFP-GAN. It was specifically trained to restore the quality of ancient images of faces, and is open-sourced : https://github.com/TencentARC/GFPGAN.
+To enhance the quality of the areas of the face modified, you can incorporate a ready-to-use GAN, GFP-GAN. It was specifically trained to restore the quality of ancient images of faces, and is open-sourced : [GFP GAN](https://github.com/TencentARC/GFPGAN).
 
 However, it only works well on faces, so you might want to use segmentation and use GFP-GAN only on the face part, or even the mask of the area of modifications.
 
-In order to use it, you first have to download a trained model, at https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth, and store it, eg in `models/gpf_gan`. The code that calls it and runs this part of the pipeline is in `pipeline/gpf_gan.py`. You will have to specify the paths of the input images, the output images and the model. 
+In order to use it, you first have to download a trained model, with `git lfs pull` or following this [link](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth), and store it, in `postprocess/gpf_gan/model`. The code that calls it and runs this part of the pipeline is in `pipeline/gpf_gan.py`.
 
 ### Segmentation
 
