@@ -1,29 +1,19 @@
-dlib==19.23.1
-#horovod==0.24.2
+basicsr==1.3.5
+facexlib==0.2.4
+lmdb==1.3
 lpips==0.1.4
 numpy==1.22.3
 opencv_python==4.5.5.64
 Pillow==9.0.1
 PyQt5==5.15.6
---extra-index-url=https://gitlab.com/api/v4/projects/26449469/packages/pypi/simple
-rr-ml-config==1.4.1
+realesrgan==0.2.5.0
+rr-ml-config==1.9.0
 scikit_learn==1.0.2
 scipy==1.8.0
 setuptools==60.9.3
+tb-nightly==2.10
 timm==0.5.4
 torch==1.11.0
 torchprofile==0.0.4
 torchvision==0.12.0
 tqdm==4.63.1
-
-#for GFPGAN
-basicsr>=1.3.4.0
-facexlib>=0.2.3
-lmdb
-#numpy<1.21  # numba requires numpy<1.21,>=1.17
-pyyaml
-tb-nightly
-yapf
-realesrgan
-# gfpgan
-# basicsr
