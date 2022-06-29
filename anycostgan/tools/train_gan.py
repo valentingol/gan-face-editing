@@ -53,15 +53,12 @@ def train(epoch):
     g_ema.eval()
     sampler.set_epoch(epoch)
 
-    with tqdm(
-            total=len(data_loader), desc=f'Epoch #{epoch + 1}',
-            disable=hvd.rank() != 0, dynamic_ncols=True
-            ) as tqdm_bar:
+    with tqdm(total=len(data_loader), desc=f'Epoch #{epoch + 1}',
+              disable=hvd.rank() != 0, dynamic_ncols=True) as tqdm_bar:
         global mean_path_length  # track across epochs
 
-        ema_decay = 0.5**(
-                args.batch_size * hvd.size() / (args.half_life_kimg * 1000.)
-                )
+        ema_decay = 0.5**(args.batch_size * hvd.size() /
+                          (args.half_life_kimg * 1000.))
 
         # loss meters
         d_loss_meter = DistributedMeter('d_loss')
@@ -84,31 +81,28 @@ def train(epoch):
             requires_grad(generator, False)
             requires_grad(discriminator, True)
 
-            z = get_mixing_z(
-                    args.batch_size, args.latent_dim, args.mixing_prob, DEVICE
-                    )
+            z = get_mixing_z(args.batch_size, args.latent_dim,
+                             args.mixing_prob, DEVICE)
             with torch.no_grad():
                 if args.dynamic_channel:
                     rand_ratio = sample_random_sub_channel(
-                            generator, min_channel=args.min_channel,
-                            divided_by=args.divided_by,
-                            mode=args.dynamic_channel_mode,
-                            )
+                        generator, min_channel=args.min_channel,
+                        divided_by=args.divided_by,
+                        mode=args.dynamic_channel_mode,
+                    )
                 fake_img, all_rgbs = generator(z, return_rgbs=True)
                 all_rgbs = all_rgbs[-args.n_res:]
                 reset_generator(generator)
 
             if args.n_res > 1:
-                sampled_res = random.sample(
-                        all_resolutions, args.n_sampled_res
-                        )
+                sampled_res = random.sample(all_resolutions,
+                                            args.n_sampled_res)
                 d_loss = 0.
                 g_arch = get_g_arch(rand_ratio) if args.conditioned_d else None
                 # Randomly draw one for real images
                 rand_g_arch = get_random_g_arch(
-                        generator, args.min_channel, args.divided_by,
-                        args.dynamic_channel_mode
-                        ) if args.conditioned_d else None
+                    generator, args.min_channel, args.divided_by,
+                    args.dynamic_channel_mode) if args.conditioned_d else None
                 for real, fake in zip(real_img, all_rgbs):
                     if real.shape[-1] in sampled_res:
                         real_pred = discriminator(real, rand_g_arch)
@@ -151,9 +145,8 @@ def train(epoch):
             requires_grad(generator, True)
             requires_grad(discriminator, False)
 
-            z = get_mixing_z(
-                    args.batch_size, args.latent_dim, args.mixing_prob, DEVICE
-                    )
+            z = get_mixing_z(args.batch_size, args.latent_dim,
+                             args.mixing_prob, DEVICE)
             # fix the randomness (potentially apply distillation)
             noises = generator.make_noise()
             inject_index = None if z.shape[1] == 1 \
@@ -161,14 +154,11 @@ def train(epoch):
 
             if args.dynamic_channel:
                 rand_ratio = sample_random_sub_channel(
-                        generator, min_channel=args.min_channel,
-                        divided_by=args.divided_by,
-                        mode=args.dynamic_channel_mode
-                        )
-            fake_img, all_rgbs = generator(
-                    z, noise=noises, inject_index=inject_index,
-                    return_rgbs=True
-                    )
+                    generator, min_channel=args.min_channel,
+                    divided_by=args.divided_by, mode=args.dynamic_channel_mode)
+            fake_img, all_rgbs = generator(z, noise=noises,
+                                           inject_index=inject_index,
+                                           return_rgbs=True)
             all_rgbs = all_rgbs[-args.n_res:]
             reset_generator(generator)
 
@@ -177,35 +167,31 @@ def train(epoch):
                 sampled_rgbs = random.sample(all_rgbs, args.n_sampled_res)
                 g_arch = get_g_arch(rand_ratio) if args.conditioned_d else None
                 g_loss = sum([
-                        g_nonsaturating_loss(discriminator(r, g_arch))
-                        for r in sampled_rgbs
-                        ])
+                    g_nonsaturating_loss(discriminator(r, g_arch))
+                    for r in sampled_rgbs
+                ])
             else:
                 g_loss = g_nonsaturating_loss(discriminator(fake_img))
 
             # distill loss
             if teacher is not None:
                 with torch.no_grad():
-                    teacher_out, _ = teacher(
-                            z, noise=noises, inject_index=inject_index
-                            )
+                    teacher_out, _ = teacher(z, noise=noises,
+                                             inject_index=inject_index)
                 teacher_rgbs = get_teacher_multi_res(teacher_out, args.n_res)
                 distill_loss1 = sum([
-                        nn.MSELoss()(sr, tr)
-                        for sr, tr in zip(all_rgbs, teacher_rgbs)
-                        ])
+                    nn.MSELoss()(sr, tr)
+                    for sr, tr in zip(all_rgbs, teacher_rgbs)
+                ])
                 distill_loss2 = sum([
-                        percept(
-                                adaptive_downsample256(sr),
-                                adaptive_downsample256(tr)
-                                ).mean()
-                        for sr, tr in zip(all_rgbs, teacher_rgbs)
-                        ])
+                    percept(adaptive_downsample256(sr),
+                            adaptive_downsample256(tr)).mean()
+                    for sr, tr in zip(all_rgbs, teacher_rgbs)
+                ])
                 distill_loss = distill_loss1 + distill_loss2
                 g_loss = g_loss + distill_loss * args.distill_loss_alpha
-                distill_loss_meter.update(
-                        distill_loss * args.distill_loss_alpha
-                        )
+                distill_loss_meter.update(distill_loss
+                                          * args.distill_loss_alpha)
 
             g_loss_meter.update(g_loss)
 
@@ -219,17 +205,13 @@ def train(epoch):
                 # the original StyleGAN training
                 assert args.n_res == 1
                 path_batch_size = max(
-                        1, args.batch_size // args.path_batch_shrink
-                        )
-                noise = get_mixing_z(
-                        path_batch_size, args.latent_dim, args.mixing_prob,
-                        DEVICE
-                        )
+                    1, args.batch_size // args.path_batch_shrink)
+                noise = get_mixing_z(path_batch_size, args.latent_dim,
+                                     args.mixing_prob, DEVICE)
                 fake_img, latents = generator(noise, return_styles=True)
                 # moving update the mean path length
                 path_loss, mean_path_length, _ = g_path_regularize(
-                        fake_img, latents, mean_path_length
-                        )
+                    fake_img, latents, mean_path_length)
                 generator.zero_grad()
                 weighted_path_loss = args.path_regularize * args.g_reg_every \
                     * path_loss
@@ -239,19 +221,20 @@ def train(epoch):
                 weighted_path_loss.backward()
                 g_optim.step()
                 mean_path_length = hvd.allreduce(
-                        torch.Tensor([mean_path_length])
-                        ).item()  # update across gpus
+                    torch.Tensor([mean_path_length
+                                  ])).item()  # update across gpus
                 path_loss_meter.update(path_loss)
 
             # moving update
             accumulate(g_ema, generator, ema_decay)
 
             info2display = {
-                    'd': d_loss_meter.avg.item(), 'g': g_loss_meter.avg.item(),
-                    'r1': r1_loss_meter.avg.item(),
-                    'd_real_acc': d_real_acc.avg.item(),
-                    'd_fake_acc': d_fake_acc.avg.item()
-                    }
+                'd': d_loss_meter.avg.item(),
+                'g': g_loss_meter.avg.item(),
+                'r1': r1_loss_meter.avg.item(),
+                'd_real_acc': d_real_acc.avg.item(),
+                'd_fake_acc': d_fake_acc.avg.item()
+            }
             if teacher is not None:
                 info2display['dist'] = distill_loss_meter.avg.item()
             if args.g_reg_every > 0:
@@ -263,41 +246,31 @@ def train(epoch):
 
             if hvd.rank() == 0 and global_idx % args.log_every == 0:
                 n_trained_images = global_idx * args.batch_size * hvd.size()
-                log_writer.add_scalar(
-                        'Loss/D', d_loss_meter.avg.item(), n_trained_images
-                        )
-                log_writer.add_scalar(
-                        'Loss/G', g_loss_meter.avg.item(), n_trained_images
-                        )
-                log_writer.add_scalar(
-                        'Loss/r1', r1_loss_meter.avg.item(), n_trained_images
-                        )
-                log_writer.add_scalar(
-                        'Loss/path', path_loss_meter.avg.item(),
-                        n_trained_images
-                        )
-                log_writer.add_scalar(
-                        'Loss/path-len', mean_path_length, n_trained_images
-                        )
-                log_writer.add_scalar(
-                        'Loss/distill', distill_loss_meter.avg.item(),
-                        n_trained_images
-                        )
+                log_writer.add_scalar('Loss/D', d_loss_meter.avg.item(),
+                                      n_trained_images)
+                log_writer.add_scalar('Loss/G', g_loss_meter.avg.item(),
+                                      n_trained_images)
+                log_writer.add_scalar('Loss/r1', r1_loss_meter.avg.item(),
+                                      n_trained_images)
+                log_writer.add_scalar('Loss/path', path_loss_meter.avg.item(),
+                                      n_trained_images)
+                log_writer.add_scalar('Loss/path-len', mean_path_length,
+                                      n_trained_images)
+                log_writer.add_scalar('Loss/distill',
+                                      distill_loss_meter.avg.item(),
+                                      n_trained_images)
 
             if hvd.rank() == 0 and global_idx % args.log_vis_every == 0:
                 with torch.no_grad():
                     g_ema.eval()
                     mean_style = g_ema.mean_style(10000)
-                    sample, _ = g_ema(
-                            sample_z, truncation=args.vis_truncation,
-                            truncation_style=mean_style
-                            )
+                    sample, _ = g_ema(sample_z, truncation=args.vis_truncation,
+                                      truncation_style=mean_style)
                     n_trained_images = global_idx * args.batch_size \
                         * hvd.size()
-                    grid = utils.make_grid(
-                            sample, nrow=int(args.n_vis_sample**0.5),
-                            normalize=True, range=(-1, 1)
-                            )
+                    grid = utils.make_grid(sample,
+                                           nrow=int(args.n_vis_sample**0.5),
+                                           normalize=True, range=(-1, 1))
                     log_writer.add_image('images', grid, n_trained_images)
 
 
@@ -321,20 +294,21 @@ def validate(epoch):
     if hvd.rank() == 0:
         print(f' * FID: {fid:.2f} ({best_fid:.2f})')
         state_dict = {
-                "g": generator.state_dict(), "d": discriminator.state_dict(),
-                "g_ema": g_ema.state_dict(), "g_optim": g_optim.state_dict(),
-                "d_optim": d_optim.state_dict(), "epoch": epoch + 1,
-                "fid": fid, "best_fid": best_fid,
-                "mean_path_length": mean_path_length,
-                }
-        torch.save(
-                state_dict, os.path.join(CHECKPOINT_DIR, args.job, 'ckpt.pt')
-                )
+            "g": generator.state_dict(),
+            "d": discriminator.state_dict(),
+            "g_ema": g_ema.state_dict(),
+            "g_optim": g_optim.state_dict(),
+            "d_optim": d_optim.state_dict(),
+            "epoch": epoch + 1,
+            "fid": fid,
+            "best_fid": best_fid,
+            "mean_path_length": mean_path_length,
+        }
+        torch.save(state_dict, os.path.join(CHECKPOINT_DIR, args.job,
+                                            'ckpt.pt'))
         if best_fid == fid:
-            torch.save(
-                    state_dict,
-                    os.path.join(CHECKPOINT_DIR, args.job, 'ckpt-best.pt')
-                    )
+            torch.save(state_dict,
+                       os.path.join(CHECKPOINT_DIR, args.job, 'ckpt-best.pt'))
 
 
 def measure_fid():
@@ -364,8 +338,7 @@ def measure_fid():
                     features_list[i_res] = feat
                 else:
                     features_list[i_res] = torch.cat(
-                            (features_list[i_res], feat), dim=0
-                            )
+                        (features_list[i_res], feat), dim=0)
     # compute the FID
     fid_dict = {}
     for i_res, features in enumerate(features_list):
@@ -386,96 +359,72 @@ def measure_fid():
     if hvd.rank() == 0:
         print('fid:', {k: round(v, 3) for k, v in fid_dict.items()})
     fid0 = hvd.broadcast(
-            torch.tensor(fid_dict[args.resolution]).float(), root_rank=0,
-            name='fid'
-            ).item()
+        torch.tensor(fid_dict[args.resolution]).float(), root_rank=0,
+        name='fid').item()
     return fid0  # only return the fid of the largest resolution
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # experiment setting
-    parser.add_argument(
-            "--job", type=str, default=None,
-            help='name of the run to help keep track'
-            )
-    parser.add_argument(
-            "--data_path", type=str, default='/dataset/ffhq/images-wrap'
-            )
+    parser.add_argument("--job", type=str, default=None,
+                        help='name of the run to help keep track')
+    parser.add_argument("--data_path", type=str,
+                        default='/dataset/ffhq/images-wrap')
     parser.add_argument("--epochs", type=int, default=357)  # 25M images
-    parser.add_argument(
-            "--batch_size", type=int, default=16, help='batch size per GPU'
-            )
+    parser.add_argument("--batch_size", type=int, default=16,
+                        help='batch size per GPU')
     parser.add_argument("--r1", type=float, default=10)
-    parser.add_argument(
-            "--path_regularize", type=float, default=2,
-            help='weight of the path reg'
-            )
+    parser.add_argument("--path_regularize", type=float, default=2,
+                        help='weight of the path reg')
     parser.add_argument("--path_batch_shrink", type=int, default=2)
     parser.add_argument("--d_reg_every", type=int, default=16)
     parser.add_argument("--g_reg_every", type=int, default=8)
     parser.add_argument("--mixing_prob", type=float, default=0.9)
-    parser.add_argument(
-            "--lr", type=float, default=0.002, help='the global learning rate'
-            )
-    parser.add_argument(
-            '-j', '--workers', default=2, type=int, help='num workers per GPU'
-            )
+    parser.add_argument("--lr", type=float, default=0.002,
+                        help='the global learning rate')
+    parser.add_argument('-j', '--workers', default=2, type=int,
+                        help='num workers per GPU')
     parser.add_argument('--resume', action='store_true', default=False)
     parser.add_argument(
-            "--half_life_kimg", type=float, default=10.,
-            help='Half-life of the running average of '
-            'generator weights'
-            )
+        "--half_life_kimg", type=float, default=10.,
+        help='Half-life of the running average of '
+        'generator weights')
     parser.add_argument("--tune_from", type=str, default=None)
     # fid setting
     parser.add_argument("--inception_path", type=str, default=None)
     parser.add_argument('--fid_n_sample', type=int, default=50000)
     parser.add_argument("--fid_batch_size", type=int, default=16)
     # log and visualization
-    parser.add_argument(
-            "--n_vis_sample", type=int, default=16,
-            help='n samples for visualization'
-            )
-    parser.add_argument(
-            "--log_every", type=int, default=100,
-            help='log training loss every'
-            )
-    parser.add_argument(
-            "--log_vis_every", type=int, default=1000,
-            help='log visualization every'
-            )
+    parser.add_argument("--n_vis_sample", type=int, default=16,
+                        help='n samples for visualization')
+    parser.add_argument("--log_every", type=int, default=100,
+                        help='log training loss every')
+    parser.add_argument("--log_vis_every", type=int, default=1000,
+                        help='log visualization every')
     parser.add_argument('--vis_truncation', type=float, default=0.5)
     # models setting
     parser.add_argument("--resolution", type=int, default=1024)
     parser.add_argument("--channel_multiplier", type=float, default=2)
-    parser.add_argument(
-            "--latent_dim", type=int, default=512, help='dimension of the z/w'
-            )
+    parser.add_argument("--latent_dim", type=int, default=512,
+                        help='dimension of the z/w')
     parser.add_argument("--n_mlp", type=int, default=8, help='z to w mapping')
     # distill teacher setting
     parser.add_argument("--teacher_ckpt", type=str, default=None)
     parser.add_argument("--t_channel_multiplier", type=float, default=2)
     parser.add_argument('--distill_loss_alpha', type=float, default=2.)
     # multi-res training
-    parser.add_argument(
-            '--n_res', type=int, default=1,
-            help='number of resolutions to support for training'
-            )
-    parser.add_argument(
-            '--n_sampled_res', type=int, default=1,
-            help='number of resolutions to sample per iter'
-            )
+    parser.add_argument('--n_res', type=int, default=1,
+                        help='number of resolutions to support for training')
+    parser.add_argument('--n_sampled_res', type=int, default=1,
+                        help='number of resolutions to sample per iter')
     # adaptive channel training
-    parser.add_argument(
-            '--dynamic_channel', action='store_true', default=False
-            )
+    parser.add_argument('--dynamic_channel', action='store_true',
+                        default=False)
     parser.add_argument('--dynamic_channel_mode', type=str, default='uniform')
     parser.add_argument('--sort_pretrain', action='store_true', default=False)
-    parser.add_argument(
-            '--conditioned_d', action='store_true', default=False,
-            help='D is conditioned on G'
-            )
+    parser.add_argument('--conditioned_d', action='store_true', default=False,
+                        help='D is conditioned on G')
     parser.add_argument('--min_channel', type=int, default=8)
     parser.add_argument('--divided_by', type=int, default=4)
 
@@ -499,10 +448,8 @@ if __name__ == "__main__":
         if hvd.rank() == 0 else None
 
     if hvd.rank() == 0:  # save args
-        with open(
-                os.path.join(LOG_DIR, args.job, 'args.txt'), 'w',
-                encoding='utf-8'
-                ) as f:
+        with open(os.path.join(LOG_DIR, args.job, 'args.txt'), 'w',
+                  encoding='utf-8') as f:
             json.dump(args.__dict__, f, indent=4)
 
     # build dataset
@@ -513,56 +460,51 @@ if __name__ == "__main__":
 
         # Transforms that return a pyramid
         transform = transforms.Compose([
-                MultiResize(args.resolution, args.n_res),
-                GroupRandomHorizontalFlip(),
-                GroupTransformWrapper(transforms.ToTensor()),
-                GroupTransformWrapper(
-                        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5),
-                                             inplace=True)
-                        ),
-                ])
+            MultiResize(args.resolution, args.n_res),
+            GroupRandomHorizontalFlip(),
+            GroupTransformWrapper(transforms.ToTensor()),
+            GroupTransformWrapper(
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5),
+                                     inplace=True)),
+        ])
     else:
         transform = transforms.Compose([
-                transforms.Resize(args.resolution),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5),
-                                     inplace=True),
-                ])
+            transforms.Resize(args.resolution),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5),
+                                 inplace=True),
+        ])
     dataset = NativeDataset(args.data_path, transform=transform)
     sampler = torch.utils.data.distributed.DistributedSampler(
-            dataset, num_replicas=hvd.size(), rank=hvd.rank()
-            )
-    data_loader = torch.utils.data.DataLoader(
-            dataset, batch_size=args.batch_size, sampler=sampler,
-            num_workers=args.workers, pin_memory=True, drop_last=True
-            )
+        dataset, num_replicas=hvd.size(), rank=hvd.rank())
+    data_loader = torch.utils.data.DataLoader(dataset,
+                                              batch_size=args.batch_size,
+                                              sampler=sampler,
+                                              num_workers=args.workers,
+                                              pin_memory=True, drop_last=True)
 
     # build discriminator
     if args.n_res > 1:
         discriminator = DiscriminatorMultiRes(
-                args.resolution, channel_multiplier=args.channel_multiplier,
-                n_res=args.n_res, modulate=args.conditioned_d
-                ).to(DEVICE)
+            args.resolution, channel_multiplier=args.channel_multiplier,
+            n_res=args.n_res, modulate=args.conditioned_d).to(DEVICE)
         all_resolutions = [
-                args.resolution // (2**i) for i in range(args.n_res)
-                ]
+            args.resolution // (2**i) for i in range(args.n_res)
+        ]
     else:
         assert not args.conditioned_d  # not supported in this mode
         discriminator = Discriminator(
-                args.resolution, channel_multiplier=args.channel_multiplier
-                ).to(DEVICE)
+            args.resolution,
+            channel_multiplier=args.channel_multiplier).to(DEVICE)
         all_resolutions = [args.resolution]
 
     # build generator
     generator = Generator(
-            args.resolution, args.latent_dim, args.n_mlp,
-            channel_multiplier=args.channel_multiplier
-            ).to(DEVICE)
-    g_ema = Generator(
-            args.resolution, args.latent_dim, args.n_mlp,
-            channel_multiplier=args.channel_multiplier
-            ).to(DEVICE)
+        args.resolution, args.latent_dim, args.n_mlp,
+        channel_multiplier=args.channel_multiplier).to(DEVICE)
+    g_ema = Generator(args.resolution, args.latent_dim, args.n_mlp,
+                      channel_multiplier=args.channel_multiplier).to(DEVICE)
     g_ema.eval()
 
     if hvd.rank() == 0:  # measure flops and #param
@@ -597,9 +539,8 @@ if __name__ == "__main__":
         if args.n_res > 1:
             # For multi-res training stage
             if args.n_res > 1 and 'multires' not in args.tune_from:
-                partially_load_d_for_multi_res(
-                        discriminator, sd['d'], args.n_res
-                        )
+                partially_load_d_for_multi_res(discriminator, sd['d'],
+                                               args.n_res)
             elif args.dynamic_channel and 'adach' not in args.tune_from:
                 # For adaptive-channel training stage
                 partially_load_d_for_ada_ch(discriminator, sd['d'])
@@ -616,9 +557,8 @@ if __name__ == "__main__":
         if hvd.rank() == 0:
             print(' * Building teacher models...')
         teacher = Generator(
-                args.resolution, args.latent_dim, args.n_mlp,
-                channel_multiplier=args.t_channel_multiplier
-                ).to(DEVICE)
+            args.resolution, args.latent_dim, args.n_mlp,
+            channel_multiplier=args.t_channel_multiplier).to(DEVICE)
         teacher_sd = torch.load(args.teacher_ckpt, map_location='cpu')
         teacher.load_state_dict(teacher_sd['g_ema'])
         teacher.eval()
@@ -633,19 +573,17 @@ if __name__ == "__main__":
 
     # build optimizer
     g_optim = optim.Adam(generator.parameters(), lr=args.lr, betas=(0., 0.99))
-    d_optim = optim.Adam(
-            discriminator.parameters(), lr=args.lr, betas=(0., 0.99)
-            )
+    d_optim = optim.Adam(discriminator.parameters(), lr=args.lr,
+                         betas=(0., 0.99))
 
     g_optim = hvd.DistributedOptimizer(
-            g_optim,
-            named_parameters=generator.named_parameters(prefix='generator'),
-            )
+        g_optim,
+        named_parameters=generator.named_parameters(prefix='generator'),
+    )
     d_optim = hvd.DistributedOptimizer(
-            d_optim, named_parameters=discriminator.named_parameters(
-                    prefix='discriminator'
-                    ),
-            )
+        d_optim, named_parameters=discriminator.named_parameters(
+            prefix='discriminator'),
+    )
 
     resume_from_epoch = 0
     mean_path_length = 0.  # track mean path len globally
@@ -665,10 +603,9 @@ if __name__ == "__main__":
                 best_fid = sd['best_fid']
                 mean_path_length = sd['mean_path_length']
 
-    resume_from_epoch = hvd.broadcast(
-            torch.tensor(resume_from_epoch), root_rank=0,
-            name='resume_from_epoch'
-            ).item()
+    resume_from_epoch = hvd.broadcast(torch.tensor(resume_from_epoch),
+                                      root_rank=0,
+                                      name='resume_from_epoch').item()
 
     # Horovod: broadcast parameters & optimizer state.
     hvd.broadcast_parameters(generator.state_dict(), root_rank=0)

@@ -12,38 +12,36 @@ from pipeline.utils.depth_segmentation.vit import forward_vit
 
 def _make_fusion_block(features, use_bn):
     """Return a fusion block."""
-    return FeatureFusionBlock_custom(
-            features, nn.ReLU(False), deconv=False, bn=use_bn, expand=False,
-            align_corners=True,
-            )
+    return FeatureFusionBlock_custom(features, nn.ReLU(False), deconv=False,
+                                     bn=use_bn, expand=False,
+                                     align_corners=True,
+                                     )
 
 
 class DPT(BaseModel):
     """Dense Prediction transformer."""
 
-    def __init__(
-            self, head, features=256, backbone="vitb_rn50_384",
-            readout="project", channels_last=False, use_bn=False,
-            enable_attention_hooks=False
-            ):
+    def __init__(self, head, features=256, backbone="vitb_rn50_384",
+                 readout="project", channels_last=False, use_bn=False,
+                 enable_attention_hooks=False):
         """Initialize model."""
         super().__init__()
 
         self.channels_last = channels_last
 
         hooks = {
-                "vitb_rn50_384": [0, 1, 8, 11], "vitb16_384": [2, 5, 8, 11],
-                "vitl16_384": [5, 11, 17, 23],
-                }
+            "vitb_rn50_384": [0, 1, 8, 11],
+            "vitb16_384": [2, 5, 8, 11],
+            "vitl16_384": [5, 11, 17, 23],
+        }
 
         # Instantiate backbone and reassemble blocks
         self.pretrained, self.scratch = _make_encoder(
-                backbone, features,
-                False,  # True: from scratch, False: from pretrained
-                groups=1, expand=False, exportable=False,
-                hooks=hooks[backbone], use_readout=readout,
-                enable_attention_hooks=enable_attention_hooks,
-                )
+            backbone, features,
+            False,  # True: from scratch, False: from pretrained
+            groups=1, expand=False, exportable=False, hooks=hooks[backbone],
+            use_readout=readout, enable_attention_hooks=enable_attention_hooks,
+        )
 
         self.scratch.refinenet1 = _make_fusion_block(features, use_bn)
         self.scratch.refinenet2 = _make_fusion_block(features, use_bn)
@@ -76,10 +74,8 @@ class DPT(BaseModel):
 class DPTDepthModel(DPT):
     """Depth estimation model."""
 
-    def __init__(
-            self, path=None, non_negative=True, scale=1.0, shift=0.0,
-            invert=False, **kwargs
-            ):
+    def __init__(self, path=None, non_negative=True, scale=1.0, shift=0.0,
+                 invert=False, **kwargs):
         """Initialize model."""
         features = kwargs["features"] if "features" in kwargs else 256
 
@@ -88,20 +84,14 @@ class DPTDepthModel(DPT):
         self.invert = invert
 
         head = nn.Sequential(
-                nn.Conv2d(
-                        features, features // 2, kernel_size=3, stride=1,
-                        padding=1
-                        ),
-                Interpolate(
-                        scale_factor=2, mode="bilinear", align_corners=True
-                        ),
-                nn.Conv2d(
-                        features // 2, 32, kernel_size=3, stride=1, padding=1
-                        ), nn.ReLU(True),
-                nn.Conv2d(32, 1, kernel_size=1, stride=1, padding=0),
-                nn.ReLU(True) if non_negative else nn.Identity(),
-                nn.Identity(),
-                )
+            nn.Conv2d(features, features // 2, kernel_size=3, stride=1,
+                      padding=1),
+            Interpolate(scale_factor=2, mode="bilinear", align_corners=True),
+            nn.Conv2d(features // 2, 32, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(True), nn.Conv2d(32, 1, kernel_size=1, stride=1,
+                                     padding=0),
+            nn.ReLU(True) if non_negative else nn.Identity(), nn.Identity(),
+        )
 
         super().__init__(head, **kwargs)
 

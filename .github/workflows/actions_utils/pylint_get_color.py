@@ -21,9 +21,7 @@ if __name__ == '__main__':
     score = float(arg.split('=')[1])
 
     if score < SCORE_MIN:
-        raise ValueError(
-                f'Pylint score {score} is lower than'
-                f'minimum ({SCORE_MIN})'
-                )
+        raise ValueError(f'Pylint score {score} is lower than'
+                         f'minimum ({SCORE_MIN})')
 
     print(score_to_rgb_color(score, SCORE_MIN, SCORE_MAX))

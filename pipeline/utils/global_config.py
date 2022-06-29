@@ -14,6 +14,6 @@ class GlobalConfig(Configuration):
     def parameters_pre_processing(self):
         """Pre-processing parameters."""
         return {
-                '*_config_path': self.register_as_additional_config_file,
-                'save_path': self.register_as_experiment_path
-                }
+            '*_config_path': self.register_as_additional_config_file,
+            'save_path': self.register_as_experiment_path
+        }

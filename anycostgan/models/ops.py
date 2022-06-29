@@ -20,9 +20,9 @@ except Exception as e:
                                               upfirdn2d)
 
 __all__ = [
-        'PixelNorm', 'EqualConv2d', 'EqualLinear', 'ModulatedConv2d',
-        'StyledConv', 'ConvLayer', 'ResBlock', 'ConstantInput', 'ToRGB'
-        ]
+    'PixelNorm', 'EqualConv2d', 'EqualLinear', 'ModulatedConv2d', 'StyledConv',
+    'ConvLayer', 'ResBlock', 'ConstantInput', 'ToRGB'
+]
 
 
 class PixelNorm(nn.Module):
@@ -132,16 +132,13 @@ class Blur(nn.Module):
 class EqualConv2d(nn.Module):
     """Equalized convolutional layer."""
 
-    def __init__(
-            self, in_channel, out_channel, kernel_size, stride=1, padding=0,
-            bias=True
-            ):
+    def __init__(self, in_channel, out_channel, kernel_size, stride=1,
+                 padding=0, bias=True):
         """Initialize the module."""
         super().__init__()
 
         self.weight = nn.Parameter(
-                torch.randn(out_channel, in_channel, kernel_size, kernel_size)
-                )
+            torch.randn(out_channel, in_channel, kernel_size, kernel_size))
         self.scale = 1 / math.sqrt(in_channel * kernel_size**2)
 
         self.stride = stride
@@ -162,29 +159,24 @@ class EqualConv2d(nn.Module):
         # Index sub channels for inference
         weight = weight[:, :in_channel].contiguous()
 
-        out = F.conv2d(
-                x, weight * self.scale, bias=self.bias, stride=self.stride,
-                padding=self.padding,
-                )
+        out = F.conv2d(x, weight * self.scale, bias=self.bias,
+                       stride=self.stride, padding=self.padding,
+                       )
 
         return out
 
     def __repr__(self):
         """Representation."""
-        return (
-                f'{self.__class__.__name__}({self.weight.shape[1]}, '
+        return (f'{self.__class__.__name__}({self.weight.shape[1]}, '
                 f'{self.weight.shape[0]}, {self.weight.shape[2]}, '
-                f'stride={self.stride}, padding={self.padding})'
-                )
+                f'stride={self.stride}, padding={self.padding})')
 
 
 class EqualLinear(nn.Module):
     """Equalized linear layer."""
 
-    def __init__(
-            self, in_dim, out_dim, bias=True, bias_init=0, lr_mul=1.0,
-            activation=None
-            ):
+    def __init__(self, in_dim, out_dim, bias=True, bias_init=0, lr_mul=1.0,
+                 activation=None):
         """Initialize the module."""
         super().__init__()
 
@@ -211,28 +203,24 @@ class EqualLinear(nn.Module):
                 raise NotImplementedError
 
         else:
-            out = F.linear(
-                    x, self.weight * self.scale, bias=self.bias * self.lr_mul
-                    )
+            out = F.linear(x, self.weight * self.scale,
+                           bias=self.bias * self.lr_mul)
 
         return out
 
     def __repr__(self):
         """Representation."""
-        return (
-                f'{self.__class__.__name__}({self.weight.shape[1]}, '
-                f'{self.weight.shape[0]})'
-                )
+        return (f'{self.__class__.__name__}({self.weight.shape[1]}, '
+                f'{self.weight.shape[0]})')
 
 
 class ModulatedConv2d(nn.Module):
     """Modulated convolutional layer."""
 
-    def __init__(
-            self, in_channel, out_channel, kernel_size, style_dim,
-            demodulate=True, upsample=False, downsample=False,
-            blur_kernel=(1, 3, 3, 1),
-            ):
+    def __init__(self, in_channel, out_channel, kernel_size, style_dim,
+                 demodulate=True, upsample=False, downsample=False,
+                 blur_kernel=(1, 3, 3, 1),
+                 ):
         """Initialize the module."""
         super().__init__()
 
@@ -250,26 +238,20 @@ class ModulatedConv2d(nn.Module):
         if upsample:
             factor = 2
             pad = (len(blur_kernel) - factor) - (kernel_size-1)
-            self.blur = Blur(
-                    blur_kernel, pad=((pad+1) // 2 + factor - 1, pad//2 + 1),
-                    upsample_factor=factor
-                    )
+            self.blur = Blur(blur_kernel,
+                             pad=((pad+1) // 2 + factor - 1, pad//2 + 1),
+                             upsample_factor=factor)
 
         self.scale = 1 / math.sqrt(in_channel * kernel_size**2)
         self.padding = kernel_size // 2
         self.weight = nn.Parameter(
-                torch.randn(
-                        1, out_channel, in_channel, kernel_size, kernel_size
-                        )
-                )
+            torch.randn(1, out_channel, in_channel, kernel_size, kernel_size))
 
     def __repr__(self):
         """Representation."""
-        return (
-                f'{self.__class__.__name__}({self.in_channel}, '
+        return (f'{self.__class__.__name__}({self.in_channel}, '
                 f'{self.out_channel}, {self.kernel_size}, '
-                f'upsample={self.upsample}, downsample={self.downsample})'
-                )
+                f'upsample={self.upsample}, downsample={self.downsample})')
 
     def forward(self, x, style):
         """Forward pass."""
@@ -292,27 +274,23 @@ class ModulatedConv2d(nn.Module):
         # Demodulate weight
         if self.demodulate:
             weight = weight * torch.rsqrt(
-                    weight.pow(2).sum([2, 3, 4], keepdim=True) + self.eps
-                    )
+                weight.pow(2).sum([2, 3, 4], keepdim=True) + self.eps)
 
         if self.upsample:
             x = x.view(1, batch * in_channel, height, width)
             weight = weight.transpose(1, 2)
-            weight = weight.reshape(
-                    weight.shape[0] * weight.shape[1], weight.shape[2],
-                    weight.shape[3], weight.shape[4]
-                    )
-            out = F.conv_transpose2d(
-                    x, weight, padding=0, stride=2, groups=batch
-                    )
+            weight = weight.reshape(weight.shape[0] * weight.shape[1],
+                                    weight.shape[2], weight.shape[3],
+                                    weight.shape[4])
+            out = F.conv_transpose2d(x, weight, padding=0, stride=2,
+                                     groups=batch)
             out = out.view(batch, -1, out.shape[-2], out.shape[-1])
             out = self.blur(out)
         else:
             x = x.contiguous().view(1, batch * in_channel, height, width)
-            weight = weight.view(
-                    weight.shape[0] * weight.shape[1], weight.shape[2],
-                    weight.shape[3], weight.shape[4]
-                    )
+            weight = weight.view(weight.shape[0] * weight.shape[1],
+                                 weight.shape[2], weight.shape[3],
+                                 weight.shape[4])
             out = F.conv2d(x, weight, padding=self.padding, groups=batch)
             out = out.view(batch, -1, out.shape[-2], out.shape[-1])
 
@@ -322,19 +300,17 @@ class ModulatedConv2d(nn.Module):
 class StyledConv(nn.Module):
     """Styled convolutional layer."""
 
-    def __init__(
-            self, in_channel, out_channel, kernel_size, style_dim,
-            upsample=False, blur_kernel=(1, 3, 3, 1), demodulate=True,
-            activation='lrelu'
-            ):
+    def __init__(self, in_channel, out_channel, kernel_size, style_dim,
+                 upsample=False, blur_kernel=(1, 3, 3, 1), demodulate=True,
+                 activation='lrelu'):
         """Initialize the module."""
         super().__init__()
 
-        self.conv = ModulatedConv2d(
-                in_channel, out_channel, kernel_size, style_dim,
-                upsample=upsample, blur_kernel=blur_kernel,
-                demodulate=demodulate,
-                )
+        self.conv = ModulatedConv2d(in_channel, out_channel, kernel_size,
+                                    style_dim, upsample=upsample,
+                                    blur_kernel=blur_kernel,
+                                    demodulate=demodulate,
+                                    )
 
         self.noise = NoiseInjection()
         if activation == 'lrelu':
@@ -354,19 +330,16 @@ class StyledConv(nn.Module):
 class ToRGB(nn.Module):
     """Convert to RGB convolution."""
 
-    def __init__(
-            self, in_channel, style_dim, upsample=True,
-            blur_kernel=(1, 3, 3, 1)
-            ):
+    def __init__(self, in_channel, style_dim, upsample=True,
+                 blur_kernel=(1, 3, 3, 1)):
         """Initialize the module."""
         super().__init__()
 
         if upsample:
             self.upsample = Upsample(blur_kernel)
 
-        self.conv = ModulatedConv2d(
-                in_channel, 3, 1, style_dim, demodulate=False
-                )
+        self.conv = ModulatedConv2d(in_channel, 3, 1, style_dim,
+                                    demodulate=False)
         self.bias = nn.Parameter(torch.zeros(1, 3, 1, 1))
 
     def forward(self, x, style, skip=None):
@@ -403,11 +376,9 @@ class AdaptiveModulate(nn.Module):
 class ConvLayer(nn.Sequential):
     """Convolutional block with blur."""
 
-    def __init__(
-            self, in_channel, out_channel, kernel_size, downsample=False,
-            blur_kernel=(1, 3, 3, 1), bias=True, activate='lrelu',
-            modulate=False, g_arch_len=18 * 4
-            ):
+    def __init__(self, in_channel, out_channel, kernel_size, downsample=False,
+                 blur_kernel=(1, 3, 3, 1), bias=True, activate='lrelu',
+                 modulate=False, g_arch_len=18 * 4):
         """Initialize the module."""
         layers = []
 
@@ -427,12 +398,10 @@ class ConvLayer(nn.Sequential):
             self.padding = kernel_size // 2
 
         layers.append(
-                EqualConv2d(
-                        in_channel, out_channel, kernel_size,
+            EqualConv2d(in_channel, out_channel, kernel_size,
                         padding=self.padding, stride=stride, bias=bias
                         and not activate,
-                        )
-                )
+                        ))
 
         # if conditioned on g_arch
         if modulate:
@@ -459,27 +428,20 @@ class ConvLayer(nn.Sequential):
 class ResBlock(nn.Module):
     """Residual block."""
 
-    def __init__(
-            self, in_channel, out_channel, blur_kernel=(1, 3, 3, 1),
-            act_func='lrelu', modulate=False, g_arch_len=18 * 4
-            ):
+    def __init__(self, in_channel, out_channel, blur_kernel=(1, 3, 3, 1),
+                 act_func='lrelu', modulate=False, g_arch_len=18 * 4):
         """Initialize the module."""
         super().__init__()
         self.out_channel = out_channel
-        self.conv1 = ConvLayer(
-                in_channel, in_channel, 3, activate=act_func,
-                modulate=modulate, g_arch_len=g_arch_len
-                )
-        self.conv2 = ConvLayer(
-                in_channel, out_channel, 3, downsample=True,
-                blur_kernel=blur_kernel, activate=act_func, modulate=modulate,
-                g_arch_len=g_arch_len
-                )
+        self.conv1 = ConvLayer(in_channel, in_channel, 3, activate=act_func,
+                               modulate=modulate, g_arch_len=g_arch_len)
+        self.conv2 = ConvLayer(in_channel, out_channel, 3, downsample=True,
+                               blur_kernel=blur_kernel, activate=act_func,
+                               modulate=modulate, g_arch_len=g_arch_len)
 
-        self.skip = ConvLayer(
-                in_channel, out_channel, 1, downsample=True, activate='none',
-                bias=False, modulate=modulate, g_arch_len=g_arch_len
-                )
+        self.skip = ConvLayer(in_channel, out_channel, 1, downsample=True,
+                              activate='none', bias=False, modulate=modulate,
+                              g_arch_len=g_arch_len)
 
     def forward(self, x, g_arch=None):
         """Forward pass."""

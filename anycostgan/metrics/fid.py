@@ -66,10 +66,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-            "--config", type=str,
-            help='config name of the pretrained generator'
-            )
+    parser.add_argument("--config", type=str,
+                        help='config name of the pretrained generator')
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--n_sample', type=int, default=50000)
     parser.add_argument('--inception', type=str, default=None, required=True)
@@ -113,8 +111,7 @@ if __name__ == '__main__':
     inception_features = extract_feature_from_samples()
     # now perform all gather
     inception_features = hvd.allgather(
-            inception_features, name='inception_features'
-            ).numpy()[:args.n_sample]
+        inception_features, name='inception_features').numpy()[:args.n_sample]
 
     if hvd.rank() == 0:
         print(f'extracted {inception_features.shape[0]} features')

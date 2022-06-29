@@ -14,20 +14,20 @@ from anycostgan.thirdparty.manipulator import project_boundary, train_boundary
 DEVICE = 'cuda'
 # specify the attributes to compute latent direction
 chosen_attr = [
-        'Smiling', 'Young', 'Big_Nose', 'Black_Hair', 'Blond_Hair',
-        'Eyeglasses', 'Mustache'
-        ]
+    'Smiling', 'Young', 'Big_Nose', 'Black_Hair', 'Blond_Hair', 'Eyeglasses',
+    'Mustache'
+]
 attr_list = [
-        '5_o_Clock_Shadow', 'Arched_Eyebrows', 'Attractive', 'Bags_Under_Eyes',
-        'Bald', 'Bangs', 'Big_Lips', 'Big_Nose', 'Black_Hair', 'Blond_Hair',
-        'Blurry', 'Brown_Hair', 'Bushy_Eyebrows', 'Chubby', 'Double_Chin',
-        'Eyeglasses', 'Goatee', 'Gray_Hair', 'Heavy_Makeup', 'High_Cheekbones',
-        'Male', 'Mouth_Slightly_Open', 'Mustache', 'Narrow_Eyes', 'No_Beard',
-        'Oval_Face', 'Pale_Skin', 'Pointy_Nose', 'Receding_Hairline',
-        'Rosy_Cheeks', 'Sideburns', 'Smiling', 'Straight_Hair', 'Wavy_Hair',
-        'Wearing_Earrings', 'Wearing_Hat', 'Wearing_Lipstick',
-        'Wearing_Necklace', 'Wearing_Necktie', 'Young'
-        ]
+    '5_o_Clock_Shadow', 'Arched_Eyebrows', 'Attractive', 'Bags_Under_Eyes',
+    'Bald', 'Bangs', 'Big_Lips', 'Big_Nose', 'Black_Hair', 'Blond_Hair',
+    'Blurry', 'Brown_Hair', 'Bushy_Eyebrows', 'Chubby', 'Double_Chin',
+    'Eyeglasses', 'Goatee', 'Gray_Hair', 'Heavy_Makeup', 'High_Cheekbones',
+    'Male', 'Mouth_Slightly_Open', 'Mustache', 'Narrow_Eyes', 'No_Beard',
+    'Oval_Face', 'Pale_Skin', 'Pointy_Nose', 'Receding_Hairline',
+    'Rosy_Cheeks', 'Sideburns', 'Smiling', 'Straight_Hair', 'Wavy_Hair',
+    'Wearing_Earrings', 'Wearing_Hat', 'Wearing_Lipstick', 'Wearing_Necklace',
+    'Wearing_Necktie', 'Young'
+]
 SPACE = 'w'  # chosen from ['z', 'w', 'w+']
 CONFIG = 'anycost-ffhq-config-f'
 
@@ -66,19 +66,14 @@ def get_style_attribute_pairs():
         if SPACE in ['w', 'z']:
             z = torch.randn(batch_size, 1, generator.style_dim, device=DEVICE)
         else:
-            z = torch.randn(
-                    batch_size, generator.n_style, generator.style_dim,
-                    device=DEVICE
-                    )
-        images, w = generator(
-                z, return_styles=True, truncation=truncation_psi,
-                truncation_style=mean_style, input_is_style=False,
-                randomize_noise=randomized_noise
-                )
-        images = F.interpolate(
-                images.clamp(-1, 1), size=256, mode='bilinear',
-                align_corners=True
-                )
+            z = torch.randn(batch_size, generator.n_style, generator.style_dim,
+                            device=DEVICE)
+        images, w = generator(z, return_styles=True, truncation=truncation_psi,
+                              truncation_style=mean_style,
+                              input_is_style=False,
+                              randomize_noise=randomized_noise)
+        images = F.interpolate(images.clamp(-1, 1), size=256, mode='bilinear',
+                               align_corners=True)
         attr = predictor(images)
         # move to cpu to save memory
         if SPACE == 'w+':
@@ -113,11 +108,10 @@ def extract_boundaries():
     for idx, attr in tqdm(enumerate(attr_list), total=len(attr_list)):
         this_prob = prob[:, idx]
 
-        boundary = train_boundary(
-                latent_codes=styles.squeeze().cpu().numpy(),
-                scores=this_prob.view(-1, 1).cpu().numpy(),
-                chosen_num_or_ratio=0.02, split_ratio=0.7,
-                )
+        boundary = train_boundary(latent_codes=styles.squeeze().cpu().numpy(),
+                                  scores=this_prob.view(-1, 1).cpu().numpy(),
+                                  chosen_num_or_ratio=0.02, split_ratio=0.7,
+                                  )
         key_name = f'{idx:02d}' + '_' + attr
         boundaries[key_name] = boundary
 
@@ -132,9 +126,8 @@ def project_boundaries():  # only project the ones used for demo
     boundaries = torch.load(f'boundaries_{CONFIG}.pt')
     chosen_idx = [attr_list.index(attr) for attr in chosen_attr]
     sorted_keys = [f'{idx:02d}' + '_' + attr_list[idx] for idx in chosen_idx]
-    all_boundaries = np.concatenate([
-            boundaries[k].cpu().numpy() for k in sorted_keys
-            ])  # n, 512
+    all_boundaries = np.concatenate(
+        [boundaries[k].cpu().numpy() for k in sorted_keys])  # n, 512
     similarity = all_boundaries @ all_boundaries.T
     projected_boundaries = []
     for i_b in range(len(sorted_keys)):
@@ -144,11 +137,9 @@ def project_boundaries():  # only project the ones used for demo
         this_sim[i_b] = -100.  # exclude self
         idx1, idx2 = np.argsort(this_sim)[-2:]  # most similar 2
         projected_boundaries.append(
-                project_boundary(
-                        all_boundaries[i_b][None], all_boundaries[idx1][None],
-                        all_boundaries[idx2][None]
-                        )
-                )
+            project_boundary(all_boundaries[i_b][None],
+                             all_boundaries[idx1][None],
+                             all_boundaries[idx2][None]))
     boundaries = dict(zip(sorted_keys, torch.tensor(projected_boundaries)))
     torch.save(boundaries, f'boundary_projected_{CONFIG}.pt')
 
