@@ -31,12 +31,9 @@ def get_attention(name):
         """Perform hook for attention."""
         x = input_[0]
         batch, num, channels = x.shape
-        qkv = (
-                module.qkv(x).reshape(
-                        batch, num, 3, module.num_heads,
-                        channels // module.num_heads
-                        ).permute(2, 0, 3, 1, 4)
-                )
+        qkv = (module.qkv(x).reshape(batch, num, 3, module.num_heads,
+                                     channels // module.num_heads).permute(
+                                         2, 0, 3, 1, 4))
         # Make torchscript happy (cannot use tensor as tuple)
         queries, keys = (qkv[0], qkv[1])
 
@@ -53,9 +50,9 @@ def get_mean_attention_map(attn, token, shape):
     attn = attn[:, :, token, 1:]
     attn = attn.unflatten(2, torch.Size([shape[2] // 16,
                                          shape[3] // 16])).float()
-    attn = torch.nn.functional.interpolate(
-            attn, size=shape[2:], mode="bicubic", align_corners=False
-            ).squeeze(0)
+    attn = torch.nn.functional.interpolate(attn, size=shape[2:],
+                                           mode="bicubic",
+                                           align_corners=False).squeeze(0)
 
     all_attn = torch.mean(attn, 0)
 
@@ -100,9 +97,8 @@ class ProjectReadout(nn.Module):
         super().__init__()
         self.start_index = start_index
 
-        self.project = nn.Sequential(
-                nn.Linear(2 * in_features, in_features), nn.GELU()
-                )
+        self.project = nn.Sequential(nn.Linear(2 * in_features, in_features),
+                                     nn.GELU())
 
     def forward(self, x):
         """Forward pass."""
@@ -144,14 +140,13 @@ def forward_vit(pretrained, x):
     layer_4 = pretrained.act_postprocess4[0:2](layer_4)
 
     unflatten = nn.Sequential(
-            nn.Unflatten(
-                    2,
-                    torch.Size([
-                            h // pretrained.model.patch_size[1],
-                            w // pretrained.model.patch_size[0],
-                            ]),
-                    )
-            )
+        nn.Unflatten(
+            2,
+            torch.Size([
+                h // pretrained.model.patch_size[1],
+                w // pretrained.model.patch_size[0],
+            ]),
+        ))
 
     if layer_1.ndim == 3:
         layer_1 = unflatten(layer_1)
@@ -162,31 +157,30 @@ def forward_vit(pretrained, x):
     if layer_4.ndim == 3:
         layer_4 = unflatten(layer_4)
 
-    layer_1 = pretrained.act_postprocess1[3:len(pretrained
-                                                .act_postprocess1)](layer_1)
-    layer_2 = pretrained.act_postprocess2[3:len(pretrained
-                                                .act_postprocess2)](layer_2)
-    layer_3 = pretrained.act_postprocess3[3:len(pretrained
-                                                .act_postprocess3)](layer_3)
-    layer_4 = pretrained.act_postprocess4[3:len(pretrained
-                                                .act_postprocess4)](layer_4)
+    layer_1 = pretrained.act_postprocess1[3:len(pretrained.act_postprocess1)](
+        layer_1)
+    layer_2 = pretrained.act_postprocess2[3:len(pretrained.act_postprocess2)](
+        layer_2)
+    layer_3 = pretrained.act_postprocess3[3:len(pretrained.act_postprocess3)](
+        layer_3)
+    layer_4 = pretrained.act_postprocess4[3:len(pretrained.act_postprocess4)](
+        layer_4)
 
     return layer_1, layer_2, layer_3, layer_4
 
 
 def _resize_pos_embed(self, posemb, gs_h, gs_w):
     """Resize positional embedding."""
-    posemb_tok, posemb_grid = (
-            posemb[:, :self.start_index], posemb[0, self.start_index:],
-            )
+    posemb_tok, posemb_grid = (posemb[:, :self.start_index],
+                               posemb[0, self.start_index:],
+                               )
 
     gs_old = int(math.sqrt(len(posemb_grid)))
 
     posemb_grid = posemb_grid.reshape(1, gs_old, gs_old,
                                       -1).permute(0, 3, 1, 2)
-    posemb_grid = F.interpolate(
-            posemb_grid, size=(gs_h, gs_w), mode="bilinear"
-            )
+    posemb_grid = F.interpolate(posemb_grid, size=(gs_h, gs_w),
+                                mode="bilinear")
     posemb_grid = posemb_grid.permute(0, 2, 3, 1).reshape(1, gs_h * gs_w, -1)
 
     posemb = torch.cat([posemb_tok, posemb_grid], dim=1)
@@ -198,9 +192,8 @@ def forward_flex(self, x):
     """Forward pass of Flex."""
     _, _, h, w = x.shape
 
-    pos_embed = self._resize_pos_embed(
-            self.pos_embed, h // self.patch_size[1], w // self.patch_size[0]
-            )
+    pos_embed = self._resize_pos_embed(self.pos_embed, h // self.patch_size[1],
+                                       w // self.patch_size[0])
 
     batch_size = x.shape[0]
 
@@ -241,109 +234,90 @@ def get_readout_oper(vit_features, features, use_readout, start_index=1):
         readout_oper = [AddReadout(start_index)] * len(features)
     elif use_readout == "project":
         readout_oper = [
-                ProjectReadout(vit_features, start_index) for _ in features
-                ]
+            ProjectReadout(vit_features, start_index) for _ in features
+        ]
     else:
-        raise ValueError(
-                "Wrong operation for readout token, use_readout can "
-                f"be 'ignore','add', or 'project', got {use_readout}"
-                )
+        raise ValueError("Wrong operation for readout token, use_readout can "
+                         f"be 'ignore','add', or 'project', got {use_readout}")
     return readout_oper
 
 
-def _make_vit_b16_backbone(
-        model, features=(96, 192, 384, 768), size=(384, 384),
-        hooks=(2, 5, 8, 11), vit_features=768, use_readout="ignore",
-        start_index=1, enable_attention_hooks=False
-        ):
+def _make_vit_b16_backbone(model, features=(96, 192, 384, 768),
+                           size=(384, 384), hooks=(2, 5, 8, 11),
+                           vit_features=768, use_readout="ignore",
+                           start_index=1, enable_attention_hooks=False):
     """Make backbone for ViT-B16."""
     pretrained = nn.Module()
 
     pretrained.model = model
     pretrained.model.blocks[hooks[0]].register_forward_hook(
-            get_activation("1")
-            )
+        get_activation("1"))
     pretrained.model.blocks[hooks[1]].register_forward_hook(
-            get_activation("2")
-            )
+        get_activation("2"))
     pretrained.model.blocks[hooks[2]].register_forward_hook(
-            get_activation("3")
-            )
+        get_activation("3"))
     pretrained.model.blocks[hooks[3]].register_forward_hook(
-            get_activation("4")
-            )
+        get_activation("4"))
 
     pretrained.activations = activations
 
     if enable_attention_hooks:
         pretrained.model.blocks[hooks[0]].attn.register_forward_hook(
-                get_attention("attn_1")
-                )
+            get_attention("attn_1"))
         pretrained.model.blocks[hooks[1]].attn.register_forward_hook(
-                get_attention("attn_2")
-                )
+            get_attention("attn_2"))
         pretrained.model.blocks[hooks[2]].attn.register_forward_hook(
-                get_attention("attn_3")
-                )
+            get_attention("attn_3"))
         pretrained.model.blocks[hooks[3]].attn.register_forward_hook(
-                get_attention("attn_4")
-                )
+            get_attention("attn_4"))
         pretrained.attention = attention
 
-    readout_oper = get_readout_oper(
-            vit_features, features, use_readout, start_index
-            )
+    readout_oper = get_readout_oper(vit_features, features, use_readout,
+                                    start_index)
 
     # 32, 48, 136, 384
     pretrained.act_postprocess1 = nn.Sequential(
-            readout_oper[0], Transpose(1, 2),
-            nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
-            nn.Conv2d(
-                    in_channels=vit_features, out_channels=features[0],
-                    kernel_size=1, stride=1, padding=0,
-                    ),
-            nn.ConvTranspose2d(
-                    in_channels=features[0], out_channels=features[0],
-                    kernel_size=4, stride=4, padding=0, bias=True, dilation=1,
-                    groups=1,
-                    ),
-            )
+        readout_oper[0], Transpose(1, 2),
+        nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
+        nn.Conv2d(in_channels=vit_features, out_channels=features[0],
+                  kernel_size=1, stride=1, padding=0,
+                  ),
+        nn.ConvTranspose2d(in_channels=features[0], out_channels=features[0],
+                           kernel_size=4, stride=4, padding=0, bias=True,
+                           dilation=1, groups=1,
+                           ),
+    )
 
     pretrained.act_postprocess2 = nn.Sequential(
-            readout_oper[1], Transpose(1, 2),
-            nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
-            nn.Conv2d(
-                    in_channels=vit_features, out_channels=features[1],
-                    kernel_size=1, stride=1, padding=0,
-                    ),
-            nn.ConvTranspose2d(
-                    in_channels=features[1], out_channels=features[1],
-                    kernel_size=2, stride=2, padding=0, bias=True, dilation=1,
-                    groups=1,
-                    ),
-            )
+        readout_oper[1], Transpose(1, 2),
+        nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
+        nn.Conv2d(in_channels=vit_features, out_channels=features[1],
+                  kernel_size=1, stride=1, padding=0,
+                  ),
+        nn.ConvTranspose2d(in_channels=features[1], out_channels=features[1],
+                           kernel_size=2, stride=2, padding=0, bias=True,
+                           dilation=1, groups=1,
+                           ),
+    )
 
     pretrained.act_postprocess3 = nn.Sequential(
-            readout_oper[2], Transpose(1, 2),
-            nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
-            nn.Conv2d(
-                    in_channels=vit_features, out_channels=features[2],
-                    kernel_size=1, stride=1, padding=0,
-                    ),
-            )
+        readout_oper[2], Transpose(1, 2),
+        nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
+        nn.Conv2d(in_channels=vit_features, out_channels=features[2],
+                  kernel_size=1, stride=1, padding=0,
+                  ),
+    )
 
     pretrained.act_postprocess4 = nn.Sequential(
-            readout_oper[3], Transpose(1, 2),
-            nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
-            nn.Conv2d(
-                    in_channels=vit_features, out_channels=features[3],
-                    kernel_size=1, stride=1, padding=0,
-                    ),
-            nn.Conv2d(
-                    in_channels=features[3], out_channels=features[3],
-                    kernel_size=3, stride=2, padding=1,
-                    ),
-            )
+        readout_oper[3], Transpose(1, 2),
+        nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
+        nn.Conv2d(in_channels=vit_features, out_channels=features[3],
+                  kernel_size=1, stride=1, padding=0,
+                  ),
+        nn.Conv2d(in_channels=features[3], out_channels=features[3],
+                  kernel_size=3, stride=2, padding=1,
+                  ),
+    )
 
     pretrained.model.start_index = start_index
     pretrained.model.patch_size = [16, 16]
@@ -351,125 +325,107 @@ def _make_vit_b16_backbone(
     # We inject this function into the VisionTransformer instances
     # so that we can use it with interpolated position embeddings
     # without modifying the library source.
-    pretrained.model.forward_flex = types.MethodType(
-            forward_flex, pretrained.model
-            )
+    pretrained.model.forward_flex = types.MethodType(forward_flex,
+                                                     pretrained.model)
     pretrained.model._resize_pos_embed = types.MethodType(
-            _resize_pos_embed, pretrained.model
-            )
+        _resize_pos_embed, pretrained.model)
 
     return pretrained
 
 
-def _make_vit_b_rn50_backbone(
-        model, features=(256, 512, 768, 768), size=(384, 384),
-        hooks=(0, 1, 8, 11), vit_features=768, use_vit_only=False,
-        use_readout="ignore", start_index=1, enable_attention_hooks=False
-        ):
+def _make_vit_b_rn50_backbone(model, features=(256, 512, 768, 768),
+                              size=(384, 384), hooks=(0, 1, 8, 11),
+                              vit_features=768, use_vit_only=False,
+                              use_readout="ignore", start_index=1,
+                              enable_attention_hooks=False):
     """Make backbone for ViT-B-RN50."""
     pretrained = nn.Module()
     pretrained.model = model
 
     if use_vit_only:
         pretrained.model.blocks[hooks[0]].register_forward_hook(
-                get_activation("1")
-                )
+            get_activation("1"))
         pretrained.model.blocks[hooks[1]].register_forward_hook(
-                get_activation("2")
-                )
+            get_activation("2"))
     else:
         pretrained.model.patch_embed.backbone.stages[0].register_forward_hook(
-                get_activation("1")
-                )
+            get_activation("1"))
         pretrained.model.patch_embed.backbone.stages[1].register_forward_hook(
-                get_activation("2")
-                )
+            get_activation("2"))
 
     pretrained.model.blocks[hooks[2]].register_forward_hook(
-            get_activation("3")
-            )
+        get_activation("3"))
     pretrained.model.blocks[hooks[3]].register_forward_hook(
-            get_activation("4")
-            )
+        get_activation("4"))
 
     if enable_attention_hooks:
         pretrained.model.blocks[2].attn.register_forward_hook(
-                get_attention("attn_1")
-                )
+            get_attention("attn_1"))
         pretrained.model.blocks[5].attn.register_forward_hook(
-                get_attention("attn_2")
-                )
+            get_attention("attn_2"))
         pretrained.model.blocks[8].attn.register_forward_hook(
-                get_attention("attn_3")
-                )
+            get_attention("attn_3"))
         pretrained.model.blocks[11].attn.register_forward_hook(
-                get_attention("attn_4")
-                )
+            get_attention("attn_4"))
         pretrained.attention = attention
 
     pretrained.activations = activations
 
-    readout_oper = get_readout_oper(
-            vit_features, features, use_readout, start_index
-            )
+    readout_oper = get_readout_oper(vit_features, features, use_readout,
+                                    start_index)
 
     if use_vit_only:
         pretrained.act_postprocess1 = nn.Sequential(
-                readout_oper[0], Transpose(1, 2),
-                nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
-                nn.Conv2d(
-                        in_channels=vit_features, out_channels=features[0],
-                        kernel_size=1, stride=1, padding=0,
-                        ),
-                nn.ConvTranspose2d(
-                        in_channels=features[0], out_channels=features[0],
-                        kernel_size=4, stride=4, padding=0, bias=True,
-                        dilation=1, groups=1,
-                        ),
-                )
+            readout_oper[0], Transpose(1, 2),
+            nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
+            nn.Conv2d(in_channels=vit_features, out_channels=features[0],
+                      kernel_size=1, stride=1, padding=0,
+                      ),
+            nn.ConvTranspose2d(in_channels=features[0],
+                               out_channels=features[0], kernel_size=4,
+                               stride=4, padding=0, bias=True, dilation=1,
+                               groups=1,
+                               ),
+        )
 
         pretrained.act_postprocess2 = nn.Sequential(
-                readout_oper[1], Transpose(1, 2),
-                nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
-                nn.Conv2d(
-                        in_channels=vit_features, out_channels=features[1],
-                        kernel_size=1, stride=1, padding=0,
-                        ),
-                nn.ConvTranspose2d(
-                        in_channels=features[1], out_channels=features[1],
-                        kernel_size=2, stride=2, padding=0, bias=True,
-                        dilation=1, groups=1,
-                        ),
-                )
+            readout_oper[1], Transpose(1, 2),
+            nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
+            nn.Conv2d(in_channels=vit_features, out_channels=features[1],
+                      kernel_size=1, stride=1, padding=0,
+                      ),
+            nn.ConvTranspose2d(in_channels=features[1],
+                               out_channels=features[1], kernel_size=2,
+                               stride=2, padding=0, bias=True, dilation=1,
+                               groups=1,
+                               ),
+        )
     else:
-        pretrained.act_postprocess1 = nn.Sequential(
-                nn.Identity(), nn.Identity(), nn.Identity()
-                )
-        pretrained.act_postprocess2 = nn.Sequential(
-                nn.Identity(), nn.Identity(), nn.Identity()
-                )
+        pretrained.act_postprocess1 = nn.Sequential(nn.Identity(),
+                                                    nn.Identity(),
+                                                    nn.Identity())
+        pretrained.act_postprocess2 = nn.Sequential(nn.Identity(),
+                                                    nn.Identity(),
+                                                    nn.Identity())
 
     pretrained.act_postprocess3 = nn.Sequential(
-            readout_oper[2], Transpose(1, 2),
-            nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
-            nn.Conv2d(
-                    in_channels=vit_features, out_channels=features[2],
-                    kernel_size=1, stride=1, padding=0,
-                    ),
-            )
+        readout_oper[2], Transpose(1, 2),
+        nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
+        nn.Conv2d(in_channels=vit_features, out_channels=features[2],
+                  kernel_size=1, stride=1, padding=0,
+                  ),
+    )
 
     pretrained.act_postprocess4 = nn.Sequential(
-            readout_oper[3], Transpose(1, 2),
-            nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
-            nn.Conv2d(
-                    in_channels=vit_features, out_channels=features[3],
-                    kernel_size=1, stride=1, padding=0,
-                    ),
-            nn.Conv2d(
-                    in_channels=features[3], out_channels=features[3],
-                    kernel_size=3, stride=2, padding=1,
-                    ),
-            )
+        readout_oper[3], Transpose(1, 2),
+        nn.Unflatten(2, torch.Size([size[0] // 16, size[1] // 16])),
+        nn.Conv2d(in_channels=vit_features, out_channels=features[3],
+                  kernel_size=1, stride=1, padding=0,
+                  ),
+        nn.Conv2d(in_channels=features[3], out_channels=features[3],
+                  kernel_size=3, stride=2, padding=1,
+                  ),
+    )
 
     pretrained.model.start_index = start_index
     pretrained.model.patch_size = [16, 16]
@@ -477,94 +433,79 @@ def _make_vit_b_rn50_backbone(
     # We inject this function into the VisionTransformer instances
     # so that we can use it with interpolated position embeddings
     # without modifying the library source.
-    pretrained.model.forward_flex = types.MethodType(
-            forward_flex, pretrained.model
-            )
+    pretrained.model.forward_flex = types.MethodType(forward_flex,
+                                                     pretrained.model)
 
     # We inject this function into the VisionTransformer instances so
     # that we can use it with interpolated position embeddings without
     # modifying the library source.
     pretrained.model._resize_pos_embed = types.MethodType(
-            _resize_pos_embed, pretrained.model
-            )
+        _resize_pos_embed, pretrained.model)
 
     return pretrained
 
 
-def _make_pretrained_vitb_rn50_384(
-        pretrained, use_readout="ignore", hooks=None, use_vit_only=False,
-        enable_attention_hooks=False
-        ):
+def _make_pretrained_vitb_rn50_384(pretrained, use_readout="ignore",
+                                   hooks=None, use_vit_only=False,
+                                   enable_attention_hooks=False):
     """Make backbone for ViT-B-ResNet50."""
     model = timm.create_model("vit_base_resnet50_384", pretrained=pretrained)
 
     hooks = [0, 1, 8, 11] if hooks is None else hooks
     return _make_vit_b_rn50_backbone(
-            model, features=[256, 512, 768, 768], size=[384, 384], hooks=hooks,
-            use_vit_only=use_vit_only, use_readout=use_readout,
-            enable_attention_hooks=enable_attention_hooks,
-            )
+        model, features=[256, 512, 768, 768], size=[384, 384], hooks=hooks,
+        use_vit_only=use_vit_only, use_readout=use_readout,
+        enable_attention_hooks=enable_attention_hooks,
+    )
 
 
-def _make_pretrained_vitl16_384(
-        pretrained, use_readout="ignore", hooks=None,
-        enable_attention_hooks=False
-        ):
+def _make_pretrained_vitl16_384(pretrained, use_readout="ignore", hooks=None,
+                                enable_attention_hooks=False):
     """Make backbone for ViT-L16."""
     model = timm.create_model("vit_large_patch16_384", pretrained=pretrained)
 
     hooks = [5, 11, 17, 23] if hooks is None else hooks
     return _make_vit_b16_backbone(
-            model, features=[256, 512, 1024, 1024], hooks=hooks,
-            vit_features=1024, use_readout=use_readout,
-            enable_attention_hooks=enable_attention_hooks,
-            )
+        model, features=[256, 512, 1024, 1024], hooks=hooks, vit_features=1024,
+        use_readout=use_readout, enable_attention_hooks=enable_attention_hooks,
+    )
 
 
-def _make_pretrained_vitb16_384(
-        pretrained, use_readout="ignore", hooks=None,
-        enable_attention_hooks=False
-        ):
+def _make_pretrained_vitb16_384(pretrained, use_readout="ignore", hooks=None,
+                                enable_attention_hooks=False):
     """Make backbone for ViT-B16."""
     model = timm.create_model("vit_base_patch16_384", pretrained=pretrained)
 
     hooks = [2, 5, 8, 11] if hooks is None else hooks
     return _make_vit_b16_backbone(
-            model, features=[96, 192, 384,
-                             768], hooks=hooks, use_readout=use_readout,
-            enable_attention_hooks=enable_attention_hooks,
-            )
+        model, features=[96, 192, 384, 768], hooks=hooks,
+        use_readout=use_readout, enable_attention_hooks=enable_attention_hooks,
+    )
 
 
-def _make_pretrained_deitb16_384(
-        pretrained, use_readout="ignore", hooks=None,
-        enable_attention_hooks=False
-        ):
+def _make_pretrained_deitb16_384(pretrained, use_readout="ignore", hooks=None,
+                                 enable_attention_hooks=False):
     """Make backbone for DeiT-B16."""
-    model = timm.create_model(
-            "vit_deit_base_patch16_384", pretrained=pretrained
-            )
+    model = timm.create_model("vit_deit_base_patch16_384",
+                              pretrained=pretrained)
 
     hooks = [2, 5, 8, 11] if hooks is None else hooks
     return _make_vit_b16_backbone(
-            model, features=[96, 192, 384,
-                             768], hooks=hooks, use_readout=use_readout,
-            enable_attention_hooks=enable_attention_hooks,
-            )
+        model, features=[96, 192, 384, 768], hooks=hooks,
+        use_readout=use_readout, enable_attention_hooks=enable_attention_hooks,
+    )
 
 
-def _make_pretrained_deitb16_distil_384(
-        pretrained, use_readout="ignore", hooks=None,
-        enable_attention_hooks=False
-        ):
+def _make_pretrained_deitb16_distil_384(pretrained, use_readout="ignore",
+                                        hooks=None,
+                                        enable_attention_hooks=False):
     """Make backbone for DeiT-B16."""
-    model = timm.create_model(
-            "vit_deit_base_distilled_patch16_384", pretrained=pretrained
-            )
+    model = timm.create_model("vit_deit_base_distilled_patch16_384",
+                              pretrained=pretrained)
 
     hooks = [2, 5, 8, 11] if hooks is None else hooks
     return _make_vit_b16_backbone(
-            model, features=[96, 192, 384,
-                             768], hooks=hooks, use_readout=use_readout,
-            start_index=2, enable_attention_hooks=enable_attention_hooks,
-            )
+        model, features=[96, 192, 384,
+                         768], hooks=hooks, use_readout=use_readout,
+        start_index=2, enable_attention_hooks=enable_attention_hooks,
+    )

@@ -28,8 +28,8 @@ class MultiResize:
             highest_res = highest_res // 2
         all_res = sorted(all_res)  # always low to high
         self.transforms = [
-                transforms.Resize(r, interpolation) for r in all_res
-                ]
+            transforms.Resize(r, interpolation) for r in all_res
+        ]
 
     def __call__(self, img):
         """Apply the transform."""

@@ -38,22 +38,19 @@ def browse_translation_dir(translation_dir, characs):
                     degree = split_name[1]
                     transfo = np.load(translation_path)
                     translations_default[char + '_' + degree] = torch.tensor(
-                            transfo, dtype=torch.float32
-                            )
+                        transfo, dtype=torch.float32)
             else:
                 if split_name[1] not in {'min', 'max'}:
                     num, from_num = int(split_name[1]), int(split_name[3])
                     if characs[char] == from_num:
                         transfo = np.load(translation_path)
                         translations[char + '_' + str(num)] = torch.tensor(
-                                transfo, dtype=torch.float32
-                                )
+                            transfo, dtype=torch.float32)
                 else:
                     raise NotImplementedError(
-                            'Specific translation (ie. using "fr_...") of '
-                            '"min/max attribute" is not supported yet. '
-                            f'{translation_path} should be removed.'
-                            )
+                        'Specific translation (ie. using "fr_...") of '
+                        '"min/max attribute" is not supported yet. '
+                        f'{translation_path} should be removed.')
 
         # Overwrite default translations with translations
         # from specific characteristics
@@ -89,28 +86,32 @@ def get_translations(translation_dir, charac_list, use_precomputed):
     """
     if charac_list is not None:
         (skin, age, sex, _, _, bang, haircolor, doublechin,
-            hairstyle) = charac_list
+         hairstyle) = charac_list
         characs = {
-                'Sk': skin, 'A': age, 'Se': sex, 'B': bang, 'Hc': haircolor,
-                'D': doublechin, 'Hs': hairstyle
-                }
+            'Sk': skin,
+            'A': age,
+            'Se': sex,
+            'B': bang,
+            'Hc': haircolor,
+            'D': doublechin,
+            'Hs': hairstyle
+        }
     else:
         characs = None
 
     # Get pre-computed translations
     if use_precomputed:
         precomputed_translations = browse_translation_dir(
-                'projection/default_translations/unconditional', characs
-                )
+            'projection/default_translations/unconditional', characs)
         # Add conditional translations only when
         # characteristics are given
         if characs is not None:
             precomputed_translations_2 = browse_translation_dir(
-                    'projection/default_translations/conditional', characs
-                    )
+                'projection/default_translations/conditional', characs)
             precomputed_translations = {
-                    **precomputed_translations, **precomputed_translations_2
-                    }
+                **precomputed_translations,
+                **precomputed_translations_2
+            }
     else:
         precomputed_translations = {}
 

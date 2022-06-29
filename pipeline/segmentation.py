@@ -50,9 +50,9 @@ def segmentation_mix(data_dir, input_path, output_path, model_path, configs):
     net, device = get_model()
 
     to_tensor = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-            ])
+        transforms.ToTensor(),
+        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+    ])
     for image_name in os.listdir(data_dir):
         base_image_name = image_name.split('.')[0]
         if not osp.exists(osp.join(output_path, base_image_name)):
@@ -88,13 +88,9 @@ def segmentation_mix(data_dir, input_path, output_path, model_path, configs):
             image = Image.open(osp.join(input_path, image_dir, file_name))
             image = image.resize((512, 512), Image.BILINEAR)
             if charac_name == 'N_max':  # Not handled
-                image = add_foreground(
-                        image, img_org, seg_org,
-                        margin=configs['foreground_margin']
-                        )
-                cv2.imwrite(
-                        osp.join(output_path, image_dir, file_name), image
-                        )
+                image = add_foreground(image, img_org, seg_org,
+                                       margin=configs['foreground_margin'])
+                cv2.imwrite(osp.join(output_path, image_dir, file_name), image)
                 print(f'image {i+1}/{n_images} done  ', end='\r')
                 continue
 
@@ -106,32 +102,22 @@ def segmentation_mix(data_dir, input_path, output_path, model_path, configs):
             seg_charac = process_segmentation(seg, charac_name)
 
             if seg_charac is None:  # Not handled
-                image = add_foreground(
-                        image, img_org, seg_org,
-                        margin=configs['foreground_margin']
-                        )
-                cv2.imwrite(
-                        osp.join(output_path, image_dir, file_name), image
-                        )
+                image = add_foreground(image, img_org, seg_org,
+                                       margin=configs['foreground_margin'])
+                cv2.imwrite(osp.join(output_path, image_dir, file_name), image)
                 print(f'image {i+1}/{n_images} done  ', end='\r')
                 continue
 
             # Get binary mask relevant for the current characteristic
             seg_org_charac = process_segmentation(seg_org, charac_name)
             # Merge the images continuously
-            img_final = merge_images(
-                    img_org, seg_org_charac, image, seg_charac,
-                    margin=configs['margin']
-                    )
+            img_final = merge_images(img_org, seg_org_charac, image,
+                                     seg_charac, margin=configs['margin'])
             # Add Foreground of the original image
-            img_final = add_foreground(
-                    img_final, img_org, seg_org,
-                    margin=configs['foreground_margin']
-                    )
+            img_final = add_foreground(img_final, img_org, seg_org,
+                                       margin=configs['foreground_margin'])
             # Save image
-            cv2.imwrite(
-                    osp.join(output_path, image_dir, file_name), img_final
-                    )
+            cv2.imwrite(osp.join(output_path, image_dir, file_name), img_final)
         print(f'image {i+1}/{n_images} done  ', end='\r')
     print()
 
@@ -221,7 +207,6 @@ if __name__ == "__main__":
 
     CONFIGS = {'margin': 21, 'foreground_margin': 6}
 
-    segmentation_mix(
-            data_dir=DATA_DIR, input_path=INPUT_PATH, output_path=OUTPUT_PATH,
-            model_path=MODEL_PATH, configs=CONFIGS
-            )
+    segmentation_mix(data_dir=DATA_DIR, input_path=INPUT_PATH,
+                     output_path=OUTPUT_PATH, model_path=MODEL_PATH,
+                     configs=CONFIGS)

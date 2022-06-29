@@ -39,15 +39,13 @@ def run(config):
 
     if 'segmentation_mix' in pipeline_paths:
         print('\nApplying segmentation mixup...')
-        segmentation_mix(
-                data_dir=data_dir, **pipeline_paths['segmentation_mix']
-                )
+        segmentation_mix(data_dir=data_dir,
+                         **pipeline_paths['segmentation_mix'])
 
     if 'depth_estimation_mix' in pipeline_paths:
         print('\nApplying depth estimation mixup...')
-        depth_estimation_mix(
-                data_dir=data_dir, **pipeline_paths['depth_estimation_mix']
-                )
+        depth_estimation_mix(data_dir=data_dir,
+                             **pipeline_paths['depth_estimation_mix'])
 
     print('\nDone!')
 

@@ -35,10 +35,8 @@ def lerp(a, b, t):
     return a + (b-a) * t
 
 
-def compute_ppl(
-        g, n_sample, batch_size, space='w', sampling='end', eps=1e-4,
-        crop=False
-        ):
+def compute_ppl(g, n_sample, batch_size, space='w', sampling='end', eps=1e-4,
+                crop=False):
     """Compute perceptual path length."""
     percept = lpips.LPIPS(net='vgg', verbose=False).to(device)
 
@@ -82,13 +80,11 @@ def compute_ppl(
                 # we do not use F.interpolate
                 # it will make a difference for 1024 resolution.
                 batch, channels, h, w = image.shape
-                image = image.view(
-                        batch, channels, h // factor, factor, w // factor,
-                        factor
-                        ).mean([3, 5])
+                image = image.view(batch, channels, h // factor, factor,
+                                   w // factor, factor).mean([3, 5])
 
-            dist = percept(image[::2], image[1::2]).view(image.shape[0] // 2
-                                                         ) / (eps**2)
+            dist = percept(image[::2], image[1::2]).view(
+                image.shape[0] // 2) / (eps**2)
             distances.append(dist.to("cpu"))
 
     distances = torch.cat(distances, 0)
@@ -98,8 +94,7 @@ def compute_ppl(
     lo = np.percentile(distances, 1, interpolation="lower")
     hi = np.percentile(distances, 99, interpolation="higher")
     filtered_dist = np.extract(
-            np.logical_and(lo <= distances, distances <= hi), distances
-            )
+        np.logical_and(lo <= distances, distances <= hi), distances)
     return filtered_dist.mean()
 
 
@@ -107,39 +102,24 @@ if __name__ == "__main__":
     device = "cuda"
 
     parser = argparse.ArgumentParser(
-            description="Perceptual Path Length calculator"
-            )
-    parser.add_argument(
-            "--config", type=str,
-            help='config name of the pretrained generator'
-            )
+        description="Perceptual Path Length calculator")
+    parser.add_argument("--config", type=str,
+                        help='config name of the pretrained generator')
     parser.add_argument('--channel_ratio', type=float, default=None)
     parser.add_argument('--target_res', type=int, default=None)
 
-    parser.add_argument(
-            "--n_sample", type=int, default=100000,
-            help="number of the samples for calculating PPL"
-            )
-    parser.add_argument(
-            "--batch_size", type=int, default=16,
-            help="batch size for the models (per gpu)"
-            )
-    parser.add_argument(
-            "--space", default='w', choices=["z", "w"],
-            help="space that PPL calculated with"
-            )
-    parser.add_argument(
-            "--eps", type=float, default=1e-4,
-            help="epsilon for numerical stability"
-            )
-    parser.add_argument(
-            "--crop", action="store_true",
-            help="apply center crop to the images"
-            )
-    parser.add_argument(
-            "--sampling", default="end", choices=["end", "full"],
-            help="set endpoint sampling method"
-            )
+    parser.add_argument("--n_sample", type=int, default=100000,
+                        help="number of the samples for calculating PPL")
+    parser.add_argument("--batch_size", type=int, default=16,
+                        help="batch size for the models (per gpu)")
+    parser.add_argument("--space", default='w', choices=["z", "w"],
+                        help="space that PPL calculated with")
+    parser.add_argument("--eps", type=float, default=1e-4,
+                        help="epsilon for numerical stability")
+    parser.add_argument("--crop", action="store_true",
+                        help="apply center crop to the images")
+    parser.add_argument("--sampling", default="end", choices=["end", "full"],
+                        help="set endpoint sampling method")
 
     args = parser.parse_args()
 
@@ -156,10 +136,8 @@ if __name__ == "__main__":
     if args.target_res is not None:
         generator.target_res = args.target_res
 
-    ppl = compute_ppl(
-            generator, n_sample=args.n_sample, batch_size=args.batch_size,
-            space=args.space, sampling=args.sampling, eps=args.eps,
-            crop=args.crop
-            )
+    ppl = compute_ppl(generator, n_sample=args.n_sample,
+                      batch_size=args.batch_size, space=args.space,
+                      sampling=args.sampling, eps=args.eps, crop=args.crop)
     if hvd.rank() == 0:
         print(' * PPL: {}'.format(ppl))

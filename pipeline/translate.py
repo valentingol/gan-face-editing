@@ -52,9 +52,11 @@ def apply_translations(projection_dir, output_path, anycost_config, configs):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     generator = get_pretrained('generator', anycost_config).to(device)
     input_kwargs = {
-            'styles': None, 'noise': None, 'randomize_noise': False,
-            'input_is_style': True
-            }
+        'styles': None,
+        'noise': None,
+        'randomize_noise': False,
+        'input_is_style': True
+    }
     n_images = len(os.listdir(latent_dir))
 
     for i, fname in enumerate(os.listdir(latent_dir)):
@@ -64,23 +66,21 @@ def apply_translations(projection_dir, output_path, anycost_config, configs):
                 charac_list = list(map(int, basename.split('_')))
             except ValueError as exc:
                 raise ValueError(
-                        'When "use_characs_in_img" is set to True, the name of'
-                        ' images should be like: "%d_%d_%d_%d_%d_%d_%d_%d_%d.'
-                        'png/.jpg" where "%d" are integer chararacteristics ('
-                        'see https://transfer-learning.org/rules for details).'
-                        'Otherwise you can set "use_characs_in_img" to False '
-                        'to get all translation for all images.'
-                        ) from exc
+                    'When "use_characs_in_img" is set to True, the name of'
+                    ' images should be like: "%d_%d_%d_%d_%d_%d_%d_%d_%d.'
+                    'png/.jpg" where "%d" are integer chararacteristics ('
+                    'see https://transfer-learning.org/rules for details).'
+                    'Otherwise you can set "use_characs_in_img" to False '
+                    'to get all translation for all images.') from exc
         else:
             charac_list = None
         # Get initial projected latent code
         base_code = np.load(os.path.join(latent_dir, basename + '.npy'))
         base_code = torch.tensor(base_code).float().to(device)
         # Get translations for the image
-        translations = get_translations(
-                translation_dir=translation_dir, charac_list=charac_list,
-                use_precomputed=use_precomputed
-                )
+        translations = get_translations(translation_dir=translation_dir,
+                                        charac_list=charac_list,
+                                        use_precomputed=use_precomputed)
         translations = {k: v.to(device) for k, v in translations.items()}
 
         if not os.path.exists(os.path.join(output_path, basename)):

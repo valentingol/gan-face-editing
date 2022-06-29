@@ -38,10 +38,9 @@ def validate():
 
                 pred_w = encoder(real_img)
 
-                fake_image, _ = generator(
-                        pred_w, noise=None, randomize_noise=False,
-                        input_is_style=True
-                        )
+                fake_image, _ = generator(pred_w, noise=None,
+                                          randomize_noise=False,
+                                          input_is_style=True)
                 fake_image = adaptive_resize(fake_image.clamp(-1, 1), 256)
 
                 lpips_loss = LPIPS_FUNC(fake_image, real_img).mean()
@@ -55,43 +54,35 @@ def validate():
                     # and sub-generators (3 configs)
                     for ch_ratio in [0.25, 0.5, 0.75]:
                         set_uniform_channel_ratio(generator, ch_ratio)
-                        fake_sub_image, _ = generator(
-                                pred_w, noise=None, randomize_noise=False,
-                                input_is_style=True
-                                )
+                        fake_sub_image, _ = generator(pred_w, noise=None,
+                                                      randomize_noise=False,
+                                                      input_is_style=True)
                         fake_sub_image = adaptive_resize(
-                                fake_sub_image.clamp(-1, 1), 256
-                                )
+                            fake_sub_image.clamp(-1, 1), 256)
                         remove_sub_channel_config(generator)
                         consist_lpips_loss_meter.update(
-                                LPIPS_FUNC(fake_sub_image,
-                                           fake_image).mean().item(),
-                                real_img.shape[0]
-                                )
+                            LPIPS_FUNC(fake_sub_image,
+                                       fake_image).mean().item(),
+                            real_img.shape[0])
                         consis_mse_loss_meter.update(
-                                nn.MSELoss()(fake_sub_image,
-                                             fake_image).item(),
-                                real_img.shape[0]
-                                )
+                            nn.MSELoss()(fake_sub_image, fake_image).item(),
+                            real_img.shape[0])
 
                         sub_lpips_loss_meter.update(
-                                LPIPS_FUNC(fake_sub_image,
-                                           real_img).mean().item(),
-                                real_img.shape[0]
-                                )
+                            LPIPS_FUNC(fake_sub_image, real_img).mean().item(),
+                            real_img.shape[0])
                         sub_mse_loss_meter.update(
-                                nn.MSELoss()(fake_sub_image, real_img).item(),
-                                real_img.shape[0]
-                                )
+                            nn.MSELoss()(fake_sub_image, real_img).item(),
+                            real_img.shape[0])
 
                 info2display = {
-                        'lpips': lpips_loss_meter.avg,
-                        'mse': mse_loss_meter.avg,
-                        'sub-lpips': sub_lpips_loss_meter.avg,
-                        'sub-mse': sub_mse_loss_meter.avg,
-                        'consist-lpips': consist_lpips_loss_meter.avg,
-                        'consist-mse': consis_mse_loss_meter.avg
-                        }
+                    'lpips': lpips_loss_meter.avg,
+                    'mse': mse_loss_meter.avg,
+                    'sub-lpips': sub_lpips_loss_meter.avg,
+                    'sub-mse': sub_mse_loss_meter.avg,
+                    'consist-lpips': consist_lpips_loss_meter.avg,
+                    'consist-mse': consis_mse_loss_meter.avg
+                }
 
                 tqdm_bar.set_postfix(info2display)
                 tqdm_bar.update(1)
@@ -101,30 +92,21 @@ if __name__ == "__main__":
     device = "cuda"
 
     parser = argparse.ArgumentParser(
-            description="Computing attribute consistency between generators"
-            )
-    parser.add_argument(
-            "--config", type=str,
-            help='config name of the pretrained generator'
-            )
+        description="Computing attribute consistency between generators")
+    parser.add_argument("--config", type=str,
+                        help='config name of the pretrained generator')
     # dataset
-    parser.add_argument(
-            "--data_path", type=str, default='/dataset/ffhq/celeba-hq/'
-            )
-    parser.add_argument(
-            "--batch_size", type=int, default=16,
-            help="batch size for the models (per gpu)"
-            )
+    parser.add_argument("--data_path", type=str,
+                        default='/dataset/ffhq/celeba-hq/')
+    parser.add_argument("--batch_size", type=int, default=16,
+                        help="batch size for the models (per gpu)")
     parser.add_argument('-j', '--workers', default=4, type=int)
 
-    parser.add_argument(
-            "--lpips_net", type=str, default='vgg', choices=['vgg', 'alex']
-            )
+    parser.add_argument("--lpips_net", type=str, default='vgg',
+                        choices=['vgg', 'alex'])
 
-    parser.add_argument(
-            '--calc_consist', action='store_true', default=False,
-            help='compute the consistency loss'
-            )
+    parser.add_argument('--calc_consist', action='store_true', default=False,
+                        help='compute the consistency loss')
     args = parser.parse_args()
 
     # build models
@@ -136,19 +118,19 @@ if __name__ == "__main__":
 
     # build test dataset
     val_transform = transforms.Compose([
-            transforms.Resize(generator.resolution),
-            transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5),
-                                 inplace=True),
-            ])
+        transforms.Resize(generator.resolution),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True),
+    ])
     test_dataset = NativeDataset(args.data_path, transform=val_transform)
     train_idx, val_idx, test_idx = get_celeba_hq_split()
     test_dataset = torch.utils.data.Subset(test_dataset, test_idx)
 
-    test_loader = torch.utils.data.DataLoader(
-            test_dataset, batch_size=args.batch_size, shuffle=False,
-            num_workers=args.workers, pin_memory=True
-            )
+    test_loader = torch.utils.data.DataLoader(test_dataset,
+                                              batch_size=args.batch_size,
+                                              shuffle=False,
+                                              num_workers=args.workers,
+                                              pin_memory=True)
 
     # build lpips loss
     LPIPS_FUNC = lpips.LPIPS(net=args.lpips_net, verbose=False).to(device)

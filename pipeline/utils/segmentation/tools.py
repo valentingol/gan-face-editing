@@ -17,8 +17,9 @@ def get_model():
     net = BiSeNet(n_classes=19)
 
     net.to(device)
-    net.load_state_dict(torch.load('postprocess/segmentation/model/'
-                                   '79999_iter.pth'))
+    net.load_state_dict(
+        torch.load('postprocess/segmentation/model/'
+                   '79999_iter.pth'))
     net.eval()
     return net, device
 
@@ -39,9 +40,9 @@ def init_segmentation(data_dir):
     net, device = get_model()
 
     to_tensor = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-            ])
+        transforms.ToTensor(),
+        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+    ])
 
     with torch.no_grad():
         for image_name in os.listdir(data_dir):

@@ -15,9 +15,8 @@ URL_TEMPLATE = 'https://hanlab.mit.edu/projects/anycost-gan/files/{}_{}.pt'
 def load_state_dict_from_url(url, key=None):
     """Load state dict from url."""
     if url.startswith('http'):
-        state_dict = safe_load_state_dict_from_url(
-                url, map_location='cpu', progress=True
-                )
+        state_dict = safe_load_state_dict_from_url(url, map_location='cpu',
+                                                   progress=True)
     else:
         state_dict = torch.load(url, map_location='cpu')
     if key is not None:
@@ -45,7 +44,7 @@ def get_pretrained(model, config=None):
         if config in [
                 'anycost-ffhq-config-f', 'anycost-ffhq-config-f-flexible',
                 'stylegan2-ffhq-config-f'
-                ]:
+        ]:
             resolution = 1024
             channel_multiplier = 2
         elif config == 'anycost-car-config-f':
@@ -65,7 +64,7 @@ def get_pretrained(model, config=None):
         if config in [
                 'anycost-ffhq-config-f', 'anycost-ffhq-config-f-flexible',
                 'stylegan2-ffhq-config-f'
-                ]:
+        ]:
             n_style = 18
             style_dim = 512
         else:
@@ -88,7 +87,7 @@ def get_pretrained(model, config=None):
         if config in [
                 'anycost-ffhq-config-f', 'anycost-ffhq-config-f-flexible',
                 'stylegan2-ffhq-config-f'
-                ]:
+        ]:
             return load_state_dict_from_url(url)
         raise NotImplementedError(f'Unknown config: {config}')
 
