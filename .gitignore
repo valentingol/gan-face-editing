@@ -2,6 +2,7 @@
 data/
 res/
 projection/run**
+**/projected_images
 .mypy_cache
 
 # General (Python)

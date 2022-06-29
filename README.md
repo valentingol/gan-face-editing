@@ -10,9 +10,11 @@
 [![Isort](https://github.com/valentingol/gan-face-editing/actions/workflows/isort.yaml/badge.svg)](https://github.com/valentingol/gan-face-editing/actions/workflows/isort.yaml)
 [![PyLint](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/valentingol/c60e6ce49447254be085193c99b8425b/raw/gan_face_editing_pylint_badge.json)](https://github.com/valentingol/gan-face-editing/actions/workflows/pylint.yaml)
 
-Winner team repository of Inter-Centrales 2022 AI competition: Ceteris Paribus Face Challenge: [site of the competition](https://transfer-learning.org/competition.html).
+**NOTE** : This is work based on the winner team repository of Inter-Centrales 2022 AI competition: Ceteris Paribus Face Challenge: [site of the competition](https://transfer-learning.org/competition.html) plus the work of the second team composed by Thibault Le Sellier De Chezelles and Hédi Razgallah (original work can be found [here](https://github.com/HediRaz/InterCentrales).
 
-This work is under the MIT license.
+This repository and the repositories it contains are licensed under the [MIT license](LICENSE.md).
+
+---
 
 ![alt text](ressources/images/compet_img.png)
 
@@ -101,7 +103,8 @@ In this API you can visualize and edit the reconstructed images using attribute 
 
 You can now run the full pipeline to apply automatic translation on all the input images and apply three steps of postprocessing (in this order):
 
-- domain mixup (using constant area of interest)
+- encoder4editing GAN
+- GFP GAN
 - segmentation mixup (using ResNet)
 - depth segmentation mixup (using ViT)
 
@@ -119,17 +122,17 @@ You can avoid using the pre-computed translation with `--translation.use_precomp
 
 All transformation can be run individually even if the project was designed to work with `apps/run_pipeline.py` in order to be consistent with custom configurations (see "Configurations" section).
 
-### Domain Mixup
+## encoder4editing
 
-To keep only the modification near the area where we expect them (called 'domain') for a specific change, a mixup is applied. The idea is to draw an area in a 512x512 white image that correspond to the area we expect add the changes, for each characteristic. The images are saved in `postprocess/domain_mixup/images/` (black and white images and black pixels correspond to the domain).
+**IMPORTANT**: To run encoder4editing you must download the pre trained model here: [e4e_ffhq_encode.pt]((https://drive.google.com/file/d/1cUv_reLE6k3604or78EranS7XzuVMWeO/view?usp=sharing)) and put in in `postprocess/encoder4editing/model/e4e_ffhq_encode.pt`.
 
-```bash
-python pipeline/domain_mixup.py
-```
+ The encoder4editing (e4e) encoder is specifically designed to complement existing image manipulation techniques performed over StyleGAN's latent space. It is based on the following paper: [Designing an Encoder for StyleGAN Image Manipulation](https://arxiv.org/abs/2102.02766). It is used instead of AnycostGAN for some transformation if needed. By default, no transformation are made with this encoder.
 
-By default, the resulting images are in `res/run1/images_post_domain_mixup/` and the distances from all pixels to the domains are saved in `postprocess/domain_mixup/distances`.
+ You can run individually this step with:
 
-As domain mixup shows no significant improvement and can even add some unwanted artifacts, it is disable by default. You can enable it with `--pipeline.skip_domain_mixup=False`.
+ ```script
+python pipeline.encoder4editing.py
+ ```
 
 ### GFP-GAN
 
