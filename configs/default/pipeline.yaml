@@ -11,7 +11,6 @@ use_characs_in_img: False
 
 --- !gfp_gan
 upscale: 2
-realesrgan: True
 bg_tile: 400
 margin: 12
 

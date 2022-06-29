@@ -39,46 +39,44 @@ def gfp_gan_mix(input_path, output_path, model_path, configs):
     """Mix original image and restored image from GFP GAN."""
     margin = configs['margin']
 
+    # NOTE: Real-ESRGAN is useless as we mask the background
+    realesrgan = False
+
     os.makedirs(output_path, exist_ok=True)
     n_images = len(os.listdir(input_path))
 
     net, device = get_model()
 
     to_tensor = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-            ])
+        transforms.ToTensor(),
+        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+    ])
 
     # Set up background up-sampler
-    if configs["realesrgan"]:
+    if realesrgan:
         if not GPU_ENABLED:
             bg_upsampler = None
             warnings.warn(
-                    'The unoptimized RealESRGAN is slow on CPU. We do not '
-                    'use it. If you really want to use it, please modify the '
-                    'corresponding codes.'
-                    )
+                'The unoptimized RealESRGAN is slow on CPU. We do not '
+                'use it. If you really want to use it, please modify the '
+                'corresponding codes.')
         else:
-            model = RRDBNet(
-                    num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23,
-                    num_grow_ch=32, scale=2
-                    )
+            model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64,
+                            num_block=23, num_grow_ch=32, scale=2)
             bg_upsampler = RealESRGANer(
-                    scale=2, model_path='https://github.com/xinntao/Real-'
-                    'ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth',
-                    model=model, tile=configs['bg_tile'], tile_pad=10,
-                    pre_pad=0, half=True
-                    )
+                scale=2, model_path='https://github.com/xinntao/Real-'
+                'ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth',
+                model=model, tile=configs['bg_tile'], tile_pad=10, pre_pad=0,
+                half=True)
     else:
         bg_upsampler = None
 
     if not os.path.isfile(model_path):
         raise ValueError(f'GFP GAN model not found at {model_path}.')
 
-    restorer = GFPGANer(
-            model_path=model_path, upscale=configs["upscale"], arch='clean',
-            channel_multiplier=2, bg_upsampler=bg_upsampler
-            )
+    restorer = GFPGANer(model_path=model_path, upscale=configs["upscale"],
+                        arch='clean', channel_multiplier=2,
+                        bg_upsampler=bg_upsampler)
 
     for i, image_dir in enumerate(os.listdir(input_path)):
         for img_name in os.listdir(os.path.join(input_path, image_dir)):
@@ -93,10 +91,10 @@ def gfp_gan_mix(input_path, output_path, model_path, configs):
 
             # Restore face
             input_image = cv2.imread(img_path, cv2.IMREAD_COLOR)
-            _, restored_images, _ = restorer.enhance(
-                    input_image, has_aligned=True,
-                    only_center_face=False, paste_back=True
-                    )
+            _, restored_images, _ = restorer.enhance(input_image,
+                                                     has_aligned=True,
+                                                     only_center_face=False,
+                                                     paste_back=True)
             assert len(restored_images) == 1, ('Only one face is expected as '
                                                'long as has_aligned=True.')
             restored_img = restored_images[0]
@@ -118,12 +116,6 @@ if __name__ == '__main__':
     # Precise custom configs if you want to change the default values :
     # empty if no modifications if not precised, it is empty
     # by default ...
-    CONFIGS = {
-            'upscale': 2,
-            'realesrgan': True,
-            'bg_tile': 400,
-            }
-    gfp_gan_mix(
-            input_path=INPUT_PATH, output_path=OUTPUT_PATH,
-            model_path=MODEL_PATH, configs=CONFIGS
-            )
+    CONFIGS = {'upscale': 2, 'bg_tile': 400}
+    gfp_gan_mix(input_path=INPUT_PATH, output_path=OUTPUT_PATH,
+                model_path=MODEL_PATH, configs=CONFIGS)
