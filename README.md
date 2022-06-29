@@ -21,6 +21,7 @@ This repository uses third-party works:
 - [anycost-gan](https://github.com/mit-han-lab/anycost-gan) (MIT license)
 - [face-parsing.PyTorch](https://github.com/zllrunning/face-parsing.PyTorch) (MIT license)
 - [DensePredictionTransformer / DPT](https://github.com/isl-org/DPT) (MIT license)
+- [encoder4editing](https://github.com/omertov/encoder4editing)
 
 Licenses are provided in `third_party_licenses`.
 
@@ -38,7 +39,7 @@ Licenses are provided in `third_party_licenses`.
 - [x] Refactor the code to make it more convenient
 - [x] Add a convenient config system
 - [x] Improve realism with GFP GAN
-- [ ] Look for other repo to solve skin and age in data_challenge branch (IN PROGRESS 🚧)
+- [x] Look for other repo to solve skin and age in data_challenge branch
 - [ ] Fix artifact bugs (IN PROGRESS 🚧)
 - [ ] Allow using GFP GAN and depth estimation on a subset of transformations/images
 - [ ] Improve depth estimation speed with a lighter model
