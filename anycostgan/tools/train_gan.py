@@ -31,10 +31,13 @@ from anycostgan.utils.datasets import NativeDataset
 from anycostgan.utils.losses import (d_logistic_loss, d_r1_loss,
                                      g_nonsaturating_loss, g_path_regularize)
 from anycostgan.utils.torch_utils import DistributedMeter
-from anycostgan.utils.train_utils import (
-    accumulate, adaptive_downsample256, get_g_arch, get_mixing_z,
-    get_random_g_arch, get_teacher_multi_res, partially_load_d_for_ada_ch,
-    partially_load_d_for_multi_res, requires_grad)
+from anycostgan.utils.train_utils import (accumulate, adaptive_downsample256,
+                                          get_g_arch, get_mixing_z,
+                                          get_random_g_arch,
+                                          get_teacher_multi_res,
+                                          partially_load_d_for_ada_ch,
+                                          partially_load_d_for_multi_res,
+                                          requires_grad)
 
 DEVICE = 'cuda'
 LOG_DIR = 'log'
