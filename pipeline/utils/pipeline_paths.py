@@ -10,6 +10,7 @@ def get_pipeline_paths(config):
     skip_domain_mixup = config.pipeline.skip_domain_mixup
     skip_segmentation = config.pipeline.skip_segmentation
     skip_depth_segmentation = config.pipeline.skip_depth_segmentation
+    skip_e4e = len(config.e4e.transformations) == 0
 
     projection_dir = config.projection_dir
     result_dir = config.result_dir
@@ -24,6 +25,9 @@ def get_pipeline_paths(config):
             'output_path': join(result_dir, 'images_post_translation'),
             'anycost_config': anycost_config,
             'configs': config.translation,
+        },
+        'apply_e4e': {
+            'configs': config.e4e,
         },
         'gfp_gan_mix': {
             'model_path': 'postprocess/gfp_gan/model/GFPGANv1.3.pth',
@@ -48,12 +52,15 @@ def get_pipeline_paths(config):
     }
 
     op_order = [
-        'apply_translations', 'gfp_gan_mix', 'domain_mix', 'segmentation_mix',
-        'depth_estimation_mix'
+        'apply_translations', 'apply_e4e', 'gfp_gan_mix', 'domain_mix',
+        'segmentation_mix', 'depth_estimation_mix'
     ]
-
+    if skip_e4e:
+        op_order.remove('apply_e4e')
+        del pipeline_paths['apply_e4e']
     if skip_gfp_gan:
         op_order.remove('gfp_gan_mix')
+        del pipeline_paths['gfp_gan_mix']
     if skip_domain_mixup:
         op_order.remove('domain_mix')
         del pipeline_paths['domain_mix']
@@ -76,9 +83,20 @@ def set_paths(pipeline_paths, op_order, result_dir, save_intermediate):
         if op_i != 0:  # not apply_translations
             if save_intermediate:
                 prev_op = op_order[op_i - 1]
-                for op_n, key_path in zip([prev_op, op_name],
-                                          ['input_path', 'output_path']):
+
+                if op_name == 'apply_e4e':
+                    # e4e doesn't need input_path
+                    ops = [op_name]
+                    key_paths = ['output_path']
+                else:
+                    ops = [prev_op, op_name]
+                    key_paths = ['input_path', 'output_path']
+
+                for op_n, key_path in zip(ops, key_paths):
                     if op_n == 'apply_translations':
+                        pipeline_paths[op_name][key_path] = join(
+                            result_dir, 'images_post_translation')
+                    if op_n == 'apply_e4e':
                         pipeline_paths[op_name][key_path] = join(
                             result_dir, 'images_post_translation')
                     if op_n == 'gfp_gan_mix':

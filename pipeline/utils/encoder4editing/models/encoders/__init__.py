@@ -1,0 +1,1 @@
+"""Encoder functions and classes."""

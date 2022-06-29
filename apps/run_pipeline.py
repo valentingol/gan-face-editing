@@ -4,6 +4,7 @@ import os
 
 from pipeline.depth_segmentation import depth_estimation_mix
 from pipeline.domain_mixup import domain_mix
+from pipeline.encoder4editing import apply_e4e
 from pipeline.gfp_gan import gfp_gan_mix
 from pipeline.segmentation import segmentation_mix
 from pipeline.translate import apply_translations
@@ -28,6 +29,10 @@ def run(config):
 
     print('\nApplying translations in latent space...')
     apply_translations(**pipeline_paths['apply_translations'])
+
+    if 'apply_e4e' in pipeline_paths:
+        print('\nApplying encoder4editing...')
+        apply_e4e(data_dir=data_dir, **pipeline_paths['apply_e4e'])
 
     if 'gfp_gan_mix' in pipeline_paths:
         print('\nApplying GFP GAN restoration...')

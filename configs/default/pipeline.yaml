@@ -5,6 +5,9 @@ skip_domain_mixup: True
 skip_segmentation: False
 skip_depth_segmentation: False
 
+--- !e4e
+transformations: []
+
 --- !translation
 use_precomputed: True
 use_characs_in_img: False
