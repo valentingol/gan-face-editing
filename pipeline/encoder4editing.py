@@ -68,10 +68,19 @@ LATENT_TRANSFORMATIONS = {
     "Se_1":
     partial(apply_projection, vector_path="vectors_editing/custom/sex.npy",
             proj_value=-1),
+    "Sk_0":
+    partial(apply_projection,
+            vector_path="vectors_editing/custom/tan.npy", proj_value=-1.3),
+    "Sk_1":
+    partial(apply_projection,
+            vector_path="vectors_editing/custom/tan.npy", proj_value=-0.7),
+    "Sk_2":
+    partial(apply_projection,
+    vector_path="vectors_editing/custom/tan.npy", proj_value=1),
     "Bald":
     partial(apply_projection,
-            vector_path="vectors_editing/custom/from_bald.npy",
-            proj_value=5.0),
+            vector_path="vectors_editing/custom/to_bald.npy",
+            proj_value=0.8),
     "make_hair":
     partial(apply_translation,
             vector_path="vectors_editing/custom/from_bald.npy",
