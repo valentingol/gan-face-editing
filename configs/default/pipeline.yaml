@@ -6,7 +6,7 @@ skip_segmentation: False
 skip_depth_segmentation: False
 
 --- !e4e
-transformations: []
+transformations: [B_1, Bn_max, Se_0, Se_1, Sk_0, Sk_1, Sk_2]
 
 --- !translation
 use_precomputed: True
@@ -15,7 +15,8 @@ use_characs_in_img: False
 --- !gfp_gan
 upscale: 2
 bg_tile: 400
-margin: 12
+margin: 6
+transformations: [Be_max, Be_min, Bp_max, Bp_min, N_min, Pn_max]
 
 --- !domain_mixup
 recompute_dist: False
@@ -24,6 +25,8 @@ margin: 42
 --- !segmentation
 margin: 21
 foreground_margin: 6
+avoid_transformations: ['N_max']
 
 --- !depth_segmentation
 foreground_coef: 8.0
+transformations: ['all']
