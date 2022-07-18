@@ -148,7 +148,7 @@ IMG_TRANSFORMATIONS_INVERSE = {
     },
     "Bp_min": {
         "function": infer.make_big_lips,
-        "value": 1
+        "value": 1.2
     },
     "Be_min": {
         "function": infer.make_bags,
