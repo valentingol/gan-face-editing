@@ -31,7 +31,8 @@ import scipy.ndimage
 
 # download models from: http://dlib.net/files/shape_predictor_68_face_
 # landmarks.dat.bz2
-predictor = dlib.shape_predictor('./shape_predictor_68_face_landmarks.dat')
+predictor = dlib.shape_predictor('anycostgan/shape_predictor/'
+                                 'shape_predictor_68_face_landmarks.dat')
 
 
 def get_landmark(filepath):
@@ -180,7 +181,8 @@ def align_face(filepath):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Align face images to FFHQ format")
-    parser.add_argument("input", type=str, help="path of the input image")
+    parser.add_argument("-i", "--input", type=str,
+                        help="path of the input image")
     parser.add_argument("-o", "--output", type=str, default=None,
                         help="output path of the aligned face")
 
