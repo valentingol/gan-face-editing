@@ -9,3 +9,4 @@ projection.n_iter: 50
 pipeline.save_intermediate: False
 translation.use_characs_in_img: False
 translation.use_precomputed: True
+e4e.transformations: []
