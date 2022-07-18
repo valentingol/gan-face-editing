@@ -93,15 +93,15 @@ LATENT_TRANSFORMATIONS = {
     "A_0":
     partial(apply_projection,
             vector_path="vectors_editing/custom/interface_age.npy",
-            proj_value=-20),
+            proj_value=-30),
     "A_1":
     partial(apply_projection,
             vector_path="vectors_editing/custom/interface_age.npy",
-            proj_value=5),
+            proj_value=0),
     "A_2":
     partial(apply_projection,
             vector_path="vectors_editing/custom/interface_age.npy",
-            proj_value=50),
+            proj_value=55),
     "Ch_min":
     partial(apply_projection, vector_path="vectors_editing/custom/chubby.npy",
             proj_value=-0.5),
