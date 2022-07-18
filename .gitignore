@@ -1,14 +1,21 @@
 # Specific files and folders
 data/
 res/
-projection/run**
+postprocess/depth_segmentation/model/
+postprocess/encoder4editing/model/
+
+# Projection
+projection/
+!projection/50_itr
+!projection/250_itr
+!projection/1000_itr
 **/projected_images
-.mypy_cache
 
 # General (Python)
 *egg-info
 *.pyc
 .env
+.mypy_cache
 .vscode
 
 # Submission
