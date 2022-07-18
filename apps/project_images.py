@@ -22,7 +22,8 @@ def run(config):
 
     for img_name in os.listdir(data_dir):
         img_path = os.path.join(data_dir, img_name)
-        if img_name.endswith('.jpg') or img_name.endswith('.png'):
+        if (img_name.endswith('.jpg') or img_name.endswith('.png')
+                or img_name.endswith('.jpeg')):
             command_line = ('FORCE_NATIVE=1 python anycostgan/tools/'
                             f'project.py --config {anycost_config} '
                             f'--encoder --n_iter={n_iter} '
@@ -34,6 +35,7 @@ def run(config):
             command_line += img_path
 
             # Project image
+            print('\nProject image:', img_name)
             os.system(command_line)
 
     print('All images projected')
@@ -49,9 +51,11 @@ def run(config):
             init_segmentation(data_dir)
             print('done')
         else:
-            print(f'Segmentation already done, please delete {org_seg_dir} if '
-                  'you want to force recomputing it (otherwise, ignore this '
-                  'message).')
+            init_segmentation(data_dir)
+            print(f'Segmentation already found at {org_seg_dir} and will '
+                  'be overwritten (to avoid recomputing it during every '
+                  'projections, you can set projection.segmentation to False '
+                  'in the configs).')
 
 
 if __name__ == '__main__':
