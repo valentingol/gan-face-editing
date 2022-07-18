@@ -11,20 +11,22 @@ from torchvision import transforms
 from pipeline.utils.segmentation.model import BiSeNet
 
 
-def get_model():
+def get_model(model_path=None):
     """Get segmentation model (and device)."""
+    model_path = ('postprocess/segmentation/model/79999_iter.pth'
+                  if model_path is None else model_path)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     net = BiSeNet(n_classes=19)
 
     net.to(device)
     net.load_state_dict(
-        torch.load('postprocess/segmentation/model/'
-                   '79999_iter.pth'))
+        torch.load(model_path)
+        )
     net.eval()
     return net, device
 
 
-def init_segmentation(data_dir):
+def init_segmentation(data_dir, model_path=None):
     """Apply segmentation (face parsing) on all input image."""
     if data_dir[-1] == '/':
         data_dir = data_dir[:-1]
@@ -37,7 +39,7 @@ def init_segmentation(data_dir):
                   'already contain face parsing was found. Images inside '
                   'will be overwritten.')
 
-    net, device = get_model()
+    net, device = get_model(model_path)
 
     to_tensor = transforms.Compose([
         transforms.ToTensor(),
@@ -128,4 +130,4 @@ if __name__ == '__main__':
     print('Segment images (face parsing)...')
     DATA_DIR = 'data/face_challenge'
     MODEL_PATH = 'postprocess/segmentation/model/79999_iter.pth'
-    init_segmentation(data_dir=DATA_DIR)
+    init_segmentation(data_dir=DATA_DIR, model_path=MODEL_PATH)
