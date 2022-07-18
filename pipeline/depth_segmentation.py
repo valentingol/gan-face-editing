@@ -83,16 +83,15 @@ def depth_estimation_mix(data_dir, input_path, output_path, model_path,
                 if (transfo_name in transformations_list
                         or transformations_list == ['all']):
                     # Apply depth estimation mixup
-                    image = Image.open(osp.join(input_path, image_dir,
-                                                file_name))
+                    image = Image.open(
+                        osp.join(input_path, image_dir, file_name))
                     image = image.resize((512, 512), Image.BILINEAR)
                     if transfo_name == 'bald' or transfo_name.startswith("Se"):
                         image = np.array(image)
                         image = image.astype(np.uint8)
                         image = cvtColor(image, cv2.COLOR_RGB2BGR)
-                        cv2.imwrite(osp.join(output_path, image_dir,
-                                             file_name),
-                                    image)
+                        cv2.imwrite(
+                            osp.join(output_path, image_dir, file_name), image)
                         print(f'image {i+1}/{n_images} done  ', end='\r')
                         continue
 
@@ -117,6 +116,8 @@ def depth_estimation_mix(data_dir, input_path, output_path, model_path,
                 else:  # Do nothing on the image
                     img_path = os.path.join(input_path, image_dir, file_name)
                     save_path = os.path.join(output_path, image_dir, file_name)
+                    os.makedirs(os.path.join(output_path, image_dir),
+                                exist_ok=True)
                     Image.open(img_path).save(save_path)
 
             print(f'image {i+1}/{n_images} done  ', end='\r')

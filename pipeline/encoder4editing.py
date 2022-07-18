@@ -63,28 +63,22 @@ def apply_translation(latents, vector_path, scroll_value):
 # projection value.
 LATENT_TRANSFORMATIONS = {
     "Se_0":
-    partial(apply_projection,
-            vector_path="vectors_editing/custom/sex.npy",
+    partial(apply_projection, vector_path="vectors_editing/custom/sex.npy",
             proj_value=1.2),
     "Se_1":
-    partial(apply_projection,
-            vector_path="vectors_editing/custom/sex.npy",
+    partial(apply_projection, vector_path="vectors_editing/custom/sex.npy",
             proj_value=-1),
     "Sk_0":
-    partial(apply_projection,
-            vector_path="vectors_editing/custom/tan.npy",
+    partial(apply_projection, vector_path="vectors_editing/custom/tan.npy",
             proj_value=-1.3),
     "Sk_1":
-    partial(apply_projection,
-            vector_path="vectors_editing/custom/tan.npy",
+    partial(apply_projection, vector_path="vectors_editing/custom/tan.npy",
             proj_value=-0.7),
     "Sk_2":
-    partial(apply_projection,
-            vector_path="vectors_editing/custom/tan.npy",
+    partial(apply_projection, vector_path="vectors_editing/custom/tan.npy",
             proj_value=1),
-    "Bald":
-    partial(apply_projection,
-            vector_path="vectors_editing/custom/to_bald.npy",
+    "bald":
+    partial(apply_projection, vector_path="vectors_editing/custom/to_bald.npy",
             proj_value=0.8),
     "make_hair":
     partial(apply_translation,
@@ -242,18 +236,18 @@ def get_img_transformations(img_name, list_of_transformations):
     """Get image transformations from img_name."""
     img_att = parse_img_name(img_name)
     transformations = []
-    for att in POSSIBLE_VALUES:
-        for val in POSSIBLE_VALUES[att]:
+    for att, values in POSSIBLE_VALUES.items():
+        for val in values:
             if img_att[att] != val:
-                t_name = att+"_"+val
+                t_name = att + "_" + val
                 if t_name in list_of_transformations:
                     transformations.append(t_name)
     for att in CURSOR_FEATURES:
-        for t_name in [att+"_max", att+"_min"]:
+        for t_name in [att + "_max", att + "_min"]:
             if t_name in list_of_transformations:
                 transformations.append(t_name)
-    if "Bald" in list_of_transformations and img_att["Hc"] != 4:
-        transformations.append("Bald")
+    if "bald" in list_of_transformations and img_att["Hc"] != 4:
+        transformations.append("bald")
     return transformations
 
 
@@ -331,6 +325,10 @@ if __name__ == "__main__":
     print('Apply encoder4editing...')
     DATA_DIR = "data/face_challenge"
     OUTPUT_PATH = "res/run1/output_images"
-    CONFIGS = {'transformations': ["A_0", "B_0", "Bald", "Bn_min", "Bp_max", "Ch_min", "D_0",
-                                   "Hc_3", "Pn_min", "Se_1"]}
+    CONFIGS = {
+        'transformations': [
+            "A_0", "B_0", "bald", "Bn_min", "Bp_max", "Ch_min", "D_0", "Hc_3",
+            "Pn_min", "Se_1"
+        ]
+    }
     apply_e4e(DATA_DIR, OUTPUT_PATH, CONFIGS)

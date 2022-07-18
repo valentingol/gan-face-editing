@@ -19,9 +19,7 @@ def get_model(model_path=None):
     net = BiSeNet(n_classes=19)
 
     net.to(device)
-    net.load_state_dict(
-        torch.load(model_path)
-        )
+    net.load_state_dict(torch.load(model_path))
     net.eval()
     return net, device
 
