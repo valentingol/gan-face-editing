@@ -114,13 +114,11 @@ FORCE_NATIVE=1 python apps/run_pipeline.py
 
 All steps of the pipeline can be run individually and the results after all steps are saved in `res/run1`.
 
-The final images are saved under `res/run1/images_post_depth_segmentation`.
-
-You can avoid using the pre-computed translation with `--translation.use_precomputed=False`.
+You can avoid using the pre-computed translation with `--translation.use_precomputed=False`. Then, the only translations that will be used are the ones you have created with the editor API.
 
 ## Postprocessing
 
-All transformation can be run individually even if the project was designed to work with `apps/run_pipeline.py` in order to be consistent with custom configurations (see "Configurations" section).
+The pipeline of transformations include many transformations. All of them can be run individually even if the project was designed to work with `apps/run_pipeline.py` in order to be consistent with custom configurations (see "Configurations" section).
 
 ## encoder4editing
 
@@ -158,7 +156,9 @@ Then you can run the following script to merge the previously edited images with
 python pipeline/segment.py
 ```
 
-By default, the resulting images are in `res/run1/images_post_segmentation/`
+By default, the resulting images are in `res/run1/output_images`
+
+**Imortant**: The translations need to have a valid prefix in their name to apply the segmentation. See the table in the section *Save your own translations* for more information.
 
 ### Depth estimation
 
@@ -171,7 +171,7 @@ Then you can run the following script to merge the previously edited images with
 python pipeline/depth_segmentation.py
 ```
 
-By default, the resulting images are in `res/run1/images_post_depth_segmentation/`
+By default, the resulting images are in `res/run1/output_images`
 
 ## To go further
 
@@ -180,7 +180,7 @@ By default, the resulting images are in `res/run1/images_post_depth_segmentation
 This project use the [rr-ml-config](https://gitlab.com/reactivereality/public/rr-ml-config-public) configuration system to configure all the main functions (in `apps/`). You can find all the configurations on yaml files in the `config/` folder. The default configs are in `config/default/` folder and split on multiple files (creating multiple sub-configs) to make it easier to use. Then, you can create your own experiments by editing a file `config/exp/my_exp.yaml` and add lines to overwriting some default configs (an example is provided in `config/exp/base.yaml`, that is used by default). Then you can run the `apps/` functions using your experiment configs. For instance:
 
 ```bash
-python apps/project_images.py --config config/exp/my_exp.yaml
+FORCE_NATIVE=1 python apps/project_images.py --config config/exp/my_exp.yaml
 FORCE_NATIVE=1 python apps/editor.py --config config/exp/my_exp.yaml
 FORCE_NATIVE=1 python apps/run_pipeline.py --config config/exp/my_exp.yaml
 ```
@@ -198,6 +198,23 @@ This make your experiments very convenient because you can set your main configu
 All your configurations are saved that allow full reproducibility of your experiments.
 
 Each time you want to create a new experiments configuration, you need to overwrite the projection dir with the name of your "projection run" (e.g. `projection/run_with_1000_iter`), the result dir (with the name of your "pipeline run" (e.g. `res/test_with_domain_mixup`), and the save path with the name of your "global run", (e.g. `configs/runs/1000_iter_proj_with_domain_mixup`). By default, it is "run1", "run1" and "run1&1" respectively.
+
+### Modify your own images
+
+You can modify your own dataset of images by create a new folder `data/my_dataset_name` and add it in your configs:
+
+```yaml
+# configs/exp/
+data_dir: data/my_dataset_name
+```
+
+Then, you need to align the faces on your images following the [FFHQ alignement](https://www.kaggle.com/datasets/arnaud58/ffhq-flickr-faces-align-crop-and-segment) and resize them to 512 * 512 pixels. First you need to install [dlib](https://pypi.org/project/dlib/) and downoad the [shape predictor](http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2), extract it, and place it in `anycostgan/shape_predictor/shape_predictor_68_face_landmarks.dat`. Then you can run the following script. Note that data will be transformed in `data_dir` **in place** so save a backup if you want before.
+
+```bash
+python apps/preprocess_images.py --config configs/exp/<exp_config_file>.yaml
+```
+
+Now you can project the images, use the editor and run your pipeline of transformations such as the section above.
 
 ### Save your own translations
 
@@ -222,6 +239,19 @@ Now, given an input image, the transformations to create characteristics that ar
 
 Note that if you not used the characteristics in the image, you can name the translation vectors as you want.
 
+**Important:** To use the semantic segmentation mixup, the algorithm should understand the part of the face you want to modify (and the part of the image you want to preserve from the original image). To do so, you need to add a particular prefix for the translation vectors: for instance for eyes change, you need to use the prefix 'N'. For instance `N_0` is a valid translation that will only edit the eyes. The table of prefix is:
+
+| Part to modify    | Prefix             |
+| :---------------: |:------------------:|
+| All the face      | A, Ch, Se or Sk    |
+| Hair              | B, Hc or Hs        |
+| Nose              | Pn                 |
+| Eyes              | Bn or N            |
+| Just under eyes   | Be                 |
+| Lips              | Bp                 |
+
+If you don't use one of the prefix above, no segmentation mixup will be applied. You can use the prefix you want for custom transformations. More intuitive prefix will be available later (e.g 'eyes' for eyes, 'face' for all the face ...).
+
 ### Extract other attribute directions
 
 :construction:
@@ -229,11 +259,5 @@ Note that if you not used the characteristics in the image, you can name the tra
 ### Retrain the GAN
 
 To retrain the GAN you need to install [horovod](https://github.com/horovod/horovod) (Mac or Linux only).
-
-:construction:
-
-### Align faces
-
-This repository provides a function to align faces. It requires [dlib](https://pypi.org/project/dlib/).
 
 :construction:
