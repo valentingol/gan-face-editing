@@ -261,7 +261,7 @@ POSSIBLE_VALUES = {
 CURSOR_FEATURES = ("Be", "N", "Pn", "Bp", "Bn", "Ch")
 
 
-def get_img_transformations(img_name, list_of_transformations):
+def get_img_transformations(img_name, tfs):
     """Get image transformations from img_name."""
     img_att = parse_img_name(img_name)
     transformations = []
@@ -271,15 +271,15 @@ def get_img_transformations(img_name, list_of_transformations):
             if img_att[att] != val:
                 t_name = att+"_"+val
                 t_name2 = att+"_"+img_att[att] + "->" + t_name
-                if att in list_of_transformations or t_name in list_of_transformations or t_name2 in list_of_transformations:
+                if att in tfs or t_name in tfs or t_name2 in tfs:
                     transformations.append(t_name2)
     # Cursor features
     for att in CURSOR_FEATURES:
         for t_name in [att + "_max", att + "_min"]:
-            if t_name in list_of_transformations:
+            if t_name in tfs:
                 transformations.append(t_name)
     # Bald
-    if "Bald" in list_of_transformations and img_att["Hc"] != 4:
+    if "Bald" in tfs and img_att["Hc"] != 4:
         transformations.append("Bald")
     return transformations
 
@@ -358,6 +358,7 @@ if __name__ == "__main__":
     print('Apply encoder4editing...')
     DATA_DIR = "data/face_challenge"
     OUTPUT_PATH = "res/run1/output_images"
-    CONFIGS = {'transformations': ["Sk_0->Sk_1", "A", "B_0", "Bald", "Bn_min", "Bp_max", "Ch_min", "D_0",
+    CONFIGS = {'transformations': ["Sk_0->Sk_1", "A", "B_0", "Bald", "Bn_min",
+                                   "Bp_max", "Ch_min", "D_0",
                                    "Hc_3", "Pn_min", "Se_1"]}
     apply_e4e(DATA_DIR, OUTPUT_PATH, CONFIGS)
