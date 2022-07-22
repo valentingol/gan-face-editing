@@ -94,9 +94,8 @@ LATENT_TRANSFORMATIONS = {
     partial(apply_projection,
             vector_path="vectors_editing/custom/tan.npy",
             proj_value=1),
-    "Bald":
-    partial(apply_projection,
-            vector_path="vectors_editing/custom/to_bald.npy",
+    "bald":
+    partial(apply_projection, vector_path="vectors_editing/custom/to_bald.npy",
             proj_value=0.8),
     "make_hair":
     partial(apply_translation,
@@ -276,7 +275,7 @@ def get_img_transformations(img_name, list_of_transformations):
                     transformations.append(t_name2)
     # Cursor features
     for att in CURSOR_FEATURES:
-        for t_name in [att+"_max", att+"_min"]:
+        for t_name in [att + "_max", att + "_min"]:
             if t_name in list_of_transformations:
                 transformations.append(t_name)
     # Bald

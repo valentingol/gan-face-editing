@@ -36,6 +36,8 @@ def depth_estimation_mix(data_dir, input_path, output_path, model_path,
     configs : dict or GlobalConfig
         Configurations for the depth estimation mixup.
     """
+    transformations_list = configs['transformations']
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -76,36 +78,48 @@ def depth_estimation_mix(data_dir, input_path, output_path, model_path,
             img_org = original_imgs[image_dir]
 
             for file_name in os.listdir(osp.join(input_path, image_dir)):
-                carac_name = file_name.split('.')[0]
+                transfo_name = file_name.split('.')[0]
 
-                image = Image.open(osp.join(input_path, image_dir, file_name))
-                image = image.resize((512, 512), Image.BILINEAR)
-                if carac_name == 'bald' or carac_name.startswith("Se"):
+                if (transfo_name in transformations_list
+                        or transformations_list == ['all']):
+                    # Apply depth estimation mixup
+                    image = Image.open(
+                        osp.join(input_path, image_dir, file_name))
+                    image = image.resize((512, 512), Image.BILINEAR)
+                    if transfo_name == 'bald' or transfo_name.startswith("Se"):
+                        image = np.array(image)
+                        image = image.astype(np.uint8)
+                        image = cvtColor(image, cv2.COLOR_RGB2BGR)
+                        cv2.imwrite(
+                            osp.join(output_path, image_dir, file_name), image)
+                        print(f'image {i+1}/{n_images} done  ', end='\r')
+                        continue
+
+                    # Get depth estimation of the edited image
+                    image_resized = image.resize((384, 384), Image.BILINEAR)
+                    image_tsr = to_tensor(image_resized)
+                    depth = depth_estimation(image_tsr, net, device)
+                    depth = cv2.resize(depth, (512, 512),
+                                       interpolation=cv2.INTER_NEAREST)
                     image = np.array(image)
-                    image = image.astype(np.uint8)
-                    image = cvtColor(image, cv2.COLOR_RGB2BGR)
+
+                    # Add Foreground of the original image
+                    img_final = fix_background(
+                        depth_org, depth, img_org, image,
+                        foreground_coef=configs['foreground_coef'])
+                    img_final = img_final.astype(np.uint8)
+                    img_final = cvtColor(img_final, cv2.COLOR_RGB2BGR)
+                    # Save image
                     cv2.imwrite(osp.join(output_path, image_dir, file_name),
-                                image)
-                    print(f'image {i+1}/{n_images} done  ', end='\r')
-                    continue
+                                img_final)
 
-                # Get depth estimation of the edited image
-                image_resized = image.resize((384, 384), Image.BILINEAR)
-                image_tsr = to_tensor(image_resized)
-                depth = depth_estimation(image_tsr, net, device)
-                depth = cv2.resize(depth, (512, 512),
-                                   interpolation=cv2.INTER_NEAREST)
-                image = np.array(image)
+                else:  # Do nothing on the image
+                    img_path = os.path.join(input_path, image_dir, file_name)
+                    save_path = os.path.join(output_path, image_dir, file_name)
+                    os.makedirs(os.path.join(output_path, image_dir),
+                                exist_ok=True)
+                    Image.open(img_path).save(save_path)
 
-                # Add Foreground of the original image
-                img_final = fix_background(
-                    depth_org, depth, img_org, image,
-                    foreground_coef=configs['foreground_coef'])
-                img_final = img_final.astype(np.uint8)
-                img_final = cvtColor(img_final, cv2.COLOR_RGB2BGR)
-                # Save image
-                cv2.imwrite(osp.join(output_path, image_dir, file_name),
-                            img_final)
             print(f'image {i+1}/{n_images} done  ', end='\r')
     print()
 
@@ -246,7 +260,7 @@ if __name__ == "__main__":
     # Path to the model
     MODEL_PATH = ('postprocess/depth_segmentation/model/'
                   'dpt_large-midas-2f21e586.pt')
-    CONFIGS = {'foreground_coef': 8.0}
+    CONFIGS = {'foreground_coef': 8.0, 'transformations': ['all']}
 
     depth_estimation_mix(data_dir=DATA_DIR, input_path=INPUT_PATH,
                          output_path=OUTPUT_PATH, model_path=MODEL_PATH,

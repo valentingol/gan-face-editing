@@ -293,7 +293,8 @@ class FaceEditor(QMainWindow):
         # 3. Prepare the latent code and original images
         file_names = sorted(os.listdir(DATA_DIR))
         self.file_names = [
-            f for f in file_names if f.endswith('.png') or f.endswith('.jpg')
+            f for f in file_names
+            if f.endswith('.png') or f.endswith('.jpg') or f.endswith('.jpeg')
         ]
         self.latent_code_list = []
         self.org_image_list = []
@@ -301,7 +302,9 @@ class FaceEditor(QMainWindow):
         for fname in self.file_names:
             org_image = np.asarray(
                 Image.open(os.path.join(DATA_DIR, fname)).convert('RGB'))
-            npy_name = fname.replace('.jpg', '.npy').replace('.png', '.npy')
+            npy_name = (fname.replace('.jpg',
+                                      '.npy').replace('.png', '.npy').replace(
+                                          '.jpeg', '.npy'))
             try:
                 latent_code = torch.from_numpy(
                     np.load(
