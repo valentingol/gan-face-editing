@@ -1,9 +1,9 @@
 --- !pipeline
 save_intermediate: True
-skip_gfp_gan: False
+skip_gfp_gan: True
 skip_domain_mixup: True
 skip_segmentation: False
-skip_depth_segmentation: False
+skip_depth_segmentation: True
 
 --- !e4e
 transformations: []
@@ -15,7 +15,8 @@ use_characs_in_img: False
 --- !gfp_gan
 upscale: 2
 bg_tile: 400
-margin: 12
+margin: 6
+transformations: []
 
 --- !domain_mixup
 recompute_dist: False
@@ -24,6 +25,8 @@ margin: 42
 --- !segmentation
 margin: 21
 foreground_margin: 6
+avoid_transformations: ['N_max']
 
 --- !depth_segmentation
 foreground_coef: 8.0
+transformations: ['all']

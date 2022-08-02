@@ -44,10 +44,12 @@ def segmentation_mix(data_dir, input_path, output_path, model_path, configs):
     configs : dict or GlobalConfig
         Configurations for the domain mixup.
     """
+    avoid_transformations_list = configs['avoid_transformations']
+
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
-    net, device = get_model()
+    net, device = get_model(model_path)
 
     to_tensor = transforms.Compose([
         transforms.ToTensor(),
@@ -65,7 +67,7 @@ def segmentation_mix(data_dir, input_path, output_path, model_path, configs):
         org_seg_dir = data_dir + '_segmented_'
     if not osp.exists(org_seg_dir) or not os.listdir(org_seg_dir):
         print('Apply segmentation on original images...', end=' ')
-        init_segmentation(data_dir)
+        init_segmentation(data_dir, model_path=model_path)
         print('done')
 
     seg_original, original_imgs = {}, {}
@@ -87,9 +89,10 @@ def segmentation_mix(data_dir, input_path, output_path, model_path, configs):
             charac_name = file_name.split('.')[0]
             image = Image.open(osp.join(input_path, image_dir, file_name))
             image = image.resize((512, 512), Image.BILINEAR)
-            if charac_name == 'N_max':  # Not handled
-                image = add_foreground(image, img_org, seg_org,
-                                       margin=configs['foreground_margin'])
+
+            if charac_name in avoid_transformations_list:  # Not handled
+                image = add_top_foreground(image, img_org, seg_org,
+                                           margin=configs['foreground_margin'])
                 cv2.imwrite(osp.join(output_path, image_dir, file_name), image)
                 print(f'image {i+1}/{n_images} done  ', end='\r')
                 continue
@@ -102,8 +105,8 @@ def segmentation_mix(data_dir, input_path, output_path, model_path, configs):
             seg_charac = process_segmentation(seg, charac_name)
 
             if seg_charac is None:  # Not handled
-                image = add_foreground(image, img_org, seg_org,
-                                       margin=configs['foreground_margin'])
+                image = add_top_foreground(image, img_org, seg_org,
+                                           margin=configs['foreground_margin'])
                 cv2.imwrite(osp.join(output_path, image_dir, file_name), image)
                 print(f'image {i+1}/{n_images} done  ', end='\r')
                 continue
@@ -114,17 +117,18 @@ def segmentation_mix(data_dir, input_path, output_path, model_path, configs):
             img_final = merge_images(img_org, seg_org_charac, image,
                                      seg_charac, margin=configs['margin'])
             # Add Foreground of the original image
-            img_final = add_foreground(img_final, img_org, seg_org,
-                                       margin=configs['foreground_margin'])
+            img_final = add_top_foreground(img_final, img_org, seg_org,
+                                           margin=configs['foreground_margin'])
             # Save image
             cv2.imwrite(osp.join(output_path, image_dir, file_name), img_final)
         print(f'image {i+1}/{n_images} done  ', end='\r')
     print()
 
 
-def add_foreground(img, img_org, seg_org, margin):
-    """Add foreground to the image."""
+def add_top_foreground(img, img_org, seg_org, margin):
+    """Add foreground on the top half of the original image to the image."""
     foreground = np.where(seg_org == 5, 1, 0)
+    foreground[foreground.shape[0] // 2:, :] = 0
     dist = dist_edt(foreground)
     alpha = alpha_from_dist(dist, margin=margin)[..., None]
     img = alpha*img_org + (1-alpha) * img
@@ -184,14 +188,14 @@ def process_segmentation(seg, charac_name):
         eyes = np.where(seg == 1, 1, 0).astype(np.uint8)
         kernel = np.ones((5, 5), 'uint8')
         eyes = cv2.dilate(eyes, kernel=kernel, iterations=4)
-        # under eye starts 10 pixels below the top of the eye
+        # Under eye starts 10 pixels below the top of the eye
         under_eyes = np.where(eyes[:-30, :] == 1, 1, 0)
         rest = np.zeros((30, 512))
         under_eyes = np.concatenate((rest, under_eyes), axis=0)
         return np.where(under_eyes == 1, 0, 1)
     if charac_name == 'Bp':
         return np.where(seg == 3, 0, 1)
-    return None
+    return None  # Not handled
 
 
 if __name__ == "__main__":
