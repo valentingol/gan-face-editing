@@ -302,7 +302,9 @@ def process_img(img_path, output_path, list_of_transformations):
     for transfo in img_transforms:
         if transfo in LATENT_TRANSFORMATIONS:
             edited_img = decode(LATENT_TRANSFORMATIONS[transfo](latents))
-            edited_img.save(os.path.join(output_path, transfo + ".png"))
+            edited_img.save(
+                os.path.join(output_path, transfo.split('>')[-1] + ".png")
+            )
 
     for transfo in img_transforms:
         if transfo in IMG_TRANSFORMATIONS:
@@ -315,7 +317,9 @@ def process_img(img_path, output_path, list_of_transformations):
                 edited_img = IMG_TRANSFORMATIONS[transfo](np.array(img),
                                                           parsing)
             edited_img = reencode(Image.fromarray(edited_img))
-            edited_img.save(os.path.join(output_path, transfo + ".png"))
+            edited_img.save(
+                os.path.join(output_path, transfo.split('>')[-1] + ".png")
+            )
 
     for transfo in img_transforms:
         if transfo in IMG_TRANSFORMATIONS_INVERSE:
