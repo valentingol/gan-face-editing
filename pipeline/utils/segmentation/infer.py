@@ -434,7 +434,7 @@ def make_bigger(img, mask):
         return img
     g_x, g_y = (minx+maxx) // 2, (miny+maxy) // 2
     mask = np.float32(mask[minx:maxx, miny:maxy])
-    new_shape = (int(mask.shape[0] * 1.1), int(mask.shape[1] * 1.5))
+    new_shape = (int(mask.shape[0] * 1.5), int(mask.shape[1] * 1.5))
     mask = cv2.resize(mask, new_shape, interpolation=cv2.INTER_CUBIC)
     mask = mask > 0.3
     mask = np.stack((mask, mask, mask), -1)
