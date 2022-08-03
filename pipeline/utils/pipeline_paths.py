@@ -112,8 +112,9 @@ def set_paths(pipeline_paths, op_order, result_dir, save_intermediate):
                         pipeline_paths[op_name][key_path] = join(
                             result_dir, 'images_post_depth_segmentation')
             else:
-                pipeline_paths[op_name]['input_path'] = join(
-                    result_dir, 'output_images')
+                if op_name != 'apply_e4e':
+                    pipeline_paths[op_name]['input_path'] = join(
+                        result_dir, 'output_images')
                 pipeline_paths[op_name]['output_path'] = join(
                     result_dir, 'output_images')
         if op_i == 0 and not save_intermediate:
